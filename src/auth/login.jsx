@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { authService } from '../services/auth.service';
+import swal from 'sweetalert2';
 import '../assets/css/login.css';
 
 export default function Login() {
+    const navigate = useNavigate();
     const [cedula, setCedula] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
 
-    // Solo permitir números en la cédula (máximo 9 dígitos)
     const handleCedulaChange = (e) => {
         const value = e.target.value.replace(/\D/g, '');
         if (value.length <= 9) {
@@ -17,25 +18,60 @@ export default function Login() {
         }
     };
 
+    function showError(mensaje){
+        swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: mensaje,
+        });
+    }
+    
+    function showSuccess(mensaje){
+        swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: mensaje,
+        });
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
 
         if (cedula.length < 7) {
-            setError('La cédula debe tener mínimo 7 dígitos');
+            showError('La cédula debe tener al menos 7 dígitos');
             return;
         }
 
         setLoading(true);
 
-        // Conectar con el backend
-        console.log('Login attempt:', { cedula, password });
+        try {
+            const response = await authService.login(cedula, password);
+            
+            // Guardar usuario y token
+            localStorage.setItem('user', JSON.stringify(response.user));
+            localStorage.setItem('token', response.token);
 
-        setTimeout(() => {
+            const nombreUsuario = response.user.nombre || response.user.cedula || 'Usuario';
+            showSuccess(`¡Bienvenido(a), ${nombreUsuario}!`);
+            
+            // Redirigir según el rol
+            const idRol = response.user.id_rol;
+            if (idRol === 1) {
+                navigate('/home'); // Administrador
+            } else if (idRol === 2) {
+                navigate('/teacher'); // Docente
+            } else if (idRol === 3) {
+                navigate('/student'); // Estudiante
+            } else {
+                navigate('/');
+            }
+        } catch (err) {
+            showError(err.message || 'Error al iniciar sesión');
+        } finally {
             setLoading(false);
-        }, 1500);
+        }
     };
-
+    let color = { color: '#ffffff' };
     return (
         <div className="login-wrapper">
             <div className="login-container">
@@ -51,12 +87,6 @@ export default function Login() {
             {/* Formulario */}
             <div className="login-right">
                 <div className="login-card">
-                    {error && (
-                        <div className="alert alert-error">
-                            <i className="fas fa-exclamation-circle"></i>
-                            <span>{error}</span>
-                        </div>
-                    )}
 
                     <form className="login-form" onSubmit={handleSubmit}>
                         <div className="form-group">
@@ -116,7 +146,7 @@ export default function Login() {
                             className={`btn-login ${loading ? 'loading' : ''}`}
                             disabled={loading}
                         >
-                            <span className="btn-text">Login</span>
+                            <span className="btn-text" style={color}>Login</span>
                             <span className="btn-loader">
                                 <i className="fas fa-spinner fa-spin"></i> Ingresando...
                             </span>

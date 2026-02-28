@@ -15,35 +15,23 @@ export default function Index() {
     const featuresRef = useRef(null);
     const servicesRef = useRef(null);
 
-    // ========================================
-    // 2. EFECTOS (Reemplaza DOMContentLoaded y EventListeners)
-    // ========================================
     useEffect(() => {
-        // Mensaje de bienvenida en consola
-        console.log('%c🎓 IUJO - Sistema de Gestión de Rúbricas', 'color: #1a365d; font-size: 20px; font-weight: bold;');
-        console.log('%cInstituto Universitario Jesús Obrero', 'color: #e53e3e; font-size: 14px;');
-        console.log('✅ Cargado correctamente desde React');
-
         // Establecer año actual
         setCurrentYear(new Date().getFullYear());
 
-        // Manejador de Scroll (Navbar, Botón de subir, y Menú Activo)
+        // Manejador de Scroll
         const handleScroll = () => {
             const scrollPos = window.scrollY;
-            
-            // 1. Navbar Scrolled
+
             setIsScrolled(scrollPos > 50);
             
-            // 2. Mostrar botón de "Subir"
             setShowScrollTop(scrollPos > 300);
 
-            // 3. Resaltar enlace activo según la sección
             const sections = ['inicio', 'servicios', 'caracteristicas', 'contacto'];
             for (const section of sections) {
                 const element = document.getElementById(section);
                 if (element) {
                     const rect = element.getBoundingClientRect();
-                    // Si la parte superior de la sección está cerca del tope de la pantalla
                     if (rect.top <= 150 && rect.bottom >= 150) {
                         setActiveSection(section);
                         break;
@@ -54,16 +42,13 @@ export default function Index() {
 
         window.addEventListener('scroll', handleScroll);
 
-        // Intersection Observer para Animaciones de Scroll (Aparecer poco a poco)
         const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
         
         const scrollObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    // Seleccionamos las tarjetas hijas del contenedor que estamos observando
                     const cards = entry.target.querySelectorAll('.animate-on-scroll');
                     cards.forEach((card, index) => {
-                        // Aplicamos el retraso (delay) dinámicamente según su posición
                         setTimeout(() => {
                             card.classList.add('is-visible');
                         }, index * 100); 
@@ -83,14 +68,11 @@ export default function Index() {
         };
     }, []);
 
-    // ========================================
-    // 3. FUNCIONES DE INTERACCIÓN
-    // ========================================
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
     const scrollToSection = (e, targetId) => {
         e.preventDefault();
-        setIsMenuOpen(false); // Cierra el menú móvil si está abierto
+        setIsMenuOpen(false);
         
         if (targetId === '#') return;
 
