@@ -6,7 +6,16 @@ import { evaluacionesService } from '../services/evaluaciones.service';
 import Swal from 'sweetalert2';
 import '../assets/css/home.css';
 import '../assets/css/evaluacion.css';
+import { useFechasDisponibles, agruparFechasPorMes } from '../utils/useFechasDisponibles';
 
+    const transformDateJSON = (formData) => {
+        const fecha_data = JSON.parse(formData.fecha_horario_json)
+        formData.id_horario = fecha_data.horarioId
+        formData.fecha_evaluacion = fecha_data.fecha
+        formData.hora_inicio = fecha_data.horaInicio
+        formData.hora_cierre = fecha_data.horaCierre
+    }
+    
 export default function Evaluaciones() {
     const navigate = useNavigate();
     const [user] = useState(() => {
@@ -34,7 +43,9 @@ export default function Evaluaciones() {
     const [materias, setMaterias] = useState([]);
     const [secciones, setSecciones] = useState([]);
     const [estrategias, setEstrategias] = useState([]);
-    const [horarios, setHorarios] = useState([]);
+
+    // Hook de fechas dinámicas
+    const { fechasSistema, configuracionFechas, loadingFechas, errorFechas, cargarFechas, resetFechas } = useFechasDisponibles();
 
     const [formData, setFormData] = useState({
         contenido: '',
@@ -45,6 +56,9 @@ export default function Evaluaciones() {
         materia_codigo: '',
         id_seccion: '',
         tipo_horario: 'Sección',
+        // Para tipo Sección: guardamos el JSON completo como string (igual que el JS original)
+        fecha_horario_json: '',
+        // Campos derivados del JSON seleccionado (o ingresados manualmente en tipo Otro)
         fecha_evaluacion: '',
         id_horario: '',
         hora_inicio: '',
@@ -53,7 +67,7 @@ export default function Evaluaciones() {
         instrumentos: ''
     });
 
-    // Cargar Evaluaciones
+    // ── Cargar Evaluaciones ────────────────────────────────────────────────────
     const loadEvaluaciones = useCallback(async () => {
         try {
             setLoading(true);
@@ -72,7 +86,7 @@ export default function Evaluaciones() {
         else loadEvaluaciones();
     }, [user, navigate, loadEvaluaciones]);
 
-    // Lógica de Carga Jerárquica para el Modal
+    // ── Carga de catálogos al abrir modal ──────────────────────────────────────
     useEffect(() => {
         if (showModal) {
             evaluacionesService.getCarreras().then(res => res.success && setCarreras(res.carreras));
@@ -80,8 +94,10 @@ export default function Evaluaciones() {
         }
     }, [showModal]);
 
+    // ── Carga jerárquica ───────────────────────────────────────────────────────
     const handleCarreraChange = async (codigo) => {
-        setFormData(prev => ({ ...prev, carrera_codigo: codigo, materia_codigo: '', id_seccion: '', id_horario: '' }));
+        setFormData(prev => ({ ...prev, carrera_codigo: codigo, materia_codigo: '', id_seccion: '', id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
+        resetFechas();
         const res = await evaluacionesService.getMateriasByCarrera(codigo);
         if (res.success) setMaterias(res.materias);
         return res;
@@ -89,22 +105,57 @@ export default function Evaluaciones() {
 
     const handleMateriaChange = async (codigo, explicitCarrera = null) => {
         const carrera = explicitCarrera || formData.carrera_codigo;
-        setFormData(prev => ({ ...prev, materia_codigo: codigo, id_seccion: '', id_horario: '' }));
+        setFormData(prev => ({ ...prev, materia_codigo: codigo, id_seccion: '', id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
+        resetFechas();
         const res = await evaluacionesService.getSecciones(codigo, carrera);
         if (res.success) setSecciones(res.secciones);
         return res;
     };
 
     const handleSeccionChange = async (id) => {
-        setFormData(prev => ({ ...prev, id_seccion: id, id_horario: '' }));
-        const res = await evaluacionesService.getSeccionHorario(id);
-        if (res.success) setHorarios(res.horarios);
+        setFormData(prev => ({ ...prev, id_seccion: id, id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
+        if (id) {
+            // Cargar fechas disponibles excluyendo las ya ocupadas de esta sección
+            await cargarFechas(id, evaluaciones);
+        } else {
+            resetFechas();
+        }
     };
 
-    // Filtrado
+    // ── Cambio en el select de fecha+horario (tipo Sección) ───────────────────
+    const handleFechaHorarioChange = (jsonString) => {
+        if (!jsonString) {
+            setFormData(prev => ({ ...prev, fecha_horario_json: '', id_horario: '', fecha_evaluacion: '', hora_inicio: '', hora_fin: '' }));
+            return;
+        }
+        const selected = JSON.parse(jsonString);
+        setFormData(prev => ({
+            ...prev,
+            fecha_horario_json: jsonString,
+            id_horario: selected.horarioId,
+            fecha_evaluacion: selected.fecha,
+            hora_inicio: selected.horaInicio,
+            hora_fin: selected.horaCierre,
+        }));
+    };
+
+    // ── Cambio de tipo de horario ──────────────────────────────────────────────
+    const handleTipoHorarioChange = (tipo) => {
+        setFormData(prev => ({
+            ...prev,
+            tipo_horario: tipo,
+            fecha_horario_json: '',
+            id_horario: '',
+            fecha_evaluacion: '',
+            hora_inicio: '',
+            hora_fin: '',
+        }));
+    };
+
+    // ── Filtrado ───────────────────────────────────────────────────────────────
     const filteredEvaluaciones = useMemo(() => {
         return evaluaciones.filter(ev => {
-            const matchesSearch = !searchTerm || 
+            const matchesSearch = !searchTerm ||
                 `${ev.contenido_evaluacion} ${ev.materia_nombre} ${ev.docente_nombre}`.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesDocente = !docenteFilter || `${ev.docente_nombre} ${ev.docente_apellido}` === docenteFilter;
             const matchesEstado = !estadoFilter || ev.estado === estadoFilter;
@@ -117,20 +168,21 @@ export default function Evaluaciones() {
         return Array.from(set).sort();
     }, [evaluaciones]);
 
-    // Paginación
+    // ── Paginación ─────────────────────────────────────────────────────────────
     const totalPages = Math.ceil(filteredEvaluaciones.length / entriesPerPage);
     const paginatedEvaluaciones = filteredEvaluaciones.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
 
-    // Acciones CRUD
+    // ── CRUD ───────────────────────────────────────────────────────────────────
     const handleOpenCreate = () => {
         setModalMode('create');
         setCurrentEvalId(null);
         setFormData({
-            contenido: '', estrategias_eval: [], porcentaje: 5, cant_personas: 1, 
+            contenido: '', estrategias_eval: [], porcentaje: 5, cant_personas: 1,
             carrera_codigo: '', materia_codigo: '', id_seccion: '', tipo_horario: 'Sección',
-            fecha_evaluacion: '', id_horario: '', hora_inicio: '', hora_fin: '', 
+            fecha_horario_json: '', fecha_evaluacion: '', id_horario: '', hora_inicio: '', hora_fin: '',
             competencias: '', instrumentos: ''
         });
+        resetFechas();
         setShowModal(true);
     };
 
@@ -141,16 +193,38 @@ export default function Evaluaciones() {
                 const data = res.evaluacion;
                 setModalMode('edit');
                 setCurrentEvalId(ev.evaluacion_id);
-                // Pre-cargar catálogos con valores explícitos para evitar problemas de estado asíncrono
+
+                // Pre-cargar catálogos
                 await handleCarreraChange(data.carrera_codigo);
                 await handleMateriaChange(data.materia_codigo, data.carrera_codigo);
-                await handleSeccionChange(data.id_seccion);
-                
+
+                // Cargar fechas disponibles para esta sección
+                // (la evaluación que se está editando NO debe bloquearse a sí misma)
+                const evaluacionesSinEstaEdit = evaluaciones.filter(e => e.evaluacion_id !== ev.evaluacion_id);
+                await cargarFechas(data.id_seccion, evaluacionesSinEstaEdit);
+
+                const fechaStr = data.fecha_evaluacion ? data.fecha_evaluacion.split('T')[0] : '';
+
+                // Reconstruir el JSON de fecha+horario para preseleccionar el select
+                let fecha_horario_json = '';
+                if (data.tipo_horario === 'Sección' && data.id_horario) {
+                    fecha_horario_json = JSON.stringify({
+                        fecha: fechaStr,
+                        horarioId: data.id_horario,
+                        diaNumero: data.dia_num,
+                        horaInicio: data.hora_inicio,
+                        horaCierre: data.hora_cierre,
+                    });
+                }
+
                 setFormData({
                     ...data,
                     contenido: data.contenido || '',
                     estrategias_eval: data.estrategias || [],
-                    fecha_evaluacion: data.fecha_evaluacion ? data.fecha_evaluacion.split('T')[0] : ''
+                    fecha_evaluacion: fechaStr,
+                    fecha_horario_json,
+                    hora_inicio: data.hora_inicio || '',
+                    hora_fin: data.hora_cierre || '',
                 });
                 setShowModal(true);
             } else {
@@ -170,6 +244,10 @@ export default function Evaluaciones() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
+        if (formData.fecha_horario_json)
+        {
+            transformDateJSON(formData)
+        }
         try {
             const res = await evaluacionesService.saveEvaluacion(formData, currentEvalId);
             if (res.success) {
@@ -186,20 +264,21 @@ export default function Evaluaciones() {
         }
     };
 
+    // ── Render ─────────────────────────────────────────────────────────────────
     return (
         <div className="home-container">
             <Menu user={user} />
             <div className="main-content">
                 <Header title="Gestión de Evaluaciones" user={user} onLogout={() => navigate('/')} />
-                
+
                 <main className="view-container">
                     {/* Toolbar Superior */}
                     <div className="toolbar-premium">
                         <div className="search-group">
                             <i className="fas fa-search"></i>
-                            <input 
-                                type="text" 
-                                placeholder="Buscar evaluación, materia o docente..." 
+                            <input
+                                type="text"
+                                placeholder="Buscar evaluación, materia o docente..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -281,7 +360,7 @@ export default function Evaluaciones() {
                                     <i className="fas fa-chevron-left"></i>
                                 </button>
                                 <span>Página {currentPage} de {totalPages}</span>
-                                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                                <button disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(p => p + 1)}>
                                     <i className="fas fa-chevron-right"></i>
                                 </button>
                             </div>
@@ -289,25 +368,28 @@ export default function Evaluaciones() {
                     )}
                 </main>
 
-                {/* Modal de Creación/Edición */}
+                {/* ── Modal de Creación/Edición ────────────────────────────── */}
                 {showModal && (
                     <div className="modal-premium-overlay">
                         <div className="modal-premium-content">
                             <div className="modal-premium-header">
                                 <h2>
-                                    {modalMode === 'create' ? 'Nueva Evaluación' : 
-                                     modalMode === 'edit' ? 'Editar Evaluación' : 'Ver Evaluación'}
+                                    {modalMode === 'create' ? 'Nueva Evaluación' :
+                                        modalMode === 'edit' ? 'Editar Evaluación' : 'Ver Evaluación'}
                                 </h2>
                                 <button className="close-btn" onClick={() => setShowModal(false)}>&times;</button>
                             </div>
+
                             <form onSubmit={handleSubmit} className="modal-premium-form">
+
+                                {/* ── Sección: Materia ──────────────────────── */}
                                 <div className="form-section-premium">
                                     <h4><i className="fas fa-book"></i> Datos de la Materia</h4>
                                     <div className="form-grid-premium">
                                         <div className="form-field">
                                             <label>Carrera</label>
-                                            <select 
-                                                value={formData.carrera_codigo} 
+                                            <select
+                                                value={formData.carrera_codigo}
                                                 onChange={(e) => handleCarreraChange(e.target.value)}
                                                 required
                                                 disabled={modalMode === 'view'}
@@ -318,39 +400,46 @@ export default function Evaluaciones() {
                                         </div>
                                         <div className="form-field">
                                             <label>Materia</label>
-                                            <select 
-                                                value={formData.materia_codigo} 
+                                            <select
+                                                value={formData.materia_codigo}
                                                 onChange={(e) => handleMateriaChange(e.target.value)}
                                                 disabled={!formData.carrera_codigo || modalMode === 'view'}
                                                 required
                                             >
                                                 <option value="">Seleccione...</option>
-                                                {materias.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre} (Semestre {m.semestre})</option>)}
+                                                {materias.map(m => (
+                                                    <option key={m.codigo} value={m.codigo}>
+                                                        {m.nombre} (Semestre {m.semestre})
+                                                    </option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div className="form-field">
                                             <label>Sección</label>
-                                            <select 
-                                                value={formData.id_seccion} 
+                                            <select
+                                                value={formData.id_seccion}
                                                 onChange={(e) => handleSeccionChange(e.target.value)}
                                                 disabled={!formData.materia_codigo || modalMode === 'view'}
                                                 required
                                             >
                                                 <option value="">Seleccione...</option>
-                                                {secciones.map(s => <option key={s.id} value={s.id}>{s.codigo}</option>)}
+                                                {secciones.map(s => (
+                                                    <option key={s.id} value={s.id}>{s.codigo}</option>
+                                                ))}
                                             </select>
                                         </div>
                                     </div>
                                 </div>
 
+                                {/* ── Sección: Detalles ─────────────────────── */}
                                 <div className="form-section-premium">
                                     <h4><i className="fas fa-tasks"></i> Detalles de la Evaluación</h4>
                                     <div className="form-field full-width">
                                         <label>Contenido / Título</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             value={formData.contenido}
-                                            onChange={(e) => setFormData({...formData, contenido: e.target.value})}
+                                            onChange={(e) => setFormData({ ...formData, contenido: e.target.value })}
                                             required
                                             disabled={modalMode === 'view'}
                                         />
@@ -358,20 +447,19 @@ export default function Evaluaciones() {
                                     <div className="form-grid-premium">
                                         <div className="form-field">
                                             <label>Ponderación (%)</label>
-                                            <input 
-                                                type="number" 
-                                                min="1" max="100"
+                                            <input
+                                                type="number" min="1" max="100"
                                                 value={formData.porcentaje}
-                                                onChange={(e) => setFormData({...formData, porcentaje: e.target.value})}
+                                                onChange={(e) => setFormData({ ...formData, porcentaje: e.target.value })}
                                                 required
                                                 disabled={modalMode === 'view'}
                                             />
                                         </div>
                                         <div className="form-field">
                                             <label>Modalidad</label>
-                                            <select 
+                                            <select
                                                 value={formData.cant_personas}
-                                                onChange={(e) => setFormData({...formData, cant_personas: e.target.value})}
+                                                onChange={(e) => setFormData({ ...formData, cant_personas: e.target.value })}
                                                 disabled={modalMode === 'view'}
                                             >
                                                 <option value="1">Individual</option>
@@ -379,68 +467,122 @@ export default function Evaluaciones() {
                                                 <option value="3">Grupal (3+)</option>
                                             </select>
                                         </div>
-                                        <div className="form-field">
-                                            <label>Fecha</label>
-                                            <input 
-                                                type="date" 
-                                                value={formData.fecha_evaluacion}
-                                                onChange={(e) => setFormData({...formData, fecha_evaluacion: e.target.value})}
-                                                required
-                                                disabled={modalMode === 'view'}
-                                            />
-                                        </div>
                                     </div>
                                 </div>
 
+                                {/* ── Sección: Horario ──────────────────────── */}
                                 <div className="form-section-premium">
                                     <h4><i className="fas fa-clock"></i> Horario</h4>
                                     <div className="form-grid-premium">
                                         <div className="form-field">
                                             <label>Tipo de Horario</label>
-                                            <select 
+                                            <select
                                                 value={formData.tipo_horario}
-                                                onChange={(e) => setFormData({...formData, tipo_horario: e.target.value})}
-                                                disabled={modalMode === 'view'}
+                                                onChange={(e) => handleTipoHorarioChange(e.target.value)}
+                                                disabled={!formData.id_seccion || modalMode === 'view'}
                                             >
                                                 <option value="Sección">Dentro de Horario de Sección</option>
-                                                <option value="Otro">Fuera de Horario (Clandestina)</option>
+                                                <option value="Otro">Fuera de Horario</option>
                                             </select>
                                         </div>
+
                                         {formData.tipo_horario === 'Sección' ? (
                                             <div className="form-field">
-                                                <label>Seleccionar Horario</label>
-                                                <select 
-                                                    value={formData.id_horario}
-                                                    onChange={(e) => setFormData({...formData, id_horario: e.target.value})}
-                                                    disabled={!formData.id_seccion || modalMode === 'view'}
-                                                    required
-                                                >
-                                                    <option value="">Seleccione...</option>
-                                                    {horarios.map(h => (
-                                                        <option key={h.id} value={h.id}>
-                                                            {h.dia} ({h.hora_inicio} - {h.hora_cierre})
+                                                <label>
+                                                    Fecha y Horario Disponible
+                                                    {loadingFechas && <span style={{ marginLeft: 8, fontSize: '0.8em', color: '#888' }}>Cargando...</span>}
+                                                </label>
+                                                {errorFechas ? (
+                                                    <p style={{ color: 'red', fontSize: '0.85em' }}>{errorFechas}</p>
+                                                ) : (
+                                                    <select
+                                                        value={formData.fecha_horario_json}
+                                                        onChange={(e) => handleFechaHorarioChange(e.target.value)}
+                                                        disabled={!formData.id_seccion || loadingFechas || modalMode === 'view'}
+                                                        required
+                                                    >
+                                                        <option value="">
+                                                            {loadingFechas ? 'Cargando fechas...' : '-- Seleccione una fecha --'}
                                                         </option>
-                                                    ))}
-                                                </select>
+                                                        {!loadingFechas && fechasSistema.length === 0 && (
+                                                            <option disabled>No hay fechas disponibles en este período</option>
+                                                        )}
+                                                        {!loadingFechas && Object.entries(agruparFechasPorMes(fechasSistema)).map(([mes, fechas]) => (
+                                                            <optgroup key={mes} label={mes}>
+                                                                {fechas.map(f => {
+                                                                    const optionData = JSON.stringify({
+                                                                        fecha: f.fechaStr,
+                                                                        horarioId: f.horarioId,
+                                                                        diaNumero: f.diaNumero,
+                                                                        horaInicio: f.horaInicio,
+                                                                        horaCierre: f.horaCierre,
+                                                                    });
+                                                                    return (
+                                                                        <option key={`${f.fechaStr}_${f.horarioId}`} value={optionData}>
+                                                                            {f.fechaLocal} ({f.diaSemana}) — {f.horaInicio?.substring(0, 5)} a {f.horaCierre?.substring(0, 5)} — Aula: {f.aula}
+                                                                        </option>
+                                                                    );
+                                                                })}
+                                                            </optgroup>
+                                                        ))}
+                                                    </select>
+                                                )}
+                                                {/* Info del período académico */}
+                                                {configuracionFechas && (
+                                                    <small style={{ color: '#888', marginTop: 4, display: 'block' }}>
+                                                        <i className="fas fa-info-circle"></i> Período: {configuracionFechas.periodo} &nbsp;|&nbsp;
+                                                        Solo se muestran los horarios de clase de la sección
+                                                    </small>
+                                                )}
                                             </div>
                                         ) : (
                                             <>
                                                 <div className="form-field">
+                                                    <label>Fecha</label>
+                                                    <input
+                                                        type="date"
+                                                        value={formData.fecha_evaluacion}
+                                                        min={configuracionFechas?.fechaInicio?.slice(0, 10)}
+                                                        max={configuracionFechas?.fechaFin?.slice(0, 10)}
+                                                        onChange={(e) => setFormData({ ...formData, fecha_evaluacion: e.target.value })}
+                                                        required
+                                                        disabled={modalMode === 'view'}
+                                                    />
+                                                </div>
+                                                <div className="form-field">
                                                     <label>Hora Inicio</label>
-                                                    <input 
-                                                        type="time" 
+                                                    <input
+                                                        type="time"
                                                         value={formData.hora_inicio}
-                                                        onChange={(e) => setFormData({...formData, hora_inicio: e.target.value})}
+                                                        max={formData.hora_fin || undefined}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value;
+                                                            setFormData({
+                                                                ...formData,
+                                                                hora_inicio: value,
+                                                                // Si la nueva hora inicio es mayor que fin, limpiar fin
+                                                                hora_fin: formData.hora_fin && value >= formData.hora_fin ? '' : formData.hora_fin
+                                                            });
+                                                        }}
                                                         required
                                                         disabled={modalMode === 'view'}
                                                     />
                                                 </div>
                                                 <div className="form-field">
                                                     <label>Hora Fin</label>
-                                                    <input 
-                                                        type="time" 
+                                                    <input
+                                                        type="time"
                                                         value={formData.hora_fin}
-                                                        onChange={(e) => setFormData({...formData, hora_fin: e.target.value})}
+                                                        min={formData.hora_inicio || undefined}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value;
+                                                            setFormData({
+                                                                ...formData,
+                                                                hora_fin: value,
+                                                                // Si la nueva hora fin es menor que inicio, limpiar inicio
+                                                                hora_inicio: formData.hora_inicio && value <= formData.hora_inicio ? '' : formData.hora_inicio
+                                                            });
+                                                        }}
                                                         required
                                                         disabled={modalMode === 'view'}
                                                     />
@@ -450,6 +592,7 @@ export default function Evaluaciones() {
                                     </div>
                                 </div>
 
+                                {/* ── Sección: Estrategias ──────────────────── */}
                                 <div className="form-section-premium">
                                     <h4><i className="fas fa-list-ul"></i> Estrategias, Competencias e Instrumentos</h4>
                                     <div className="form-field full-width">
@@ -457,17 +600,17 @@ export default function Evaluaciones() {
                                         <div className="chips-container-premium">
                                             {estrategias.map(est => (
                                                 <label key={est.id} className={`chip-premium ${formData.estrategias_eval.includes(est.id) ? 'selected' : ''}`}>
-                                                    <input 
-                                                        type="checkbox" 
+                                                    <input
+                                                        type="checkbox"
                                                         value={est.id}
                                                         checked={formData.estrategias_eval.includes(est.id)}
                                                         disabled={modalMode === 'view'}
                                                         onChange={(e) => {
                                                             const id = parseInt(e.target.value);
-                                                            const newEst = e.target.checked 
+                                                            const newEst = e.target.checked
                                                                 ? [...formData.estrategias_eval, id]
                                                                 : formData.estrategias_eval.filter(x => x !== id);
-                                                            setFormData({...formData, estrategias_eval: newEst});
+                                                            setFormData({ ...formData, estrategias_eval: newEst });
                                                         }}
                                                     />
                                                     {est.nombre}
@@ -478,23 +621,23 @@ export default function Evaluaciones() {
                                     <div className="form-grid-premium">
                                         <div className="form-field">
                                             <label>Competencias</label>
-                                            <textarea 
+                                            <textarea
                                                 rows="3"
                                                 value={formData.competencias}
-                                                onChange={(e) => setFormData({...formData, competencias: e.target.value})}
+                                                onChange={(e) => setFormData({ ...formData, competencias: e.target.value })}
                                                 placeholder="Describa las competencias..."
                                                 disabled={modalMode === 'view'}
-                                            ></textarea>
+                                            />
                                         </div>
                                         <div className="form-field">
                                             <label>Instrumentos</label>
-                                            <textarea 
+                                            <textarea
                                                 rows="3"
                                                 value={formData.instrumentos}
-                                                onChange={(e) => setFormData({...formData, instrumentos: e.target.value})}
+                                                onChange={(e) => setFormData({ ...formData, instrumentos: e.target.value })}
                                                 placeholder="Describa los instrumentos..."
                                                 disabled={modalMode === 'view'}
-                                            ></textarea>
+                                            />
                                         </div>
                                     </div>
                                 </div>
