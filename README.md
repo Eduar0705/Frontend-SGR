@@ -1,16 +1,74 @@
-# React + Vite
+# Sistema de Rúbricas - IUJO Barquisimeto
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Descripción
 
-Currently, two official plugins are available:
+Este proyecto es un **Sistema de Gestión de Rúbricas para Evaluación Académica** desarrollado por estudiantes del Instituto Universitario Jesús Obrero (IUJO) en Barquisimeto. El sistema permite la creación, gestión y aplicación de rúbricas para la evaluación de estudiantes en entornos académicos, facilitando un proceso de evaluación más objetivo y estructurado.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+El proyecto está construido utilizando **JavaScript** con el framework **React.js**.
 
-## React Compiler
+## Características Principales
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Gestión de Rúbricas**: Crear y editar rúbricas personalizadas con criterios y niveles de desempeño.
+- **Evaluación de Estudiantes**: Aplicar rúbricas a evaluaciones específicas con calificaciones detalladas.
+- **Sistema de Autenticación**: Registro y login de usuarios (profesores y administradores).
+- **Interfaz Web**: Interfaz de usuario intuitiva construida con EJS y CSS.
+- **Manejo de Errores**: Páginas de error personalizadas para 404 y 500.
+- **Sesiones de Usuario**: Gestión segura de sesiones con express-session.
 
-## Expanding the ESLint configuration
+## Tecnologías Utilizadas
+- **Frontend**:
+  - React
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Instalación
+
+### Prerrequisitos
+
+- Node.js (versión 14 o superior)
+- React
+- MySQL (versión 8.0 o superior)
+- Git
+
+### Pasos de Instalación
+
+1. **Clona el repositorio**:
+   ```bash
+   git clone https://github.com/tu-usuario/sistem-rubricas.git
+   cd sistem-rubricas
+   ```
+
+2. **Instala las dependencias**:
+   ```bash
+   npm install
+   ```
+
+
+4. **Ejecuta el servidor**:
+   - Para desarrollo: `npm run dev`
+
+El servidor se ejecutará en `http://localhost:5173`
+
+## Uso
+
+1. **Accede a la aplicación** en tu navegador web en `http://localhost:5173`
+2. **Regístrate** como nuevo usuario o **inicia sesión** si ya tienes una cuenta
+3. **Crea rúbricas** definiendo criterios y niveles de evaluación
+4. **Aplica evaluaciones** utilizando las rúbricas creadas
+5. **Revisa resultados** y genera reportes de evaluación
+
+## Contribuidores
+
+- **Eduar Suárez**
+- **Heracles Sanchez**
+
+## Licencia
+
+Este proyecto está bajo la Licencia ISC.
+
+## Soporte
+
+Para soporte técnico o preguntas sobre el proyecto, por favor contacta a los contribuidores o abre un issue en el repositorio.
+
+---
+
+**Instituto Universitario Jesús Obrero (IUJO) - Barquisimeto**

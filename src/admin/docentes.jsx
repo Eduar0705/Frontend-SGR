@@ -8,7 +8,10 @@ import '../assets/css/docentes.css';
 
 export default function Docentes() {
     const navigate = useNavigate();
-    const [user, setUser] = useState(null);
+    const [user] = useState(() => {
+        const storedUser = localStorage.getItem('user');
+        return storedUser ? JSON.parse(storedUser) : null;
+    });
     const [profesores, setProfesores] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -28,27 +31,26 @@ export default function Docentes() {
         telefono: '', especialidad: '', notas: '', activo: '1', cedula_og: ''
     });
 
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
-        if (!storedUser || !token) {
-            navigate('/login');
-        } else {
-            setUser(JSON.parse(storedUser));
-            cargarProfesores();
-        }
-    }, [navigate]);
-
     const cargarProfesores = async () => {
         try {
             const data = await docentesService.getDocentes();
             setProfesores(data || []);
             setLoading(false);
-        } catch (error) {
+        } catch {
             Swal.fire('Error', 'No se pudieron cargar los datos', 'error');
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!user || !token) {
+            navigate('/login');
+        } else {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            cargarProfesores();
+        }
+    }, [navigate, user]);
 
     // --- VALIDACIONES EN TIEMPO REAL ---
     const handleChange = (e) => {
@@ -96,7 +98,7 @@ export default function Docentes() {
         setShowViewModal(true);
     };
 
-    const handleDelete = (cedula) => {
+    const handleDelete = () => {
         Swal.fire({
             title: '¿Eliminar docente?',
             text: "Esta acción no se puede revertir.",

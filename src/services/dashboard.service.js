@@ -5,24 +5,60 @@ export const dashboardService = {
     async getStats() {
         const token = localStorage.getItem('token');
         
-        try {
-            const response = await fetch(`${API_URL}/dashboard`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Error al obtener estadísticas del dashboard');
+        const response = await fetch(`${API_URL}/dashboard`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
+        });
 
-            return data.data; // Retorna el payload de data
-        } catch (error) {
-            throw error;
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Error al obtener estadísticas del dashboard');
         }
+
+        return data.data; // Retorna el payload de data
+    },
+
+    async getStudentStats() {
+        const token = localStorage.getItem('token');
+        
+        const response = await fetch(`${API_URL}/dashboard/student`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Error al obtener estadísticas estudiantiles');
+        }
+
+        return data.data;
+    },
+
+    async getTeacherStats() {
+        const token = localStorage.getItem('token');
+        
+        const response = await fetch(`${API_URL}/dashboard/teacher`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Error al obtener estadísticas del docente');
+        }
+
+        return data.data;
     }
 };

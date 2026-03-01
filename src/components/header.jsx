@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import { useUI } from '../context/UIContext';
 
 export default function Header({ title, user, onLogout }) {
     const navigate = useNavigate();
+    const { toggleSidebar } = useUI();
 
     function cerrarSesion() {
         Swal.fire({
@@ -27,7 +29,7 @@ export default function Header({ title, user, onLogout }) {
     return (
         <header className="header">
             <div className="header-left">
-                <button className="mobile-menu-toggle" id="mobileMenuToggle">
+                <button className="mobile-menu-toggle" id="mobileMenuToggle" onClick={toggleSidebar}>
                     <i className="fas fa-bars"></i>
                 </button>
                 <h1 className="page-title" id="pageTitle"> {title || 'Inicio'} </h1>
@@ -37,7 +39,7 @@ export default function Header({ title, user, onLogout }) {
                     className="header-btn" 
                     title="Configuración" 
                     onClick={() => {
-                        if (user?.id_rol === 1) navigate('/admin/config');
+                        if (user?.id_rol === 1) navigate('/admin/configuracion');
                         else if (user?.id_rol === 2) navigate('/teacher/config');
                         else if (user?.id_rol === 3) navigate('/student/config');
                         else navigate('/config');

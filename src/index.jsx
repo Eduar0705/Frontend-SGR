@@ -9,16 +9,13 @@ export default function Index() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [activeSection, setActiveSection] = useState('inicio');
     const [showScrollTop, setShowScrollTop] = useState(false);
-    const [currentYear, setCurrentYear] = useState('');
+    const [currentYear] = useState(new Date().getFullYear());
 
     // Referencias para los Intersection Observers (las animaciones al bajar)
     const featuresRef = useRef(null);
     const servicesRef = useRef(null);
 
     useEffect(() => {
-        // Establecer año actual
-        setCurrentYear(new Date().getFullYear());
-
         // Manejador de Scroll
         const handleScroll = () => {
             const scrollPos = window.scrollY;

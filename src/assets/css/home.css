@@ -57,7 +57,12 @@ body {
     display: flex;
     flex-direction: column;
     z-index: 1000;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+}
+
+.sidebar.active {
+    transform: translateX(0) !important;
+    box-shadow: var(--shadow-xl);
 }
 
 .sidebar-header {
@@ -152,7 +157,7 @@ body {
     border: 1px solid #b3d7ff;
 }
 
-.sidebar-toggle {
+.sidebar-toggle, .sidebar-close-btn {
     display: none;
     background: none;
     border: none;
@@ -160,6 +165,12 @@ body {
     color: var(--color-text-secondary);
     cursor: pointer;
     padding: var(--spacing-xs);
+    transition: all 0.2s;
+}
+
+.sidebar-close-btn:hover {
+    color: var(--color-danger);
+    transform: rotate(90deg);
 }
 
 .sidebar-nav {
@@ -283,6 +294,13 @@ body {
     font-size: 1.5rem;
     color: var(--color-text);
     cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-md);
+    transition: background-color 0.2s;
+}
+
+.mobile-menu-toggle:hover {
+    background-color: var(--color-bg);
 }
 
 .page-title {
@@ -1611,5 +1629,32 @@ body {
     .card,
     .evaluacion-card {
         break-inside: avoid;
+    }
+}
+/* Sidebar Overlay */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+@media (max-width: 1024px) {
+    .sidebar-close-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
     }
 }
