@@ -11,14 +11,14 @@ import { useFechasDisponibles, agruparFechasPorMes } from '../utils/useFechasDis
 
 import { useUI } from '../context/UIContext';
 
-    const transformDateJSON = (formData) => {
-        const fecha_data = JSON.parse(formData.fecha_horario_json)
-        formData.id_horario = fecha_data.horarioId
-        formData.fecha_evaluacion = fecha_data.fecha
-        formData.hora_inicio = fecha_data.horaInicio
-        formData.hora_cierre = fecha_data.horaCierre
-    }
-    
+const transformDateJSON = (formData) => {
+    const fecha_data = JSON.parse(formData.fecha_horario_json)
+    formData.id_horario = fecha_data.horarioId
+    formData.fecha_evaluacion = fecha_data.fecha
+    formData.hora_inicio = fecha_data.horaInicio
+    formData.hora_cierre = fecha_data.horaCierre
+}
+
 export default function Evaluaciones() {
     const navigate = useNavigate();
     const [user] = useState(() => {
@@ -252,8 +252,7 @@ export default function Evaluaciones() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
-        if (formData.fecha_horario_json)
-        {
+        if (formData.fecha_horario_json) {
             transformDateJSON(formData)
         }
         try {
@@ -271,7 +270,9 @@ export default function Evaluaciones() {
             setSubmitting(false);
         }
     };
-
+    const esDiagnostico = estrategias
+        .filter(est => formData.estrategias_eval.includes(est.id))
+        .some(est => est.ponderable === 0);
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
         <div className="home-container">
@@ -460,7 +461,7 @@ export default function Evaluaciones() {
                                                 value={formData.porcentaje}
                                                 onChange={(e) => setFormData({ ...formData, porcentaje: e.target.value })}
                                                 required
-                                                disabled={modalMode === 'view'}
+                                                disabled={modalMode === 'view' || esDiagnostico}
                                             />
                                         </div>
                                         <div className="form-field">
@@ -618,7 +619,17 @@ export default function Evaluaciones() {
                                                             const newEst = e.target.checked
                                                                 ? [...formData.estrategias_eval, id]
                                                                 : formData.estrategias_eval.filter(x => x !== id);
-                                                            setFormData({ ...formData, estrategias_eval: newEst });
+
+                                                            // Verificar si alguna estrategia seleccionada es no ponderable
+                                                            const tieneNoPonderable = estrategias
+                                                                .filter(est => newEst.includes(est.id))
+                                                                .some(est => est.ponderable === 0);
+
+                                                            const porcentaje = tieneNoPonderable
+                                                                ? 0
+                                                                : (esDiagnostico ? 5 : formData.porcentaje); // si venía bloqueado, restaurar a 5
+
+                                                            setFormData({ ...formData, estrategias_eval: newEst, porcentaje });
                                                         }}
                                                     />
                                                     {est.nombre}
