@@ -1,0 +1,13 @@
+const API_URL = 'http://localhost:3000/api';
+
+export const calificacionesService = {
+    async getCalificaciones() {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/calificaciones`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Error al obtener calificaciones');
+        return data.data;
+    }
+};
