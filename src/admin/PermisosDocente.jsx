@@ -7,9 +7,12 @@ import { docentesService } from '../services/docentes.service';
 import Swal from 'sweetalert2';
 import '../assets/css/permisos_docente.css';
 
+import { useUI } from '../context/UIContext';
+
 export default function PermisosDocente() {
     const { cedula } = useParams();
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -53,13 +56,14 @@ export default function PermisosDocente() {
             if (resPermisos.success) {
                 setPermisos(resPermisos.data);
             }
-            setLoading(false);
         } catch (error) {
             console.error(error);
             Swal.fire('Error', 'Error al cargar datos', 'error');
+        } finally {
             setLoading(false);
+            setGlobalLoading(false);
         }
-    }, [cedula, navigate]);
+    }, [cedula, navigate, setGlobalLoading]);
 
     const cargarCarreras = useCallback(async () => {
         setLoadingSteps(prev => ({ ...prev, carreras: true }));

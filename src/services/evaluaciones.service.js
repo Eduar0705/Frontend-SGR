@@ -66,6 +66,47 @@ export const evaluacionesService = {
         return await response.json();
     },
 
+    // --- Teacher Specific Methods (Filtered by Permissions) ---
+    async getTeacherCarreras() {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/teacher/evaluaciones/carreras`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await response.json();
+    },
+
+    async getTeacherMateriasByCarrera(carreraCodigo) {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/teacher/evaluaciones/carrera/${carreraCodigo}/materias`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await response.json();
+    },
+
+    async getTeacherSecciones(materiaCodigo) {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/teacher/evaluaciones/materia/${materiaCodigo}/secciones`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await response.json();
+    },
+
+    async getTeacherEstudiantes(seccionId) {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/teacher/evaluaciones/seccion/${seccionId}/estudiantes`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await response.json();
+    },
+
+    async getTeacherRubricasActivas() {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/teacher/evaluaciones/rubricas/activas`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await response.json();
+    },
+
     async createEvaluaciones(rubrica_id, estudiantes, observaciones) {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_URL}/teacher/evaluaciones/crear`, {
@@ -107,6 +148,19 @@ export const evaluacionesService = {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_URL}/teacher/evaluaciones/${evaluacionId}/${estudianteCedula}/detalles`, {
             headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await response.json();
+    },
+
+    async saveEvaluacionResultado(evaluacionId, estudianteCedula, payload) {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/teacher/evaluaciones/${evaluacionId}/${estudianteCedula}/guardar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
         });
         return await response.json();
     },

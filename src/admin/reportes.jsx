@@ -34,8 +34,11 @@ ChartJS.register(
   Filler
 );
 
+import { useUI } from '../context/UIContext';
+
 export default function Reportes() {
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -53,8 +56,9 @@ export default function Reportes() {
             Swal.fire('Error', 'No se pudieron cargar las estadísticas', 'error');
         } finally {
             setLoading(false);
+            setGlobalLoading(false);
         }
-    }, []);
+    }, [setGlobalLoading]);
 
     useEffect(() => {
         if (!user) {

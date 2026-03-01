@@ -8,8 +8,11 @@ import { estudiantesService } from '../services/estudiantes.service';
 import '../assets/css/home.css';
 import '../assets/css/estudiantes.css';
 
+import { useUI } from '../context/UIContext';
+
 export default function TeacherEstudiantes() {
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -47,6 +50,7 @@ export default function TeacherEstudiantes() {
             Swal.fire('Error', 'No se pudieron cargar los estudiantes', 'error');
         } finally {
             setLoading(false);
+            setGlobalLoading(false);
         }
     };
 

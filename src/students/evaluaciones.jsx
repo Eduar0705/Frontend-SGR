@@ -6,8 +6,11 @@ import { studentEvaluacionesService } from '../services/studentEvaluaciones.serv
 import Swal from 'sweetalert2';
 import '../assets/css/home.css';
 
+import { useUI } from '../context/UIContext';
+
 export default function StudentEvaluaciones() {
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -31,6 +34,7 @@ export default function StudentEvaluaciones() {
             console.error('Error:', error);
         } finally {
             setLoading(false);
+            setGlobalLoading(false);
         }
     };
 

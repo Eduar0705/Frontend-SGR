@@ -5,9 +5,11 @@ import Header from '../components/header';
 import { docentesService } from '../services/docentes.service';
 import Swal from 'sweetalert2';
 import '../assets/css/docentes.css';
+import { useUI } from '../context/UIContext';
 
 export default function Docentes() {
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -39,6 +41,8 @@ export default function Docentes() {
         } catch {
             Swal.fire('Error', 'No se pudieron cargar los datos', 'error');
             setLoading(false);
+        } finally {
+            setGlobalLoading(false);
         }
     };
 

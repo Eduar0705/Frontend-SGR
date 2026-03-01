@@ -7,9 +7,12 @@ import { teacherRubricasService } from '../services/teacherRubricas.service';
 import '../assets/css/home.css';
 import '../assets/css/crearRubrica.css';
 
+import { useUI } from '../context/UIContext';
+
 export default function TeacherEditarRubrica() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -124,6 +127,7 @@ export default function TeacherEditarRubrica() {
             navigate('/teacher/rubricas');
         } finally {
             setLoading(false);
+            setGlobalLoading(false);
         }
     };
 
@@ -179,36 +183,51 @@ export default function TeacherEditarRubrica() {
 
     // --- Dynamic Form Logic ---
     const redistribuirPuntajes = () => {
-        if (criterios.length === 0) return;
+        if (!criterios.length) return;
         const totalPorcentaje = parseFloat(formData.porcentaje_evaluacion) || 10;
-        const puntajePorCriterio = Math.max(1, totalPorcentaje / criterios.length);
+        
+        const numCriterios = criterios.length;
+        const puntajeBase = Math.floor((totalPorcentaje / numCriterios) * 1000) / 1000;
+        const resto = parseFloat((totalPorcentaje - (puntajeBase * numCriterios)).toFixed(3));
 
-        setCriterios(prevCriterios => prevCriterios.map(c => {
-            const nuevosNiveles = c.niveles.map((n, idx) => {
-                const factor = (c.niveles.length - idx) / c.niveles.length;
-                const puntajeNivel = Math.max(0.25, puntajePorCriterio * factor);
-                return { ...n, puntaje: parseFloat(puntajeNivel.toFixed(2)) };
-            });
-            return { ...c, puntaje_maximo: parseFloat(puntajePorCriterio.toFixed(2)), niveles: nuevosNiveles };
+        setCriterios(prevCriterios => prevCriterios.map((c, idx) => {
+            const nuevoMax = idx === numCriterios - 1 ? parseFloat((puntajeBase + resto).toFixed(3)) : puntajeBase;
+            
+            return {
+                ...c,
+                puntaje_maximo: nuevoMax.toFixed(3),
+                niveles: c.niveles.map((n) => {
+                    let nuevoPuntaje = n.puntaje;
+                    const nombre = n.nombre_nivel;
+                    
+                    if (nombre === 'Excelente' || nombre === 'Sobresaliente') nuevoPuntaje = nuevoMax;
+                    else if (nombre === 'Notable') nuevoPuntaje = parseFloat((nuevoMax * 0.8).toFixed(3));
+                    else if (nombre === 'Regular' || nombre === 'Aprobado') nuevoPuntaje = parseFloat((nuevoMax * 0.6).toFixed(3));
+                    else if (nombre === 'Deficiente' || nombre === 'Insuficiente') nuevoPuntaje = 0;
+                    
+                    if (nombre !== 'Deficiente' && nombre !== 'Insuficiente' && nuevoPuntaje < 0.025) nuevoPuntaje = 0.025;
+                    
+                    return { ...n, puntaje: parseFloat(nuevoPuntaje).toFixed(3) };
+                })
+            };
         }));
     };
 
     const addCriterio = () => {
-        setCriterios(prev => [
-            ...prev,
-            {
-                id: Date.now(),
-                descripcion: '',
-                puntaje_maximo: 10,
-                orden: prev.length + 1,
-                niveles: [
-                    { id: Date.now() + 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: 10, orden: 1 },
-                    { id: Date.now() + 2, nombre_nivel: 'Notable', descripcion: '', puntaje: 8, orden: 2 },
-                    { id: Date.now() + 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: 6, orden: 3 },
-                    { id: Date.now() + 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 4, orden: 4 }
-                ]
-            }
-        ]);
+        const id = Date.now();
+        const nuevoCriterio = {
+            id,
+            descripcion: '',
+            puntaje_maximo: 0,
+            orden: criterios.length + 1,
+            niveles: [
+                { id: id + 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: 0, orden: 1 },
+                { id: id + 2, nombre_nivel: 'Notable', descripcion: '', puntaje: 0, orden: 2 },
+                { id: id + 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: 0, orden: 3 },
+                { id: id + 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0, orden: 4 }
+            ]
+        };
+        setCriterios(prev => [...prev, nuevoCriterio]);
     };
 
     const removeCriterio = (id) => {
@@ -264,6 +283,9 @@ export default function TeacherEditarRubrica() {
             return c;
         }));
     };
+
+    // Calcular suma total automáticamente
+    const totalPuntosCriterios = criterios.reduce((acc, c) => acc + (parseFloat(c.puntaje_maximo) || 0), 0);
 
     // --- Submission ---
     const handleSubmit = async (e) => {
@@ -343,7 +365,7 @@ export default function TeacherEditarRubrica() {
                                     </select>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                                     <div className="form-group">
                                         <label>Carrera *</label>
                                         <select name="carrera" value={formData.carrera} onChange={handleChange} className="form-select" style={inputStyle} required>
@@ -372,14 +394,21 @@ export default function TeacherEditarRubrica() {
                                             {secciones.map(s => <option key={s.id} value={s.id}>{s.letra} ({s.codigo_periodo})</option>)}
                                         </select>
                                     </div>
-                                </div>
-
-                                <div className="form-group" style={{ marginBottom: '15px' }}>
-                                    <label>Evaluación que la utilizará *</label>
-                                    <select name="evaluacion_id" value={formData.evaluacion_id} onChange={handleChange} className="form-select" style={inputStyle} required disabled={!formData.seccion_id}>
-                                        <option value="">{formData.seccion_id ? 'Seleccione evaluación' : 'Primero seleccione sección'}</option>
-                                        {evaluaciones.map(e => <option key={e.id} value={e.id}>Evaluación {e.fecha_evaluacion ? e.fecha_evaluacion.split('T')[0] : 'Sin fecha'} - {e.ponderacion}%</option>)}
-                                    </select>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                        <div style={{ flex: 1, marginRight: '20px' }}>
+                                            <label>Evaluación que la utilizará *</label>
+                                            <select name="evaluacion_id" value={formData.evaluacion_id} onChange={handleChange} className="form-select" style={inputStyle} required disabled={!formData.seccion_id}>
+                                                <option value="">{formData.seccion_id ? 'Seleccione evaluación' : 'Primero seleccione sección'}</option>
+                                                {evaluaciones.map(e => <option key={e.id} value={e.id}>Evaluación {e.fecha_evaluacion ? e.fecha_evaluacion.split('T')[0] : 'Sin fecha'} - {e.ponderacion}%</option>)}
+                                            </select>
+                                        </div>
+                                        <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', textTransform: 'uppercase' }}>Suma de Criterios</div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios - formData.porcentaje_evaluacion) < 0.01 ? '#059669' : '#ef4444' }}>
+                                                {totalPuntosCriterios.toFixed(2)} / {formData.porcentaje_evaluacion}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>

@@ -24,14 +24,27 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
     const cargarDatosBasicos = async () => {
         try {
             const [resCarreras, resRubricas] = await Promise.all([
-                evaluacionesService.getCarreras(),
-                evaluacionesService.getRubricasActivas()
+                evaluacionesService.getTeacherCarreras(),
+                evaluacionesService.getTeacherRubricasActivas()
             ]);
-            setCarreras(resCarreras);
-            setRubricas(resRubricas);
+            
+            if (resCarreras?.success) {
+                setCarreras(resCarreras.carreras || []);
+                if (resCarreras.carreras.length === 0) {
+                    console.log('No Careers for this teacher');
+                }
+            } else {
+                Swal.fire('Error', resCarreras?.message || 'No se pudieron cargar las carreras', 'error');
+            }
+
+            if (resRubricas?.success) {
+                setRubricas(resRubricas.rubricas || []);
+            } else {
+                Swal.fire('Error', resRubricas?.message || 'No se pudieron cargar las rúbricas', 'error');
+            }
         } catch (error) {
             console.error('Error fetching basic data:', error);
-            Swal.fire('Error', 'No se pudieron cargar rubricas o carreras', 'error');
+            Swal.fire('Error', 'Error de conexión al cargar datos básicos', 'error');
         }
     };
 
@@ -46,8 +59,8 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
 
         if (cod) {
             try {
-                const res = await evaluacionesService.getMaterias(cod);
-                setMaterias(res);
+                const res = await evaluacionesService.getTeacherMateriasByCarrera(cod);
+                setMaterias(res?.success ? res.materias : []);
             } catch (error) {
                 console.error('Error fetching materias:', error);
             }
@@ -63,8 +76,8 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
 
         if (cod) {
             try {
-                const res = await evaluacionesService.getSecciones(cod);
-                setSecciones(res);
+                const res = await evaluacionesService.getTeacherSecciones(cod);
+                setSecciones(res?.success ? res.secciones : []);
             } catch (error) {
                 console.error('Error fetching secciones:', error);
             }
@@ -79,8 +92,8 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
         if (seccionId) {
             setLoadingEstudiantes(true);
             try {
-                const res = await evaluacionesService.getEstudiantes(seccionId);
-                setEstudiantes(res);
+                const res = await evaluacionesService.getTeacherEstudiantes(seccionId);
+                setEstudiantes(res?.success ? res.estudiantes : []);
             } catch (error) {
                 console.error('Error fetching estudiantes:', error);
                 Swal.fire('Error', 'No se pudieron cargar los estudiantes', 'error');

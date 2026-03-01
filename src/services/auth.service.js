@@ -33,5 +33,33 @@ export const authService = {
             console.error('Error logging out:', error);
             return { success: false };
         }
+    },
+    requestRecovery: async (cedula, email) => {
+        const response = await fetch(`${API_URL}/auth/request-recovery`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ cedula, email }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Error al solicitar recuperación');
+        }
+        return data;
+    },
+    resetPassword: async (cedula, code, newPassword) => {
+        const response = await fetch(`${API_URL}/auth/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ cedula, code, newPassword }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Error al restablecer contraseña');
+        }
+        return data;
     }
 };

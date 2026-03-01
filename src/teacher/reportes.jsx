@@ -9,8 +9,11 @@ import '../assets/css/home.css';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
+import { useUI } from '../context/UIContext';
+
 export default function TeacherReportes() {
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -33,6 +36,7 @@ export default function TeacherReportes() {
                 console.error('Error loading stats:', error);
             } finally {
                 setLoading(false);
+                setGlobalLoading(false);
             }
         };
         loadStats();

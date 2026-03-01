@@ -6,8 +6,11 @@ import { calificacionesService } from '../services/calificaciones.service';
 import Swal from 'sweetalert2';
 import '../assets/css/home.css';
 
+import { useUI } from '../context/UIContext';
+
 export default function StudentCalificaciones() {
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -37,6 +40,7 @@ export default function StudentCalificaciones() {
             Swal.fire('Error', 'No se pudieron cargar las calificaciones', 'error');
         } finally {
             setLoading(false);
+            setGlobalLoading(false);
         }
     };
 

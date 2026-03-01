@@ -5,9 +5,11 @@ import Header from '../components/header';
 import { academicoService } from '../services/academico.service';
 import Swal from 'sweetalert2';
 import '../assets/css/home.css';
+import { useUI } from '../context/UIContext';
 
 export default function EvaluacionDocente() {
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -48,8 +50,9 @@ export default function EvaluacionDocente() {
             Swal.fire('Error', 'No se pudieron cargar las evaluaciones docentes', 'error');
         } finally {
             setLoading(false);
+            setGlobalLoading(false);
         }
-    }, []);
+    }, [setGlobalLoading]);
 
     useEffect(() => {
         if (!user) {
@@ -79,19 +82,20 @@ export default function EvaluacionDocente() {
         setSelectedDocente(docente);
         resetForm();
         try {
-            Swal.fire({ title: 'Cargando permisos...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            setGlobalLoading(true);
             const permisos = await academicoService.getPermisosDocente(docente.cedula);
             setPermisosDocente(permisos);
             setModalMode('create');
-            Swal.close();
         } catch {
             Swal.fire('Error', 'No se pudieron cargar los permisos del docente', 'error');
+        } finally {
+            setGlobalLoading(false);
         }
     };
 
     const openEditModal = async (evalu) => {
         try {
-            Swal.fire({ title: 'Cargando datos...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            setGlobalLoading(true);
             const result = await academicoService.getEvaluacionDocenteDetalle(evalu.evaluacion_id);
             if (result.success) {
                 const ev = result.evaluacion;
@@ -121,16 +125,17 @@ export default function EvaluacionDocente() {
                 });
                 
                 setModalMode('edit');
-                Swal.close();
             }
         } catch {
             Swal.fire('Error', 'No se pudo cargar la evaluación', 'error');
+        } finally {
+            setGlobalLoading(false);
         }
     };
 
     const openViewModal = async (evalId) => {
         try {
-            Swal.fire({ title: 'Cargando detalles...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            setGlobalLoading(true);
             const result = await academicoService.getEvaluacionDocenteDetalle(evalId);
             if (result.success) {
                 const ev = result.evaluacion;
@@ -171,7 +176,7 @@ export default function EvaluacionDocente() {
                             <hr/>
                             ${criteriosHtml}
                             <div style="margin-top:15px;">
-                                <strong>Sugerencias:</strong><br/>
+                                 <strong>Sugerencias:</strong><br/>
                                 <p style="background:#f9fafb; padding:10px; border-radius:5px; border:1px solid #e5e7eb;">${ev.sugerencias || 'Sin sugerencias'}</p>
                             </div>
                         </div>
@@ -183,6 +188,8 @@ export default function EvaluacionDocente() {
             }
         } catch {
             Swal.fire('Error', 'No se pudo visualizar la evaluación', 'error');
+        } finally {
+            setGlobalLoading(false);
         }
     };
 

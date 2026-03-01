@@ -15,8 +15,10 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
 
     const cargarEvaluacion = async () => {
         try {
-            const resp = await evaluacionesService.getDetalles(idEvaluacion, cedula);
+            const resp = await evaluacionesService.getEvaluacionDetalles(idEvaluacion, cedula);
             if (resp.success) {
+                // El backend devuelve id_evaluacion en minúsculas o camello? 
+                // Revisando TeacherEvaluacionesModel.js:302 es er.id_evaluacion
                 setEvalData(resp);
                 setObservaciones(resp.evaluacion.observaciones || '');
                 
@@ -89,7 +91,7 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                 detalles
             };
 
-            const resp = await evaluacionesService.saveEvaluacion(evalData.evaluacion.id_evaluacion, evalData.estudiante.cedula, payload);
+            const resp = await evaluacionesService.saveEvaluacionResultado(evalData.evaluacion.id_evaluacion, evalData.estudiante.cedula, payload);
 
             if (resp.success) {
                 Swal.fire('Éxito', 'Evaluación guardada correctamente', 'success').then(() => onSaved());

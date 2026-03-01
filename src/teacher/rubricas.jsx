@@ -7,8 +7,11 @@ import { teacherRubricasService } from '../services/teacherRubricas.service';
 import { imprimirRubricaFormal } from '../utils/printRubrica';
 import '../assets/css/home.css';
 
+import { useUI } from '../context/UIContext';
+
 export default function TeacherRubrica() {
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -42,6 +45,7 @@ export default function TeacherRubrica() {
             Swal.fire('Error', 'Error de conexión', 'error');
         } finally {
             setLoading(false);
+            setGlobalLoading(false);
         }
     };
 

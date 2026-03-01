@@ -11,8 +11,11 @@ import ModalEvaluar from './components/ModalEvaluar';
 import ModalVerDetalles from './components/ModalVerDetalles';
 import ModalAddEvaluacion from './components/ModalAddEvaluacion';
 
+import { useUI } from '../context/UIContext';
+
 export default function TeacherEvaluaciones() {
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -22,6 +25,7 @@ export default function TeacherEvaluaciones() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedCarreras, setExpandedCarreras] = useState({});
+    const [isActionLoading, setIsActionLoading] = useState(false);
     
     // Estados para Modales
     const [showEvaluar, setShowEvaluar] = useState(false);
@@ -50,6 +54,7 @@ export default function TeacherEvaluaciones() {
             Swal.fire('Error', 'No se pudieron cargar las evaluaciones', 'error');
         } finally {
             setLoading(false);
+            setGlobalLoading(false);
         }
     };
 
@@ -168,55 +173,97 @@ export default function TeacherEvaluaciones() {
                                                                                 const fullName = `${ev.estudiante_nombre} ${ev.estudiante_apellido}`.toLowerCase();
                                                                                 return fullName.includes(searchTerm) || ev.estudiante_cedula.includes(searchTerm);
                                                                             }).map(ev => (
-                                                                                <div key={ev.id} className="evaluacion-card" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '15px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                                                                                    <div className="evaluacion-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                                                                                        <div className="evaluacion-student" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                                                                            <div className="student-avatar" style={{ background: '#3b82f6', color: 'white', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                                                                                                {ev.iniciales}
-                                                                                            </div>
-                                                                                            <div>
-                                                                                                <div className="student-name" style={{ fontWeight: '600', color: '#1e293b' }}>
-                                                                                                    {ev.estudiante_nombre} {ev.estudiante_apellido}
-                                                                                                </div>
-                                                                                                <div className="student-id" style={{ fontSize: '0.85em', color: '#64748b' }}>
-                                                                                                    CI: {ev.estudiante_cedula}
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                        <span className={`badge-status ${ev.estado === 'Completada' ? 'completed' : 'pending'}`} style={{ 
-                                                                                            padding: '4px 8px', borderRadius: '12px', fontSize: '0.8em',
-                                                                                            background: ev.estado === 'Completada' ? '#dcfce7' : '#fef3c7',
-                                                                                            color: ev.estado === 'Completada' ? '#166534' : '#92400e'
-                                                                                        }}>
-                                                                                            {ev.estado}
-                                                                                        </span>
+                                                                                <div key={ev.id} className="evaluacion-card" style={{ 
+                                                                                    background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px', 
+                                                                                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)', 
+                                                                                    position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '15px' 
+                                                                                }}>
+                                                                                    {/* Ribbon Banner */}
+                                                                                    <div style={{
+                                                                                        position: 'absolute', top: '12px', right: '-35px', background: ev.estado === 'Completada' ? '#10b981' : '#f59e0b',
+                                                                                        color: 'white', padding: '5px 40px', fontSize: '0.75em', fontWeight: 'bold',
+                                                                                        transform: 'rotate(45deg)', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', zIndex: 1
+                                                                                    }}>
+                                                                                        {ev.estado}
+                                                                                    </div>
+
+                                                                                    <div className="evaluacion-header-info">
+                                                                                        <h4 style={{ margin: '0 0 5px 0', fontSize: '1.2em', color: '#1e293b', fontWeight: 'bold', textTransform: 'uppercase' }}>{ev.materia_nombre}</h4>
+                                                                                        <div style={{ color: '#3b82f6', fontSize: '0.9em', fontWeight: '500' }}>{ev.materia_codigo} {ev.seccion_codigo}</div>
+                                                                                    </div>
+
+                                                                                    <div className="student-box" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                                        <div style={{ color: '#64748b' }}><i className="fas fa-user"></i></div>
+                                                                                        <div style={{ color: '#2563eb', fontWeight: '500' }}>{ev.estudiante_nombre} {ev.estudiante_apellido}</div>
+                                                                                    </div>
+
+                                                                                    <div className="evaluacion-comment" style={{ color: '#64748b', fontSize: '0.95em', minHeight: '1.4em' }}>
+                                                                                        {ev.observaciones || 'Sin observaciones adicionales'}
                                                                                     </div>
                                                                                     
-                                                                                    <div className="evaluacion-body" style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', marginBottom: '15px' }}>
-                                                                                        <div className="evaluacion-score" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                                                            <div className="score-label" style={{ color: '#64748b', fontSize: '0.9em' }}>Calificación</div>
-                                                                                            <div className="score-value" style={{ fontWeight: 'bold', color: '#1e293b' }}>{ev.calificacion}</div>
+                                                                                    <div className="evaluacion-stats" style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', padding: '15px', borderRadius: '12px' }}>
+                                                                                        <div style={{ textAlign: 'left' }}>
+                                                                                            <span style={{ fontSize: '0.75em', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Ponderación</span>
+                                                                                            <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1em' }}>{ev.porcentaje_evaluacion || 10}%</div>
+                                                                                        </div>
+                                                                                        <div style={{ textAlign: 'right' }}>
+                                                                                            <span style={{ fontSize: '0.75em', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Progreso</span>
+                                                                                            <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1em' }}>{ev.estado === 'Completada' ? '1/1' : '0/1'}</div>
                                                                                         </div>
                                                                                     </div>
                                                                                     
-                                                                                    <div className="evaluacion-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
-                                                                                        <span className="evaluacion-date" style={{ fontSize: '0.85em', color: '#64748b' }}>
-                                                                                            <i className="fas fa-calendar" style={{ marginRight: '5px' }}></i>
-                                                                                            {ev.fecha_formateada}
-                                                                                        </span>
-                                                                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                                                                    <div className="evaluacion-footer" style={{ borderTop: '1px solid #e2e8f0', paddingTop: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: '0.85em' }}>
+                                                                                            <span><i className="fas fa-calendar-alt"></i> {ev.fecha_formateada}</span>
+                                                                                            <span><i className="fas fa-clock"></i> Sección</span>
+                                                                                        </div>
+                                                                                        <div style={{ display: 'flex', gap: '10px' }}>
                                                                                             {ev.estado === 'Completada' ? (
                                                                                                 <>
-                                                                                                    <button onClick={() => { setSelectedEstudianteDetalles({idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula}); setShowDetalles(true); }} style={{ padding: '6px 10px', fontSize: '0.85em', background: '#f1f5f9', color: '#334155', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                                                                                                        Ver Detalles
+                                                                                                    <button 
+                                                                                                        onClick={(e) => { 
+                                                                                                            e.stopPropagation();
+                                                                                                            setIsActionLoading(true);
+                                                                                                            setSelectedEstudianteEvaluar({idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula}); 
+                                                                                                            setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800);
+                                                                                                        }} 
+                                                                                                        style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                                                        className="btn-card-action"
+                                                                                                        title="Editar Evaluación"
+                                                                                                    >
+                                                                                                        <i className="fas fa-edit"></i>
                                                                                                     </button>
-                                                                                                    <button onClick={() => { setSelectedEstudianteEvaluar({idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula}); setShowEvaluar(true); }} style={{ padding: '6px 10px', fontSize: '0.85em', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                                                                                                        <i className="fas fa-edit" style={{ marginRight: '5px' }}></i> Editar
+                                                                                                    <button 
+                                                                                                        onClick={(e) => { 
+                                                                                                            e.stopPropagation();
+                                                                                                            setIsActionLoading(true);
+                                                                                                            setSelectedEstudianteDetalles({idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula}); 
+                                                                                                            setTimeout(() => { setIsActionLoading(false); setShowDetalles(true); }, 800);
+                                                                                                        }} 
+                                                                                                        style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                                                        className="btn-card-action"
+                                                                                                        title="Ver Detalles"
+                                                                                                    >
+                                                                                                        <i className="fas fa-eye"></i>
+                                                                                                    </button>
+                                                                                                    <button 
+                                                                                                        style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', opacity: 0.6 }}
+                                                                                                        title="Estadísticas (Próximamente)"
+                                                                                                    >
+                                                                                                        <i className="fas fa-chart-line"></i>
                                                                                                     </button>
                                                                                                 </>
                                                                                             ) : (
-                                                                                                <button onClick={() => { setSelectedEstudianteEvaluar({idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula}); setShowEvaluar(true); }} style={{ padding: '6px 12px', fontSize: '0.85em', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                                                                                                    Evaluar
+                                                                                                <button 
+                                                                                                    onClick={(e) => { 
+                                                                                                        e.stopPropagation();
+                                                                                                        setIsActionLoading(true);
+                                                                                                        setSelectedEstudianteEvaluar({idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula}); 
+                                                                                                        setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800);
+                                                                                                    }} 
+                                                                                                    style={{ width: '100%', padding: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                                                                                >
+                                                                                                    <i className="fas fa-clipboard-check"></i> Evaluar Estudiante
                                                                                                 </button>
                                                                                             )}
                                                                                         </div>
@@ -275,6 +322,25 @@ export default function TeacherEvaluaciones() {
 
                     {renderContent()}
                 </div>
+
+                {/* Overlay de Carga Global para Acciones */}
+                {isActionLoading && (
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                        background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(4px)',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 9999, transition: 'all 0.3s ease'
+                    }}>
+                        <div style={{
+                            background: 'white', padding: '30px 50px', borderRadius: '16px',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.1)', textAlign: 'center'
+                        }}>
+                            <i className="fas fa-circle-notch fa-spin fa-3x" style={{ color: '#3b82f6', marginBottom: '15px' }}></i>
+                            <h3 style={{ margin: 0, color: '#1e293b' }}>Cargando información...</h3>
+                            <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '0.9em' }}>Por favor, espere un momento</p>
+                        </div>
+                    </div>
+                )}
             </main>
 
             {/* Modales */}
@@ -298,6 +364,33 @@ export default function TeacherEvaluaciones() {
                     onClose={() => setShowAddEvaluacion(false)} 
                     onSaved={() => { setShowAddEvaluacion(false); fetchEvaluaciones(); }}
                 />
+            )}
+
+            {/* Overlay de Carga Global para Acciones (Ubicado al final para asegurar z-index) */}
+            {isActionLoading && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    zIndex: 2147483647, transition: 'all 0.3s ease'
+                }}>
+                    <div style={{
+                        background: 'white', padding: '40px 60px', borderRadius: '24px',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.3)', textAlign: 'center',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px',
+                        minWidth: '300px'
+                    }}>
+                        <div className="loader-container-uiverse">
+                            <div className="loader">
+                                <div className="justify-content-center jimu-primary-loading"></div>
+                            </div>
+                        </div>
+                        <div style={{ marginTop: '20px' }}>
+                            <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.4em', fontWeight: 'bold' }}>Procesando...</h3>
+                            <p style={{ margin: '8px 0 0 0', color: '#64748b', fontSize: '1em' }}>Espere un momento por favor</p>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
