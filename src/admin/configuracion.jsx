@@ -262,7 +262,8 @@ export default function Configuracion() {
             </div>
 
             {/* Modal Agregar Usuario */}
-            <div className={`modal-add-usuarios ${showAddModal ? 'active' : ''}`}>
+            {showAddModal && (
+            <div className="modal-add-usuarios active">
                 <div className="modal-content">
                     <span className="close-btn" onClick={() => setShowAddModal(false)}>&times;</span>
                     <h2>Agregar Nuevo Usuario</h2>
@@ -303,9 +304,11 @@ export default function Configuracion() {
                     </form>
                 </div>
             </div>
+            )}
 
             {/* Modal Editar Usuario */}
-            <div className={`modal-edit-usuario ${showEditModal ? 'active' : ''}`}>
+            {showEditModal && (
+            <div className="modal-edit-usuario active">
                 <div className="modal-content">
                     <span className="close-btn" onClick={() => setShowEditModal(false)}>&times;</span>
                     <h2>Editar Usuario</h2>
@@ -345,6 +348,7 @@ export default function Configuracion() {
                     </form>
                 </div>
             </div>
+            )}
         </main>
     );
 }

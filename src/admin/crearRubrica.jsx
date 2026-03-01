@@ -289,185 +289,117 @@ export default function CrearRubricas() {
     if (!user) return null;
 
     return (
-        <main className="crear-rubrica-container">
+        <main className="main-content">
             <Menu user={user} />
-            <div className="content-wrapper">
-                <Header title="Diseñador de Rúbricas Premium" user={user} onLogout={() => navigate('/login')} />
+            <div className="content-wrapper" style={{ width: '100%' }}>
+                <Header title="Crear Nueva Rúbrica" user={user} onLogout={() => navigate('/login')} />
                 
-                <div className="form-content-area">
-                    <div className="rubrica-card-wrapper">
-                        {/* HERO HEADER */}
-                        <div className="rubrica-hero-header">
-                            <div className="title-group">
-                                <div className="hero-icon">
-                                    <i className="fas fa-magic"></i>
+                <div style={{ padding: '30px' }}>
+                    <div className="card" style={{ borderRadius: '15px', background: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', padding: '30px' }}>
+                        <form onSubmit={handleSubmit}>
+                            {/* Encabezado */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Nombre de la Rúbrica *</label>
+                                    <input type="text" name="nombre_rubrica" value={formData.nombre_rubrica} onChange={handleInputChange} className="form-input" required placeholder="Ej: Rúbrica de Proyecto Final" />
                                 </div>
                                 <div>
-                                    <h2>Creador de Rúbricas</h2>
+                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Tipo de Rúbrica *</label>
+                                    <select name="tipo_rubrica" value={formData.tipo_rubrica} onChange={handleInputChange} className="form-select" required>
+                                        <option value="">Seleccione tipo</option>
+                                        {tiposRubrica.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+                                    </select>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div className="form-content-area">
-                            <form onSubmit={handleSubmit}>
-                                {/* SECCIÓN 1: CONFIGURACIÓN */}
-                                <div className="rubrica-section">
-                                    <div className="section-label">
-                                        <div className="number">1</div>
-                                        <h3>Configuración General</h3>
-                                    </div>
-                                    <div className="premium-grid">
-                                        <div className="premium-group">
-                                            <label>Identificador de Rúbrica</label>
-                                            <input type="text" name="nombre_rubrica" value={formData.nombre_rubrica} onChange={handleInputChange} className="premium-input" required placeholder="Ej: Rúbrica de Análisis Crítico Semestre I" />
-                                        </div>
-                                        <div className="premium-group">
-                                            <label>Modelo de Aplicación</label>
-                                            <select name="tipo_rubrica" value={formData.tipo_rubrica} onChange={handleInputChange} className="premium-select" required>
-                                                <option value="">Seleccione el modelo...</option>
-                                                {tiposRubrica.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="premium-group">
-                                            <label>Estructura Académica (Carrera)</label>
-                                            <select name="carrera" value={formData.carrera} onChange={handleCarreraChange} className="premium-select" required>
-                                                <option value="">Seleccione carrera...</option>
-                                                {carreras.map(c => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
+
+                            {/* Selectores en Cascada */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                <div>
+                                    <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Carrera</label>
+                                    <select name="carrera" value={formData.carrera} onChange={handleCarreraChange} className="form-select">
+                                        <option value="">Seleccione carrera</option>
+                                        {carreras.map(c => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
+                                    </select>
                                 </div>
-
-                                {/* SECCIÓN 2: CONTEXTO */}
-                                <div className="rubrica-section">
-                                    <div className="section-label">
-                                        <div className="number">2</div>
-                                        <h3>Contexto de Aplicación</h3>
-                                    </div>
-                                    <div className="premium-grid">
-                                        <div className="premium-group">
-                                            <label>Periodo (Semestre)</label>
-                                            <select name="semestre" value={formData.semestre} onChange={handleSemestreChange} className="premium-select" required disabled={!formData.carrera}>
-                                                <option value="">Seleccione...</option>
-                                                {semestres.map(s => <option key={s} value={s}>Semestre {s}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="premium-group">
-                                            <label>Unidad Curricular (Materia)</label>
-                                            <select name="materia_codigo" value={formData.materia_codigo} onChange={handleMateriaChange} className="premium-select" required disabled={!formData.semestre}>
-                                                <option value="">Seleccione...</option>
-                                                {materias.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="premium-group">
-                                            <label>Sección Académica</label>
-                                            <select name="seccion_id" value={formData.seccion_id} onChange={handleSeccionChange} className="premium-select" required disabled={!formData.materia_codigo}>
-                                                <option value="">Seleccione...</option>
-                                                {secciones.map(s => <option key={s.id} value={s.id}>{s.codigo} ({s.lapso_academico})</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div className="highlight-context-zone">
-                                        <div className="premium-group">
-                                            <label>Evaluación Destino (Planificación Vigente)</label>
-                                            <select name="evaluacion_id" value={formData.evaluacion_id} onChange={handleEvaluacionChange} className="premium-select" required disabled={!formData.seccion_id}>
-                                                <option value="">Vincular con una evaluación planificada...</option>
-                                                {evaluaciones.map(e => <option key={e.evaluacion_id} value={e.evaluacion_id}>{e.contenido_evaluacion} [{e.tipo_evaluacion}] — {e.valor}%</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="premium-group" style={{ marginTop: '25px' }}>
-                                        <label>Guía de Aplicación (Instrucciones)</label>
-                                        <textarea name="instrucciones" value={formData.instrucciones} onChange={handleInputChange} className="premium-input premium-textarea" placeholder="Escriba aquí las directrices para el evaluador o el estudiante..."></textarea>
-                                    </div>
+                                <div>
+                                    <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Semestre</label>
+                                    <select name="semestre" value={formData.semestre} onChange={handleSemestreChange} className="form-select" disabled={!semestres.length}>
+                                        <option value="">Seleccione semestre</option>
+                                        {semestres.map(s => <option key={s} value={s}>Semestre {s}</option>)}
+                                    </select>
                                 </div>
-
-                                {/* SECCIÓN 3: CONSTRUCTOR DE CRITERIOS */}
-                                <div className="rubrica-section">
-                                    <div className="builder-header">
-                                        <div className="section-label" style={{ marginBottom: 0 }}>
-                                            <div className="number">3</div>
-                                            <h3>Definición de Criterios y Desempeño</h3>
-                                        </div>
-                                        <div className="action-buttons">
-                                            <div className="stats-pill">
-                                                Balance: <strong>{criterios.reduce((acc, curr) => acc + parseFloat(curr.puntaje_maximo || 0), 0).toFixed(2)}</strong> / {formData.porcentaje_evaluacion}%
-                                            </div>
-                                            <button type="button" onClick={distribuirPuntajes} className="btn-premium-outline" title="Equilibrar pesos">
-                                                <i className="fas fa-balance-scale"></i>
-                                            </button>
-                                            <button type="button" onClick={agregarCriterio} className="btn-premium-primary">
-                                                <i className="fas fa-plus"></i>
-                                                <span className="btn-text">Nuevo Criterio</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="criterios-timeline">
-                                        {criterios.map((c, cIdx) => (
-                                            <div key={c.id} className="criterio-card-premium">
-                                                <div className="criterio-top-bar">
-                                                    <div className="criterio-num">{cIdx + 1}</div>
-                                                    <div className="criterio-input-wrapper">
-                                                        <input type="text" value={c.descripcion} onChange={(e) => handleCriterioChange(c.id, 'descripcion', e.target.value)} className="title-input-ghost" placeholder="Defina el objetivo o criterio de evaluación..." required />
-                                                    </div>
-                                                    <div className="value-box-compact">
-                                                        <span>VALOR</span>
-                                                        <input type="number" value={c.puntaje_maximo} onChange={(e) => handleCriterioChange(c.id, 'puntaje_maximo', e.target.value)} step="0.01" required />
-                                                    </div>
-                                                    <div className="criterio-management">
-                                                        <button type="button" onClick={() => agregarNivel(c.id)} className="btn-circles btn-circles-add" title="Añadir Nivel de Logro">
-                                                            <i className="fas fa-plus"></i>
-                                                        </button>
-                                                        <button type="button" onClick={() => eliminarCriterio(c.id)} className="btn-circles btn-circles-delete" title="Remover Criterio">
-                                                            <i className="fas fa-trash-alt"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                <div className="niveles-scroller">
-                                                    <div className="niveles-grid">
-                                                        {c.niveles.map((n) => (
-                                                            <div key={n.id} className="nivel-card-modern">
-                                                                <div className="nivel-header-row">
-                                                                    <input type="text" value={n.nombre} onChange={(e) => handleNivelChange(c.id, n.id, 'nombre', e.target.value)} placeholder="Ej: Excelente" className="nivel-name-input" required />
-                                                                    <div className="pts-badge-input">
-                                                                        <input type="number" value={n.puntaje} onChange={(e) => handleNivelChange(c.id, n.id, 'puntaje', e.target.value)} step="0.01" required />
-                                                                        <span>pts</span>
-                                                                    </div>
-                                                                    <button type="button" onClick={() => eliminarNivel(c.id, n.id)} style={{ background: 'transparent', border: 'none', color: '#cbd5e1', cursor: 'pointer', marginLeft: 'auto' }}>✕</button>
-                                                                </div>
-                                                                <textarea value={n.descripcion} onChange={(e) => handleNivelChange(c.id, n.id, 'descripcion', e.target.value)} placeholder="Describa las evidencias o indicadores de este nivel de logro..." className="nivel-desc-area" required></textarea>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-
-                                        {criterios.length === 0 && (
-                                            <div style={{ textAlign: 'center', padding: '60px', opacity: 0.4 }}>
-                                                <i className="fas fa-scroll" style={{ fontSize: '4rem', marginBottom: '20px' }}></i>
-                                                <p style={{ fontSize: '1.2rem', fontWeight: 600 }}>Inicie el diseño agregando su primer criterio</p>
-                                            </div>
-                                        )}
-                                    </div>
+                                <div>
+                                    <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Materia</label>
+                                    <select name="materia_codigo" value={formData.materia_codigo} onChange={handleMateriaChange} className="form-select" disabled={!materias.length}>
+                                        <option value="">Seleccione materia</option>
+                                        {materias.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre}</option>)}
+                                    </select>
                                 </div>
+                                <div>
+                                    <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Sección</label>
+                                    <select name="seccion_id" value={formData.seccion_id} onChange={handleSeccionChange} className="form-select" disabled={!secciones.length}>
+                                        <option value="">Seleccione sección</option>
+                                        {secciones.map(s => <option key={s.id} value={s.id}>{s.codigo} ({s.lapso_academico})</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Evaluación</label>
+                                    <select name="evaluacion_id" value={formData.evaluacion_id} onChange={handleEvaluacionChange} className="form-select" required disabled={!evaluaciones.length}>
+                                        <option value="">Seleccione evaluación</option>
+                                        {evaluaciones.map(e => <option key={e.evaluacion_id} value={e.evaluacion_id}>{e.contenido_evaluacion} ({e.valor}%)</option>)}
+                                    </select>
+                                </div>
+                            </div>
 
-                                {/* FOOTER ACTIONS */}
-                                <div className="footer-actions">
-                                    <button type="button" onClick={() => navigate('/admin/rubricas')} className="btn-premium-outline">
-                                        Descartar cambios
-                                    </button>
-                                    <button type="submit" className="btn-premium-primary" disabled={loading}>
-                                        <i className="fas fa-check-double"></i>
-                                        Finalizar y Publicar Rúbrica
+                            {/* Instrucciones */}
+                            <div style={{ marginBottom: '30px' }}>
+                                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Instrucciones Generales</label>
+                                <textarea name="instrucciones" className="form-textarea" rows="3" value={formData.instrucciones} onChange={handleInputChange} placeholder="Instrucciones para el estudiante..."></textarea>
+                            </div>
+
+                            {/* Criterios */}
+                            <div className="criterios-container">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #1e3a8a', paddingBottom: '10px', marginBottom: '20px' }}>
+                                    <h3 style={{ margin: 0, color: '#1e3a8a' }}>Criterios de Evaluación</h3>
+                                    <button type="button" onClick={agregarCriterio} className="btns" style={{ background: '#10b981', color: 'white', padding: '8px 15px', borderRadius: '8px', fontSize: '0.9rem' }}>
+                                        <i className="fas fa-plus"></i> Agregar Criterio
                                     </button>
                                 </div>
-                            </form>
-                        </div>
+
+                                {criterios.map((c, cIdx) => (
+                                    <div key={c.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', marginBottom: '20px', position: 'relative' }}>
+                                        <button type="button" onClick={() => eliminarCriterio(c.id)} style={{ position: 'absolute', top: '10px', right: '10px', background: '#fee2e2', color: '#ef4444', border: 'none', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Eliminar criterio">
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                        
+                                        <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', paddingRight: '40px' }}>
+                                            <input type="text" placeholder="Descripción del criterio (Ej: Dominio del tema)" value={c.descripcion} onChange={(e) => handleCriterioChange(c.id, 'descripcion', e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
+                                            <input type="number" placeholder="Pts" value={c.puntaje_maximo} onChange={(e) => handleCriterioChange(c.id, 'puntaje_maximo', e.target.value)} style={{ width: '80px', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                                            {c.niveles.map((n, nIdx) => (
+                                                <div key={n.id} style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                                                    <input type="text" value={n.nombre} onChange={(e) => handleNivelChange(c.id, n.id, 'nombre', e.target.value)} style={{ fontWeight: 'bold', border: 'none', background: 'transparent', width: '100%', marginBottom: '5px', color: '#475569' }} placeholder="Nivel" />
+                                                    <textarea value={n.descripcion} onChange={(e) => handleNivelChange(c.id, n.id, 'descripcion', e.target.value)} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '0.85rem', padding: '8px', marginBottom: '5px', resize: 'vertical' }} rows="3" placeholder="Descripción del nivel..." />
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                        <input type="number" value={n.puntaje} onChange={(e) => handleNivelChange(c.id, n.id, 'puntaje', e.target.value)} style={{ width: '60px', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px', fontSize: '0.9rem', color: '#1e3a8a', fontWeight: 'bold' }} placeholder="0" />
+                                                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>pts</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px', borderTop: '1px solid #e5e7eb', paddingTop: '25px', marginTop: '30px' }}>
+                                <button type="button" onClick={() => navigate('/admin/rubricas')} className="btns" style={{ background: '#94a3b8', color: 'white', padding: '12px 30px', borderRadius: '10px' }}>Cancelar</button>
+                                <button type="submit" className="btns" style={{ background: '#1e3a8a', color: 'white', padding: '12px 45px', borderRadius: '10px', fontWeight: 'bold' }} disabled={loading}>
+                                    <i className="fas fa-save" style={{ marginRight: '8px' }}></i> {loading ? 'Guardando...' : 'Guardar Rúbrica'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>

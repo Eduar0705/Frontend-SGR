@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Menu from '../components/menu';
 import Header from '../components/header';
-import { dashboardService } from '../services/dashboard.service';
+import dashboardService from '../services/dashboard.service';
 import '../assets/css/home.css';
 
 export default function Student() {

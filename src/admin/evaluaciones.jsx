@@ -84,12 +84,15 @@ export default function Evaluaciones() {
         setFormData(prev => ({ ...prev, carrera_codigo: codigo, materia_codigo: '', id_seccion: '', id_horario: '' }));
         const res = await evaluacionesService.getMateriasByCarrera(codigo);
         if (res.success) setMaterias(res.materias);
+        return res;
     };
 
-    const handleMateriaChange = async (codigo) => {
+    const handleMateriaChange = async (codigo, explicitCarrera = null) => {
+        const carrera = explicitCarrera || formData.carrera_codigo;
         setFormData(prev => ({ ...prev, materia_codigo: codigo, id_seccion: '', id_horario: '' }));
-        const res = await evaluacionesService.getSecciones(codigo, formData.carrera_codigo);
+        const res = await evaluacionesService.getSecciones(codigo, carrera);
         if (res.success) setSecciones(res.secciones);
+        return res;
     };
 
     const handleSeccionChange = async (id) => {
@@ -138,21 +141,30 @@ export default function Evaluaciones() {
                 const data = res.evaluacion;
                 setModalMode('edit');
                 setCurrentEvalId(ev.evaluacion_id);
-                // Pre-cargar catálogos
+                // Pre-cargar catálogos con valores explícitos para evitar problemas de estado asíncrono
                 await handleCarreraChange(data.carrera_codigo);
-                await handleMateriaChange(data.materia_codigo);
+                await handleMateriaChange(data.materia_codigo, data.carrera_codigo);
                 await handleSeccionChange(data.id_seccion);
                 
                 setFormData({
                     ...data,
+                    contenido: data.contenido || '',
                     estrategias_eval: data.estrategias || [],
                     fecha_evaluacion: data.fecha_evaluacion ? data.fecha_evaluacion.split('T')[0] : ''
                 });
                 setShowModal(true);
+            } else {
+                Swal.fire('Error', res.message || 'No se pudo cargar la evaluación', 'error');
             }
         } catch (error) {
+            console.error(error);
             Swal.fire('Error', 'No se pudo cargar el detalle', 'error');
         }
+    };
+
+    const handleOpenView = async (ev) => {
+        await handleOpenEdit(ev);
+        setModalMode('view');
     };
 
     const handleSubmit = async (e) => {
@@ -252,8 +264,11 @@ export default function Evaluaciones() {
                                             <button onClick={() => handleOpenEdit(ev)} title="Editar">
                                                 <i className="fas fa-edit"></i>
                                             </button>
-                                            <button onClick={() => navigate(`/admin/evaluacion/${ev.evaluacion_id}`)} title="Ver Detalles">
+                                            <button onClick={() => handleOpenView(ev)} title="Ver Detalles">
                                                 <i className="fas fa-eye"></i>
+                                            </button>
+                                            <button onClick={() => navigate(`/admin/reportes`)} title="Ver Estadísticas">
+                                                <i className="fas fa-chart-bar"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -279,7 +294,10 @@ export default function Evaluaciones() {
                     <div className="modal-premium-overlay">
                         <div className="modal-premium-content">
                             <div className="modal-premium-header">
-                                <h2>{modalMode === 'create' ? 'Nueva Evaluación' : 'Editar Evaluación'}</h2>
+                                <h2>
+                                    {modalMode === 'create' ? 'Nueva Evaluación' : 
+                                     modalMode === 'edit' ? 'Editar Evaluación' : 'Ver Evaluación'}
+                                </h2>
                                 <button className="close-btn" onClick={() => setShowModal(false)}>&times;</button>
                             </div>
                             <form onSubmit={handleSubmit} className="modal-premium-form">
@@ -292,6 +310,7 @@ export default function Evaluaciones() {
                                                 value={formData.carrera_codigo} 
                                                 onChange={(e) => handleCarreraChange(e.target.value)}
                                                 required
+                                                disabled={modalMode === 'view'}
                                             >
                                                 <option value="">Seleccione...</option>
                                                 {carreras.map(c => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
@@ -302,7 +321,7 @@ export default function Evaluaciones() {
                                             <select 
                                                 value={formData.materia_codigo} 
                                                 onChange={(e) => handleMateriaChange(e.target.value)}
-                                                disabled={!formData.carrera_codigo}
+                                                disabled={!formData.carrera_codigo || modalMode === 'view'}
                                                 required
                                             >
                                                 <option value="">Seleccione...</option>
@@ -314,7 +333,7 @@ export default function Evaluaciones() {
                                             <select 
                                                 value={formData.id_seccion} 
                                                 onChange={(e) => handleSeccionChange(e.target.value)}
-                                                disabled={!formData.materia_codigo}
+                                                disabled={!formData.materia_codigo || modalMode === 'view'}
                                                 required
                                             >
                                                 <option value="">Seleccione...</option>
@@ -333,6 +352,7 @@ export default function Evaluaciones() {
                                             value={formData.contenido}
                                             onChange={(e) => setFormData({...formData, contenido: e.target.value})}
                                             required
+                                            disabled={modalMode === 'view'}
                                         />
                                     </div>
                                     <div className="form-grid-premium">
@@ -344,6 +364,7 @@ export default function Evaluaciones() {
                                                 value={formData.porcentaje}
                                                 onChange={(e) => setFormData({...formData, porcentaje: e.target.value})}
                                                 required
+                                                disabled={modalMode === 'view'}
                                             />
                                         </div>
                                         <div className="form-field">
@@ -351,6 +372,7 @@ export default function Evaluaciones() {
                                             <select 
                                                 value={formData.cant_personas}
                                                 onChange={(e) => setFormData({...formData, cant_personas: e.target.value})}
+                                                disabled={modalMode === 'view'}
                                             >
                                                 <option value="1">Individual</option>
                                                 <option value="2">Parejas</option>
@@ -364,6 +386,7 @@ export default function Evaluaciones() {
                                                 value={formData.fecha_evaluacion}
                                                 onChange={(e) => setFormData({...formData, fecha_evaluacion: e.target.value})}
                                                 required
+                                                disabled={modalMode === 'view'}
                                             />
                                         </div>
                                     </div>
@@ -377,6 +400,7 @@ export default function Evaluaciones() {
                                             <select 
                                                 value={formData.tipo_horario}
                                                 onChange={(e) => setFormData({...formData, tipo_horario: e.target.value})}
+                                                disabled={modalMode === 'view'}
                                             >
                                                 <option value="Sección">Dentro de Horario de Sección</option>
                                                 <option value="Otro">Fuera de Horario (Clandestina)</option>
@@ -388,7 +412,7 @@ export default function Evaluaciones() {
                                                 <select 
                                                     value={formData.id_horario}
                                                     onChange={(e) => setFormData({...formData, id_horario: e.target.value})}
-                                                    disabled={!formData.id_seccion}
+                                                    disabled={!formData.id_seccion || modalMode === 'view'}
                                                     required
                                                 >
                                                     <option value="">Seleccione...</option>
@@ -408,6 +432,7 @@ export default function Evaluaciones() {
                                                         value={formData.hora_inicio}
                                                         onChange={(e) => setFormData({...formData, hora_inicio: e.target.value})}
                                                         required
+                                                        disabled={modalMode === 'view'}
                                                     />
                                                 </div>
                                                 <div className="form-field">
@@ -417,6 +442,7 @@ export default function Evaluaciones() {
                                                         value={formData.hora_fin}
                                                         onChange={(e) => setFormData({...formData, hora_fin: e.target.value})}
                                                         required
+                                                        disabled={modalMode === 'view'}
                                                     />
                                                 </div>
                                             </>
@@ -435,6 +461,7 @@ export default function Evaluaciones() {
                                                         type="checkbox" 
                                                         value={est.id}
                                                         checked={formData.estrategias_eval.includes(est.id)}
+                                                        disabled={modalMode === 'view'}
                                                         onChange={(e) => {
                                                             const id = parseInt(e.target.value);
                                                             const newEst = e.target.checked 
@@ -456,6 +483,7 @@ export default function Evaluaciones() {
                                                 value={formData.competencias}
                                                 onChange={(e) => setFormData({...formData, competencias: e.target.value})}
                                                 placeholder="Describa las competencias..."
+                                                disabled={modalMode === 'view'}
                                             ></textarea>
                                         </div>
                                         <div className="form-field">
@@ -465,16 +493,21 @@ export default function Evaluaciones() {
                                                 value={formData.instrumentos}
                                                 onChange={(e) => setFormData({...formData, instrumentos: e.target.value})}
                                                 placeholder="Describa los instrumentos..."
+                                                disabled={modalMode === 'view'}
                                             ></textarea>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="modal-premium-footer">
-                                    <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>Cancelar</button>
-                                    <button type="submit" className="btn-save" disabled={submitting}>
-                                        {submitting ? 'Guardando...' : (modalMode === 'create' ? 'Crear Evaluación' : 'Guardar Cambios')}
+                                    <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>
+                                        {modalMode === 'view' ? 'Cerrar' : 'Cancelar'}
                                     </button>
+                                    {modalMode !== 'view' && (
+                                        <button type="submit" className="btn-save" disabled={submitting}>
+                                            {submitting ? 'Guardando...' : (modalMode === 'create' ? 'Crear Evaluación' : 'Guardar Cambios')}
+                                        </button>
+                                    )}
                                 </div>
                             </form>
                         </div>

@@ -39,7 +39,7 @@ export const academicoService = {
 
     async getEvaluaciones(seccionId) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:3000/admin/evaluaciones/${seccionId}`, {
+        const response = await fetch(`${API_URL}/admin/evaluaciones/${seccionId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();

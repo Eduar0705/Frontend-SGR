@@ -17,5 +17,21 @@ export const authService = {
         }
 
         return data;
+    },
+    logout: async (cedula) => {
+        try {
+            const response = await fetch(`${API_URL}/auth/logout`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ cedula }),
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error logging out:', error);
+            return { success: false };
+        }
     }
 };

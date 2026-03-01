@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
 import Menu from '../components/menu';
 import Header from '../components/header';
-import { teacherRubricasService } from '../services/teacherRubricas.service';
+import Swal from 'sweetalert2';
 import '../assets/css/home.css';
-import '../assets/css/crearRubrica.css';
 
 export default function TeacherCrearRubricas() {
     const navigate = useNavigate();
@@ -14,248 +12,213 @@ export default function TeacherCrearRubricas() {
         return storedUser ? JSON.parse(storedUser) : null;
     });
 
-    // Form data arrays
-    const [carreras, setCarreras] = useState([]);
+    // Estados de datos
+    const [loading, setLoading] = useState(false);
     const [tiposRubrica, setTiposRubrica] = useState([]);
+    const [carreras, setCarreras] = useState([]);
     const [semestres, setSemestres] = useState([]);
     const [materias, setMaterias] = useState([]);
     const [secciones, setSecciones] = useState([]);
     const [evaluaciones, setEvaluaciones] = useState([]);
 
-    // Form states
+    // Estado del Formulario
     const [formData, setFormData] = useState({
         nombre_rubrica: '',
-        tipo_rubrica: '',
-        carrera: '',
+        tipo_rubrica: '', // ID del tipo
+        carrera_codigo: '',
         semestre: '',
         materia_codigo: '',
         seccion_id: '',
         evaluacion_id: '',
-        fecha_evaluacion: '',
-        porcentaje_evaluacion: 10,
-        competencias: '',
-        instrucciones: ''
+        porcentaje_evaluacion: 0,
+        instrucciones: '',
+        criterios: [
+            {
+                id_local: 1,
+                descripcion: '',
+                puntaje_maximo: '',
+                niveles: [
+                    { id_local: 1, nombre_nivel: 'Excelente', descripcion: '', puntaje: '' },
+                    { id_local: 2, nombre_nivel: 'Regular', descripcion: '', puntaje: '' },
+                    { id_local: 3, nombre_nivel: 'Deficiente', descripcion: '', puntaje: '' }
+                ]
+            }
+        ]
     });
 
-    // Criterios & Niveles
-    const [criterios, setCriterios] = useState([
-        {
-            id: 1,
-            descripcion: '',
-            puntaje_maximo: 10,
-            orden: 1,
-            niveles: [
-                { id: 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: 10, orden: 1 },
-                { id: 2, nombre_nivel: 'Notable', descripcion: '', puntaje: 8, orden: 2 },
-                { id: 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: 6, orden: 3 },
-                { id: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 4, orden: 4 }
-            ]
-        }
-    ]);
-
-    const [loading, setLoading] = useState(true);
-
+    // Cargar datos iniciales
     useEffect(() => {
-        if (!user) { navigate('/login'); return; }
+        if (!user) {
+            navigate('/login');
+            return;
+        }
         loadInitialData();
     }, [user, navigate]);
 
-    useEffect(() => {
-        redistribuirPuntajes();
-    }, [formData.porcentaje_evaluacion, criterios.length]);
-
     const loadInitialData = async () => {
         try {
-            const data = await teacherRubricasService.getFormData();
-            setCarreras(data.carreras || []);
-            setTiposRubrica(data.tipos || []);
-        } catch (error) {
-            Swal.fire('Error', 'No se pudieron cargar los datos iniciales', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // --- Cascade Handlers ---
-    const handleChange = async (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-
-        if (name === 'carrera') {
-            setFormData(prev => ({ ...prev, semestre: '', materia_codigo: '', seccion_id: '', evaluacion_id: '', competencias: '', fecha_evaluacion: '' }));
-            setSemestres([]); setMaterias([]); setSecciones([]); setEvaluaciones([]);
-            if (value) {
-                const sems = await teacherRubricasService.getSemestres(value);
-                setSemestres(sems);
-            }
-        } 
-        else if (name === 'semestre') {
-            setFormData(prev => ({ ...prev, materia_codigo: '', seccion_id: '', evaluacion_id: '', competencias: '', fecha_evaluacion: '' }));
-            setMaterias([]); setSecciones([]); setEvaluaciones([]);
-            if (value) {
-                const mats = await teacherRubricasService.getMaterias(formData.carrera, value);
-                setMaterias(mats);
-            }
-        }
-        else if (name === 'materia_codigo') {
-            setFormData(prev => ({ ...prev, seccion_id: '', evaluacion_id: '', competencias: '', fecha_evaluacion: '' }));
-            setSecciones([]); setEvaluaciones([]);
-            if (value) {
-                const secs = await teacherRubricasService.getSecciones(value);
-                setSecciones(secs);
-            }
-        }
-        else if (name === 'seccion_id') {
-            setFormData(prev => ({ ...prev, evaluacion_id: '', competencias: '', fecha_evaluacion: '' }));
-            setEvaluaciones([]);
-            if (value) {
-                const evals = await teacherRubricasService.getEvaluaciones(value);
-                setEvaluaciones(evals);
-            }
-        }
-        else if (name === 'evaluacion_id') {
-            const ev = evaluaciones.find(x => String(x.id) === String(value));
-            if (ev) {
-                setFormData(prev => ({
-                    ...prev,
-                    fecha_evaluacion: ev.fecha_evaluacion ? ev.fecha_evaluacion.split('T')[0] : '',
-                    porcentaje_evaluacion: ev.ponderacion || 10,
-                    competencias: ev.competencias || ''
-                }));
-            }
-        }
-    };
-
-    // --- Dynamic Form Logic ---
-    const redistribuirPuntajes = () => {
-        if (criterios.length === 0) return;
-        const totalPorcentaje = parseFloat(formData.porcentaje_evaluacion) || 10;
-        const puntajePorCriterio = Math.max(1, totalPorcentaje / criterios.length);
-
-        setCriterios(prevCriterios => prevCriterios.map(c => {
-            const nuevosNiveles = c.niveles.map((n, idx) => {
-                const factor = (c.niveles.length - idx) / c.niveles.length;
-                const puntajeNivel = Math.max(0.25, puntajePorCriterio * factor);
-                return { ...n, puntaje: parseFloat(puntajeNivel.toFixed(2)) };
+            const token = localStorage.getItem('token');
+            // Cargar tipos de rúbrica
+            const resForm = await fetch('http://localhost:3000/api/teacher/rubricas/form-data', {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-            return { ...c, puntaje_maximo: parseFloat(puntajePorCriterio.toFixed(2)), niveles: nuevosNiveles };
-        }));
-    };
+            const dataForm = await resForm.json();
+            if (dataForm.success) setTiposRubrica(dataForm.tiposRubrica || []);
 
-    const addCriterio = () => {
-        setCriterios(prev => [
-            ...prev,
-            {
-                id: Date.now(),
-                descripcion: '',
-                puntaje_maximo: 10,
-                orden: prev.length + 1,
-                niveles: [
-                    { id: Date.now() + 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: 10, orden: 1 },
-                    { id: Date.now() + 2, nombre_nivel: 'Notable', descripcion: '', puntaje: 8, orden: 2 },
-                    { id: Date.now() + 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: 6, orden: 3 },
-                    { id: Date.now() + 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 4, orden: 4 }
-                ]
-            }
-        ]);
-    };
+            // Cargar carreras del docente (Cascade inicio)
+            const resCarreras = await fetch('http://localhost:3000/api/teacher/evaluaciones/carreras', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const dataCarreras = await resCarreras.json();
+            if (dataCarreras.success) setCarreras(dataCarreras.carreras);
 
-    const removeCriterio = (id) => {
-        if (criterios.length <= 1) {
-            Swal.fire('Advertencia', 'Debe mantener al menos un criterio', 'warning');
-            return;
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'Error al cargar datos iniciales', 'error');
         }
-        setCriterios(prev => prev.filter(c => c.id !== id));
     };
 
-    const updateCriterio = (criterioId, field, value) => {
-        setCriterios(prev => prev.map(c => c.id === criterioId ? { ...c, [field]: value } : c));
+    // Manejadores de Cascada (Endpoints de Teacher)
+    const handleCarreraChange = async (codigo) => {
+        setFormData(prev => ({ ...prev, carrera_codigo: codigo, semestre: '', materia_codigo: '', seccion_id: '', evaluacion_id: '' }));
+        setSemestres([]); setMaterias([]); setSecciones([]); setEvaluaciones([]);
+        
+        if (!codigo) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:3000/api/teacher/rubricas/semestres/${codigo}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setSemestres(data);
+        } catch (error) { console.error(error); }
     };
 
-    const addNivel = (criterioId) => {
-        setCriterios(prev => prev.map(c => {
-            if (c.id === criterioId) {
-                return {
-                    ...c,
-                    niveles: [
-                        ...c.niveles,
-                        { id: Date.now(), nombre_nivel: 'Nuevo Nivel', descripcion: '', puntaje: 1, orden: c.niveles.length + 1 }
-                    ]
-                };
-            }
-            return c;
+    const handleSemestreChange = async (semestre) => {
+        setFormData(prev => ({ ...prev, semestre: semestre, materia_codigo: '', seccion_id: '', evaluacion_id: '' }));
+        setMaterias([]); setSecciones([]); setEvaluaciones([]);
+
+        if (!semestre) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:3000/api/teacher/rubricas/materias/${formData.carrera_codigo}/${semestre}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setMaterias(data);
+        } catch (error) { console.error(error); }
+    };
+
+    const handleMateriaChange = async (materiaCodigo) => {
+        setFormData(prev => ({ ...prev, materia_codigo: materiaCodigo, seccion_id: '', evaluacion_id: '' }));
+        setSecciones([]); setEvaluaciones([]);
+
+        if (!materiaCodigo) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:3000/api/teacher/rubricas/secciones/${materiaCodigo}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setSecciones(data);
+        } catch (error) { console.error(error); }
+    };
+
+    const handleSeccionChange = async (seccionId) => {
+        setFormData(prev => ({ ...prev, seccion_id: seccionId, evaluacion_id: '' }));
+        setEvaluaciones([]);
+
+        if (!seccionId) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:3000/api/teacher/rubricas/evaluaciones/${seccionId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setEvaluaciones(data);
+        } catch (error) { console.error(error); }
+    };
+
+    const handleEvaluacionChange = (evalId) => {
+        const evaluacion = evaluaciones.find(e => e.id == evalId);
+        setFormData(prev => ({
+            ...prev,
+            evaluacion_id: evalId,
+            porcentaje_evaluacion: evaluacion ? evaluacion.ponderacion : 0
         }));
-        redistribuirPuntajes();
     };
 
-    const removeNivel = (criterioId, nivelId) => {
-        setCriterios(prev => prev.map(c => {
-            if (c.id === criterioId) {
-                if (c.niveles.length <= 1) {
-                    Swal.fire('Advertencia', 'Cada criterio debe tener al menos un nivel', 'warning');
-                    return c;
-                }
-                return { ...c, niveles: c.niveles.filter(n => n.id !== nivelId) };
-            }
-            return c;
-        }));
-        redistribuirPuntajes();
-    };
-
-    const updateNivel = (criterioId, nivelId, field, value) => {
-        setCriterios(prev => prev.map(c => {
-            if (c.id === criterioId) {
-                return {
-                    ...c,
-                    niveles: c.niveles.map(n => n.id === nivelId ? { ...n, [field]: value } : n)
-                };
-            }
-            return c;
+    // Manejo de Criterios y Niveles
+    const addCriterio = () => {
+        setFormData(prev => ({
+            ...prev,
+            criterios: [...prev.criterios, {
+                id_local: Date.now(),
+                descripcion: '',
+                puntaje_maximo: '',
+                niveles: [
+                    { id_local: Date.now() + 1, nombre_nivel: 'Excelente', descripcion: '', puntaje: '' },
+                    { id_local: Date.now() + 2, nombre_nivel: 'Regular', descripcion: '', puntaje: '' },
+                    { id_local: Date.now() + 3, nombre_nivel: 'Deficiente', descripcion: '', puntaje: '' }
+                ]
+            }]
         }));
     };
 
-    // --- Submission ---
+    const removeCriterio = (idx) => {
+        const newCriterios = [...formData.criterios];
+        newCriterios.splice(idx, 1);
+        setFormData({ ...formData, criterios: newCriterios });
+    };
+
+    const handleCriterioChange = (idx, field, value) => {
+        const newCriterios = [...formData.criterios];
+        newCriterios[idx][field] = value;
+        setFormData({ ...formData, criterios: newCriterios });
+    };
+
+    const handleNivelChange = (cIdx, nIdx, field, value) => {
+        const newCriterios = [...formData.criterios];
+        newCriterios[cIdx].niveles[nIdx][field] = value;
+        setFormData({ ...formData, criterios: newCriterios });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Basic validation
-        if (parseFloat(formData.porcentaje_evaluacion) < 5) {
-            Swal.fire('Error', 'El porcentaje debe ser al menos 5%', 'error');
-            return;
+        if (!formData.nombre_rubrica || !formData.tipo_rubrica || !formData.evaluacion_id) {
+            return Swal.fire('Atención', 'Complete los campos obligatorios del encabezado', 'warning');
         }
 
-        // Validate criterios
-        let sumaCriterios = 0;
-        let invalid = false;
-        criterios.forEach(c => {
-            if (!c.descripcion) invalid = true;
-            sumaCriterios += parseFloat(c.puntaje_maximo || 0);
-            c.niveles.forEach(n => {
-                if (!n.nombre_nivel || !n.descripcion) invalid = true;
-            });
-        });
-
-        if (invalid) {
-            Swal.fire('Error', 'Debe llenar todas las descripciones y nombres de criterios/niveles', 'error');
-            return;
+        const totalPuntos = formData.criterios.reduce((acc, c) => acc + parseFloat(c.puntaje_maximo || 0), 0);
+        if (Math.abs(totalPuntos - formData.porcentaje_evaluacion) > 0.01) {
+            return Swal.fire('Error de Puntos', `La suma de criterios (${totalPuntos}) debe ser igual al porcentaje de la evaluación (${formData.porcentaje_evaluacion}%)`, 'error');
         }
 
-        if (Math.abs(sumaCriterios - formData.porcentaje_evaluacion) > 0.5) {
-            Swal.fire('Error', `La suma de puntajes (${sumaCriterios.toFixed(2)}) no coincide con el porcentaje (${formData.porcentaje_evaluacion}%)`, 'error');
-            return;
-        }
-
-        const payload = { ...formData, criterios: criterios };
-
-        Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
-            const result = await teacherRubricasService.crearRubrica(payload);
-            if (result.status === 'error' || result.success === false) throw new Error(result.mensaje || result.message);
-            Swal.fire('Éxito', result.mensaje || 'Rúbrica creada', 'success').then(() => {
-                navigate('/teacher/rubricas');
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:3000/api/teacher/rubricas', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
             });
+            const data = await res.json();
+
+            if (data.status === 'ok' || data.success) {
+                Swal.fire('Éxito', 'Rúbrica creada correctamente', 'success');
+                navigate('/teacher/rubricas');
+            } else {
+                Swal.fire('Error', data.mensaje || 'Error al crear la rúbrica', 'error');
+            }
         } catch (error) {
-            Swal.fire('Error', error.message || 'Error al guardar rúbrica', 'error');
+            console.error(error);
+            Swal.fire('Error', 'Error de conexión', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -265,154 +228,117 @@ export default function TeacherCrearRubricas() {
         <main className="main-content">
             <Menu user={user} />
             <div className="content-wrapper" style={{ width: '100%' }}>
-                <Header title="Crear Rúbrica" user={user} onLogout={() => navigate('/login')} />
-
-                <div className="view active" style={{ padding: '20px' }}>
-                    <div className="card form-container" style={{ padding: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                        <div className="card-header" style={{ marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
-                            <h2 style={{ color: '#1e3a8a' }}><i className="fas fa-plus-circle"></i> Crear Nueva Rúbrica</h2>
-                        </div>
-                        
-                        <div className="alert alert-info" style={{ background: '#eff6ff', color: '#1e40af', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
-                            <i className="fas fa-info-circle"></i> Complete todos los campos requeridos. Los puntajes se distribuirán automáticamente según el porcentaje de la evaluación seleccionada.
-                        </div>
-
-                        {loading ? <p>Cargando datos...</p> : (
-                            <form onSubmit={handleSubmit} id="rubricaForm">
-                                <div className="form-group" style={{ marginBottom: '15px' }}>
-                                    <label>Nombre de la Rúbrica *</label>
-                                    <input type="text" name="nombre_rubrica" value={formData.nombre_rubrica} onChange={handleChange} className="form-input" style={inputStyle} required />
+                <Header title="Crear Nueva Rúbrica" user={user} onLogout={() => navigate('/login')} />
+                
+                <div style={{ padding: '30px' }}>
+                    <div className="card" style={{ borderRadius: '15px', background: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', padding: '30px' }}>
+                        <form onSubmit={handleSubmit}>
+                            {/* Encabezado */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Nombre de la Rúbrica *</label>
+                                    <input type="text" value={formData.nombre_rubrica} onChange={(e) => setFormData({...formData, nombre_rubrica: e.target.value})} className="form-input" required placeholder="Ej: Rúbrica de Proyecto Final" />
                                 </div>
-                                
-                                <div className="form-group" style={{ marginBottom: '15px' }}>
-                                    <label>Tipo de Rúbrica *</label>
-                                    <select name="tipo_rubrica" value={formData.tipo_rubrica} onChange={handleChange} className="form-select" style={inputStyle} required>
-                                        <option value="">Seleccionar tipo</option>
+                                <div>
+                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Tipo de Rúbrica *</label>
+                                    <select value={formData.tipo_rubrica} onChange={(e) => setFormData({...formData, tipo_rubrica: e.target.value})} className="form-select" required>
+                                        <option value="">Seleccione tipo</option>
                                         {tiposRubrica.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                                     </select>
                                 </div>
+                            </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-                                    <div className="form-group">
-                                        <label>Carrera *</label>
-                                        <select name="carrera" value={formData.carrera} onChange={handleChange} className="form-select" style={inputStyle} required>
-                                            <option value="">Seleccione carrera</option>
-                                            {carreras.map(c => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Semestre *</label>
-                                        <select name="semestre" value={formData.semestre} onChange={handleChange} className="form-select" style={inputStyle} required disabled={!formData.carrera}>
-                                            <option value="">{formData.carrera ? 'Seleccione semestre' : 'Primero seleccione carrera'}</option>
-                                            {semestres.map(s => <option key={s} value={s}>Semestre {s}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Materia *</label>
-                                        <select name="materia_codigo" value={formData.materia_codigo} onChange={handleChange} className="form-select" style={inputStyle} required disabled={!formData.semestre}>
-                                            <option value="">{formData.semestre ? 'Seleccione materia' : 'Primero seleccione semestre'}</option>
-                                            {materias.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Sección *</label>
-                                        <select name="seccion_id" value={formData.seccion_id} onChange={handleChange} className="form-select" style={inputStyle} required disabled={!formData.materia_codigo}>
-                                            <option value="">{formData.materia_codigo ? 'Seleccione sección' : 'Primero seleccione materia'}</option>
-                                            {secciones.map(s => <option key={s.id} value={s.id}>{s.letra} ({s.codigo_periodo})</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="form-group" style={{ marginBottom: '15px' }}>
-                                    <label>Evaluación que la utilizará *</label>
-                                    <select name="evaluacion_id" value={formData.evaluacion_id} onChange={handleChange} className="form-select" style={inputStyle} required disabled={!formData.seccion_id}>
-                                        <option value="">{formData.seccion_id ? 'Seleccione evaluación' : 'Primero seleccione sección'}</option>
-                                        {evaluaciones.map(e => <option key={e.id} value={e.id}>Evaluación {e.fecha_evaluacion ? e.fecha_evaluacion.split('T')[0] : 'Sin fecha'} - {e.ponderacion}%</option>)}
+                            {/* Selectores en Cascada */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                <div>
+                                    <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Carrera</label>
+                                    <select value={formData.carrera_codigo} onChange={(e) => handleCarreraChange(e.target.value)} className="form-select">
+                                        <option value="">Seleccione carrera</option>
+                                        {carreras.map(c => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
                                     </select>
                                 </div>
+                                <div>
+                                    <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Semestre</label>
+                                    <select value={formData.semestre} onChange={(e) => handleSemestreChange(e.target.value)} className="form-select" disabled={!semestres.length}>
+                                        <option value="">Seleccione semestre</option>
+                                        {semestres.map(s => <option key={s} value={s}>Semestre {s}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Materia</label>
+                                    <select value={formData.materia_codigo} onChange={(e) => handleMateriaChange(e.target.value)} className="form-select" disabled={!materias.length}>
+                                        <option value="">Seleccione materia</option>
+                                        {materias.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Sección</label>
+                                    <select value={formData.seccion_id} onChange={(e) => handleSeccionChange(e.target.value)} className="form-select" disabled={!secciones.length}>
+                                        <option value="">Seleccione sección</option>
+                                        {secciones.map(s => <option key={s.id} value={s.id}>{s.letra}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Evaluación</label>
+                                    <select value={formData.evaluacion_id} onChange={(e) => handleEvaluacionChange(e.target.value)} className="form-select" required disabled={!evaluaciones.length}>
+                                        <option value="">Seleccione evaluación</option>
+                                        {evaluaciones.map(ev => <option key={ev.id} value={ev.id}>{ev.competencias} ({ev.ponderacion}%)</option>)}
+                                    </select>
+                                </div>
+                            </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-                                    <div className="form-group">
-                                        <label>Fecha de Evaluación *</label>
-                                        <input type="date" value={formData.fecha_evaluacion} className="form-input" style={inputStyle} disabled />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Porcentaje de Evaluación (%) *</label>
-                                        <input type="number" value={formData.porcentaje_evaluacion} className="form-input" style={inputStyle} disabled />
-                                    </div>
+                            {/* Instrucciones */}
+                            <div style={{ marginBottom: '30px' }}>
+                                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Instrucciones Generales</label>
+                                <textarea className="form-textarea" rows="3" value={formData.instrucciones} onChange={(e) => setFormData({...formData, instrucciones: e.target.value})} placeholder="Instrucciones para el estudiante..."></textarea>
+                            </div>
+
+                            {/* Criterios */}
+                            <div className="criterios-container">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #1e3a8a', paddingBottom: '10px', marginBottom: '20px' }}>
+                                    <h3 style={{ margin: 0, color: '#1e3a8a' }}>Criterios de Evaluación</h3>
+                                    <button type="button" onClick={addCriterio} className="btns" style={{ background: '#10b981', color: 'white', padding: '8px 15px', borderRadius: '8px', fontSize: '0.9rem' }}>
+                                        <i className="fas fa-plus"></i> Agregar Criterio
+                                    </button>
                                 </div>
 
-                                <div className="form-group" style={{ marginBottom: '15px' }}>
-                                    <label>Competencias Evaluadas</label>
-                                    <textarea value={formData.competencias} className="form-textarea" style={inputStyle} rows="2" disabled />
-                                </div>
-
-                                <div className="form-group" style={{ marginBottom: '25px' }}>
-                                    <label>Instrucciones / Descripción Extra</label>
-                                    <textarea name="instrucciones" value={formData.instrucciones} onChange={handleChange} className="form-textarea" style={inputStyle} rows="3" placeholder="Instrucciones adicionales para la rúbrica..." />
-                                </div>
-
-                                {/* CRITERIOS SECTION */}
-                                <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: '20px', marginBottom: '20px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                        <h3 style={{ color: '#0f172a' }}><i className="fas fa-list-check"></i> Criterios de Evaluación</h3>
-                                        <button type="button" onClick={addCriterio} style={btnStyle('#3b82f6', '#fff')}><i className="fas fa-plus"></i> Agregar Criterio</button>
-                                    </div>
-
-                                    {criterios.map((crit, cIdx) => (
-                                        <div key={crit.id} style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '15px', marginBottom: '20px' }}>
-                                            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                                                <input type="text" value={crit.descripcion} onChange={e => updateCriterio(crit.id, 'descripcion', e.target.value)} placeholder="Descripción del Criterio (Ej: Originalidad)" style={{ ...inputStyle, flex: 1 }} required />
-                                                <div style={{ width: '120px' }}>
-                                                    <small>Puntaje Max.</small>
-                                                    <input type="number" value={crit.puntaje_maximo} onChange={e => updateCriterio(crit.id, 'puntaje_maximo', e.target.value)} style={inputStyle} step="0.01" min="0" required />
-                                                </div>
-                                                <button type="button" onClick={() => removeCriterio(crit.id)} style={{ ...btnStyle('#ef4444', '#fff'), padding: '10px' }} title="Eliminar Criterio"><i className="fas fa-trash"></i></button>
-                                            </div>
-
-                                            <div style={{ marginLeft: '20px', paddingLeft: '20px', borderLeft: '3px solid #e2e8f0' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                                    <h4 style={{ color: '#475569', fontSize: '14px', margin: 0 }}><i className="fas fa-star"></i> Niveles de Desempeño</h4>
-                                                    <button type="button" onClick={() => addNivel(crit.id)} style={btnStyle('#10b981', '#fff', '12px', '5px 10px')}><i className="fas fa-plus"></i> Nivel</button>
-                                                </div>
-
-                                                {crit.niveles.map((nivel, nIdx) => (
-                                                    <div key={nivel.id} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'flex-start' }}>
-                                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                            <div style={{ display: 'flex', gap: '10px' }}>
-                                                                <input type="text" value={nivel.nombre_nivel} onChange={e => updateNivel(crit.id, nivel.id, 'nombre_nivel', e.target.value)} placeholder="Nombre Nivel" style={{ ...inputStyle, flex: 1 }} required />
-                                                                <input type="number" value={nivel.puntaje} onChange={e => updateNivel(crit.id, nivel.id, 'puntaje', e.target.value)} placeholder="Puntos" style={{ ...inputStyle, width: '100px' }} step="0.01" min="0" required />
-                                                            </div>
-                                                            <textarea value={nivel.descripcion} onChange={e => updateNivel(crit.id, nivel.id, 'descripcion', e.target.value)} placeholder="Descripción del nivel..." style={inputStyle} rows="1" required />
-                                                        </div>
-                                                        <button type="button" onClick={() => removeNivel(crit.id, nivel.id)} style={{ ...btnStyle('#ef4444', '#fff'), padding: '8px', opacity: 0.8 }}><i className="fas fa-times"></i></button>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                {formData.criterios.map((c, cIdx) => (
+                                    <div key={c.id_local} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', marginBottom: '20px', position: 'relative' }}>
+                                        <button type="button" onClick={() => removeCriterio(cIdx)} style={{ position: 'absolute', top: '10px', right: '10px', background: '#fee2e2', color: '#ef4444', border: 'none', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Eliminar criterio">
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                        
+                                        <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', paddingRight: '40px' }}>
+                                            <input type="text" placeholder="Descripción del criterio (Ej: Dominio del tema)" value={c.descripcion} onChange={(e) => handleCriterioChange(cIdx, 'descripcion', e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
+                                            <input type="number" placeholder="Pts" value={c.puntaje_maximo} onChange={(e) => handleCriterioChange(cIdx, 'puntaje_maximo', e.target.value)} style={{ width: '80px', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
                                         </div>
-                                    ))}
-                                </div>
 
-                                <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-                                    <button type="button" onClick={() => navigate('/teacher/rubricas')} style={btnStyle('#94a3b8', '#fff')}><i className="fas fa-times"></i> Cancelar</button>
-                                    <button type="submit" style={btnStyle('#2563eb', '#fff')}><i className="fas fa-save"></i> Guardar Rúbrica</button>
-                                </div>
-                            </form>
-                        )}
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                                            {c.niveles.map((n, nIdx) => (
+                                                <div key={n.id_local} style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                                                    <input type="text" value={n.nombre_nivel} onChange={(e) => handleNivelChange(cIdx, nIdx, 'nombre_nivel', e.target.value)} style={{ fontWeight: 'bold', border: 'none', background: 'transparent', width: '100%', marginBottom: '5px', color: '#475569' }} placeholder="Nivel" />
+                                                    <textarea value={n.descripcion} onChange={(e) => handleNivelChange(cIdx, nIdx, 'descripcion', e.target.value)} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '0.85rem', padding: '8px', marginBottom: '5px', resize: 'vertical' }} rows="3" placeholder="Descripción del nivel..." />
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                        <input type="number" value={n.puntaje} onChange={(e) => handleNivelChange(cIdx, nIdx, 'puntaje', e.target.value)} style={{ width: '60px', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px', fontSize: '0.9rem', color: '#1e3a8a', fontWeight: 'bold' }} placeholder="0" />
+                                                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>pts</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px', borderTop: '1px solid #e5e7eb', paddingTop: '25px', marginTop: '30px' }}>
+                                <button type="button" onClick={() => navigate('/teacher/rubricas')} className="btns" style={{ background: '#94a3b8', color: 'white', padding: '12px 30px', borderRadius: '10px' }}>Cancelar</button>
+                                <button type="submit" className="btns" style={{ background: '#1e3a8a', color: 'white', padding: '12px 45px', borderRadius: '10px', fontWeight: 'bold' }} disabled={loading}>
+                                    <i className="fas fa-save" style={{ marginRight: '8px' }}></i> {loading ? 'Guardando...' : 'Guardar Rúbrica'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </main>
     );
 }
-
-const inputStyle = {
-    width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', 
-    fontSize: '14px', boxSizing: 'border-box', outline: 'none'
-};
-
-const btnStyle = (bg, color, fontSize = '14px', padding = '10px 15px') => ({
-    background: bg, color: color, padding: padding, fontSize: fontSize, 
-    border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', 
-    alignItems: 'center', gap: '6px', fontWeight: 'bold'
-});

@@ -14,6 +14,7 @@ import CrearRubricas from './admin/crearRubrica';
 import EvaluacionDocente from './admin/evaluacionDocente';
 import Evaluaciones from './admin/evaluaciones';
 import Rubricas from './admin/rubricas';
+import PermisosDocente from './admin/PermisosDocente';
 
 //Importar archivos de Docentes
 import Teacher from './teacher/teacher';
@@ -28,6 +29,7 @@ import TeacherEditarRubrica from './teacher/editarRubrica';
 import Student from './students/student';
 import StudentCalificaciones from './students/calificaciones';
 import StudentEvaluaciones from './students/evaluaciones';
+import UserProfile from './components/UserProfile';
 
 import { UIProvider } from './context/UIContext';
 
@@ -53,6 +55,7 @@ function App() {
                     <Route path='/admin/evaluacion-docente' element={<EvaluacionDocente />} />
                     <Route path='/admin/evaluaciones' element={<Evaluaciones />} />
                     <Route path='/admin/rubricas' element={<Rubricas />} />
+                    <Route path='/admin/permisos/:cedula' element={<PermisosDocente />} />
 
                     {/* Rutas para Docentes*/}
                     <Route path="/teacher" element={<Teacher />} />
@@ -62,11 +65,13 @@ function App() {
                     <Route path="/teacher/reportes" element={<TeacherReportes />} />
                     <Route path="/teacher/rubricas" element={<TeacherRubrica />} />
                     <Route path="/teacher/rubricas/editar/:id" element={<TeacherEditarRubrica />} />
+                    <Route path="/teacher/config" element={<UserProfile user={JSON.parse(localStorage.getItem('user'))} onLogout={() => window.location.href = '/login'} />} />
 
                     {/* Rutas para Estudiantes*/}
                     <Route path="/student" element={<Student />} />
                     <Route path="/student/calificaciones" element={<StudentCalificaciones />} />
                     <Route path="/student/evaluaciones" element={<StudentEvaluaciones />} />
+                    <Route path="/student/config" element={<UserProfile user={JSON.parse(localStorage.getItem('user'))} onLogout={() => window.location.href = '/login'} />} />
 
                     {/* Ruta por defecto */}
                     <Route path="*" element={<Navigate to="/" replace />} />

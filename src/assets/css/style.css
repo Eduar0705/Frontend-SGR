@@ -842,28 +842,6 @@ html {
   .section-title {
     font-size: 2rem;
   }
-}
-
-/* ========================================
-   RESPONSIVE — 768px (Tablet Portrait)
-======================================== */
-@media (max-width: 768px) {
-  /* Hero */
-  .hero-section {
-    background-attachment: scroll;
-  }
-
-  .hero-title {
-    font-size: 2.5rem;
-  }
-
-  .hero-subtitle {
-    font-size: 1.05rem;
-  }
-
-  .hero-content {
-    max-width: 100%;
-  }
 
   /* Mobile Menu */
   .navbar-toggler {
@@ -924,6 +902,28 @@ html {
 
   .brand-text {
     display: none;
+  }
+}
+
+/* ========================================
+   RESPONSIVE — 768px (Tablet Portrait)
+======================================== */
+@media (max-width: 768px) {
+  /* Hero */
+  .hero-section {
+    background-attachment: scroll;
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.05rem;
+  }
+
+  .hero-content {
+    max-width: 100%;
   }
 
   /* Grids */

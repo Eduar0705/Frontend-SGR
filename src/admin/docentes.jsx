@@ -116,6 +116,10 @@ export default function Docentes() {
         setShowViewModal(true);
     };
 
+    const handlePermisos = (profe) => {
+        navigate(`/admin/permisos/${profe.cedula}`);
+    };
+
     const handleDelete = (cedula) => {
         Swal.fire({
             title: '¿Eliminar docente?',
@@ -227,7 +231,7 @@ export default function Docentes() {
                                                     <button className="btns btn-edit" onClick={() => openEditModal(p)} title="Editar"><i className="fa fa-edit"></i></button>
                                                     <button className="btns btn-delete" onClick={() => handleDelete(p.cedula)} title="Eliminar"><i className="fa fa-trash"></i></button>
                                                     <button className="btns btn-view" onClick={() => openViewModal(p)} title="Ver detalles"><i className="fa fa-eye"></i></button>
-                                                    <button className="btns btn-permi" title="Permisos"><i className="fa fa-book"></i></button>
+                                                    <button className="btns btn-permi" onClick={() => handlePermisos(p)} title="Permisos"><i className="fa fa-book"></i></button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -329,40 +333,51 @@ export default function Docentes() {
                         <button className="btn-cerrar" onClick={() => setShowViewModal(false)}>&times;</button>
                         <h2>Detalles del Docente</h2>
                         <div style={{padding: '32px'}}>
-                            <div className="docente-info" style={{flexDirection: 'column', gap: '10px'}}>
-                                <div style={{background: 'white', width: '70px', height: '70px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', textAlign: 'center', marginBottom: '20px'}}>
-                                    <i className="fa fa-user" style={{fontSize: '35px', color: '#2196F3'}}></i>
+                            
+                            <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px'}}>
+                                <div style={{background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)', marginBottom: '16px', border: '3px solid white'}}>
+                                    <i className="fa fa-user" style={{fontSize: '36px', color: '#3b82f6'}}></i>
                                 </div>
-                                <div className="info-item">
-                                    <strong>Nombre:</strong> 
-                                    <span>{formData.nombre} {formData.apellido}</span>
-                                </div>
-                                <div className="info-item">
-                                    <strong>Cédula:</strong> 
-                                    <span>{formData.cedula}</span>
-                                </div>
-                                <div className="info-item">
-                                    <strong>Email:</strong>
-                                    <span>{formData.email}</span>
-                                </div>
-                                <div className="info-item">
-                                    <strong>Telefono:</strong>
-                                    <span>{formData.telefono}</span>
-                                </div>
-                                <div className="info-item">
-                                    <strong>Especialidad:</strong> 
-                                    <span>{formData.especializacion || formData.especialidad}</span>
-                                </div>
-                                <div className="info-item">
-                                    <strong>Decripcion:</strong> <br/>
-                                    <span>{formData.descripcion}</span>
-                                </div><br />
-                                <div className="info-item">
-                                    <strong>Estado:</strong> 
-                                    <span>{formData.activo == 1 ? 'Activo' : 'Inactivo'}</span>
+                                <h3 style={{margin: '0 0 4px 0', fontSize: '20px', color: '#1e293b'}}>{formData.nombre} {formData.apellido}</h3>
+                                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                    <span style={{fontSize: '14px', color: '#64748b', fontWeight: '500'}}><i className="fa fa-id-card-o" style={{marginRight: '4px'}}></i> {formData.cedula}</span>
+                                    <span className={`status-badge ${formData.activo == 1 ? 'status-active' : 'status-inactive'}`} style={{fontSize: '12px', padding: '2px 8px'}}>{formData.activo == 1 ? 'Activo' : 'Inactivo'}</span>
                                 </div>
                             </div>
-                            <button className="btn btn-primary" onClick={() => setShowViewModal(false)} style={{width:'100%', marginTop:'20px'}}>Cerrar</button>
+
+                            <div className="docente-info-grid" style={{
+                                display: 'grid', 
+                                gridTemplateColumns: '1fr 1fr', 
+                                gap: '16px', 
+                                background: '#f8fafc', 
+                                padding: '24px', 
+                                borderRadius: '12px', 
+                                border: '1px solid #e2e8f0',
+                                marginBottom: '24px'
+                            }}>
+                                <div className="info-detail-item" style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
+                                    <span style={{fontSize: '12px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px'}}>Email</span>
+                                    <span style={{fontSize: '14px', color: '#334155', fontWeight: '500', wordBreak: 'break-all'}}><i className="fa fa-envelope-o" style={{color: '#3b82f6', marginRight: '6px', width: '14px'}}></i>{formData.email || 'N/A'}</span>
+                                </div>
+                                <div className="info-detail-item" style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
+                                    <span style={{fontSize: '12px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px'}}>Teléfono</span>
+                                    <span style={{fontSize: '14px', color: '#334155', fontWeight: '500'}}><i className="fa fa-phone" style={{color: '#3b82f6', marginRight: '6px', width: '14px'}}></i>{formData.telefono || 'N/A'}</span>
+                                </div>
+                                <div className="info-detail-item" style={{display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: '1 / -1'}}>
+                                    <span style={{fontSize: '12px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px'}}>Especialidad</span>
+                                    <span style={{fontSize: '14px', color: '#334155', fontWeight: '500', textTransform: 'capitalize'}}><i className="fa fa-graduation-cap" style={{color: '#3b82f6', marginRight: '6px', width: '14px'}}></i>{formData.especializacion || formData.especialidad || 'N/A'}</span>
+                                </div>
+                                {formData.descripcion && (
+                                    <div className="info-detail-item" style={{display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: '1 / -1'}}>
+                                        <span style={{fontSize: '12px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px'}}>Descripción</span>
+                                        <span style={{fontSize: '14px', color: '#475569', lineHeight: '1.5', background: 'white', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '4px'}}>{formData.descripcion}</span>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div style={{display: 'flex', justifyContent: 'flex-end'}}>
+                                <button className="btn btn-primary" onClick={() => setShowViewModal(false)} style={{padding: '10px 24px'}}>Cerrar Detalles</button>
+                            </div>
                         </div>
                     </div>
                 </div>
