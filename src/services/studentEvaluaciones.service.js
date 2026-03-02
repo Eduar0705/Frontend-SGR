@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/api/student/evaluaciones';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 export const studentEvaluacionesService = {
     async getEvaluaciones() {
@@ -13,7 +13,7 @@ export const studentEvaluacionesService = {
 
     async getDetalleEvaluacion(evaluacionId) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/${evaluacionId}/detalles`, {
+        const response = await fetch(`${API_URL}/student/evaluaciones/${evaluacionId}/detalles`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.json();

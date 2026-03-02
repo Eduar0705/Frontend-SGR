@@ -6,8 +6,6 @@ import Swal from 'sweetalert2';
 import { teacherRubricasService } from '../services/teacherRubricas.service';
 import '../assets/css/home.css';
 
-import { useUI } from '../context/UIContext';
-
 export default function TeacherCrearRubricas() {
     const navigate = useNavigate();
     const { setLoading: setGlobalLoading } = useUI();
@@ -62,11 +60,24 @@ export default function TeacherCrearRubricas() {
 
     const loadInitialData = async () => {
         try {
-            const data = await teacherRubricasService.getFormData();
-            setCarreras(data.carreras || []);
-            setTiposRubrica(data.tipos || []);
-        } finally {
-            setGlobalLoading(false);
+            const token = localStorage.getItem('token');
+            // Cargar tipos de rúbrica
+            const resForm = await fetch('http://localhost:3000/api/teacher/rubricas/form-data', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const dataForm = await resForm.json();
+            if (dataForm.success) setTiposRubrica(dataForm.tiposRubrica || []);
+
+            // Cargar carreras del docente (Cascade inicio)
+            const resCarreras = await fetch('http://localhost:3000/api/teacher/evaluaciones/carreras', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const dataCarreras = await resCarreras.json();
+            if (dataCarreras.success) setCarreras(dataCarreras.carreras);
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'Error al cargar datos iniciales', 'error');
         }
     };
 
@@ -77,8 +88,12 @@ export default function TeacherCrearRubricas() {
         
         if (!codigo) return;
         try {
-            const data = await teacherRubricasService.getSemestres(codigo);
-            setSemestres(data || []);
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:3000/api/teacher/rubricas/semestres/${codigo}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setSemestres(data);
         } catch (error) { console.error(error); }
     };
 
@@ -88,8 +103,12 @@ export default function TeacherCrearRubricas() {
 
         if (!semestre) return;
         try {
-            const data = await teacherRubricasService.getMaterias(formData.carrera_codigo, semestre);
-            setMaterias(data || []);
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:3000/api/teacher/rubricas/materias/${formData.carrera_codigo}/${semestre}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setMaterias(data);
         } catch (error) { console.error(error); }
     };
 
@@ -99,8 +118,12 @@ export default function TeacherCrearRubricas() {
 
         if (!materiaCodigo) return;
         try {
-            const data = await teacherRubricasService.getSecciones(materiaCodigo);
-            setSecciones(data || []);
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:3000/api/teacher/rubricas/secciones/${materiaCodigo}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setSecciones(data);
         } catch (error) { console.error(error); }
     };
 
@@ -110,8 +133,12 @@ export default function TeacherCrearRubricas() {
 
         if (!seccionId) return;
         try {
-            const data = await teacherRubricasService.getEvaluaciones(seccionId);
-            setEvaluaciones(data || []);
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:3000/api/teacher/rubricas/evaluaciones/${seccionId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setEvaluaciones(data);
         } catch (error) { console.error(error); }
     };
 
@@ -256,7 +283,16 @@ export default function TeacherCrearRubricas() {
 
         try {
             setLoading(true);
-            const data = await teacherRubricasService.crearRubrica(formData);
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:3000/api/teacher/rubricas', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+            const data = await res.json();
 
             if (data.status === 'ok' || data.success) {
                 Swal.fire('Éxito', 'Rúbrica creada correctamente', 'success');

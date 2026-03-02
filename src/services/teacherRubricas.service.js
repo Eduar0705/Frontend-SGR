@@ -1,9 +1,9 @@
-const API_URL = 'http://localhost:3000/api/teacher/rubricas';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 export const teacherRubricasService = {
     async getFormData() {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/form-data`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/teacher/rubricas/form-data`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (!res.ok) throw new Error('Error al obtener datos');
         const data = await res.json();
         return data.data;
@@ -11,28 +11,28 @@ export const teacherRubricasService = {
 
     async getSemestres(carrera) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/semestres/${carrera}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/teacher/rubricas/semestres/${carrera}`, { headers: { 'Authorization': `Bearer ${token}` } });
         const data = await res.json();
         return data.data;
     },
 
     async getMaterias(carrera, semestre) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/materias/${carrera}/${semestre}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/teacher/rubricas/materias/${carrera}/${semestre}`, { headers: { 'Authorization': `Bearer ${token}` } });
         const data = await res.json();
         return data.data;
     },
 
     async getSecciones(materia) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/secciones/${materia}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/teacher/rubricas/secciones/${materia}`, { headers: { 'Authorization': `Bearer ${token}` } });
         const data = await res.json();
         return data.data;
     },
 
     async getEvaluaciones(seccionId) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/evaluaciones/${seccionId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/teacher/rubricas/evaluaciones/${seccionId}`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (!res.ok) return [];
         const data = await res.json();
         return data.data || [];
@@ -60,21 +60,21 @@ export const teacherRubricasService = {
 
     async getRubricaDetalle(id) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/detalle/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/teacher/rubricas/detalle/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (!res.ok) throw new Error('Error al obtener detalle de la rúbrica');
         return await res.json();
     },
 
     async getRubricaForEdit(id) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/editar/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/teacher/rubricas/editar/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (!res.ok) throw new Error('Error al obtener rúbrica para editar');
         return await res.json();
     },
 
     async updateRubrica(id, rubricaData) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/${id}`, {
+        const res = await fetch(`${API_URL}/teacher/rubricas/${id}`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -87,7 +87,7 @@ export const teacherRubricasService = {
 
     async deleteRubrica(id) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/${id}`, {
+        const res = await fetch(`${API_URL}/teacher/rubricas/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });

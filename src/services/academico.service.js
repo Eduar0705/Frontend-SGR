@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 export const academicoService = {
     async getCarreras() {
@@ -186,7 +186,7 @@ export const academicoService = {
 
     async saveRubrica(rubricaData) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:3000/envioRubrica`, {
+        const response = await fetch(`${API_URL}/envioRubrica`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
