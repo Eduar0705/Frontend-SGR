@@ -2,16 +2,13 @@ import './assets/css/style.css';
 import { useState, useEffect, useRef } from 'react';
 
 export default function Index() {
-    // ========================================
-    // 1. ESTADOS (Reemplaza variables globales)
-    // ========================================
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const [activeSection, setActiveSection] = useState('inicio');
     const [showScrollTop, setShowScrollTop] = useState(false);
     const [currentYear] = useState(new Date().getFullYear());
 
-    // Referencias para los Intersection Observers (las animaciones al bajar)
+    // Referencias para los Intersection Observers 
     const featuresRef = useRef(null);
     const servicesRef = useRef(null);
 
