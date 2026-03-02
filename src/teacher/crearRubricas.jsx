@@ -4,7 +4,10 @@ import Menu from '../components/menu';
 import Header from '../components/header';
 import Swal from 'sweetalert2';
 import { teacherRubricasService } from '../services/teacherRubricas.service';
+import { useUI } from '../context/UIContext';
 import '../assets/css/home.css';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/api';
 
 export default function TeacherCrearRubricas() {
     const navigate = useNavigate();
@@ -60,16 +63,17 @@ export default function TeacherCrearRubricas() {
 
     const loadInitialData = async () => {
         try {
+            setGlobalLoading(false); // Apagar el overlay del menú
             const token = localStorage.getItem('token');
             // Cargar tipos de rúbrica
-            const resForm = await fetch('http://localhost:3000/api/teacher/rubricas/form-data', {
+            const resForm = await fetch(`${API_URL}/teacher/rubricas/form-data`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const dataForm = await resForm.json();
             if (dataForm.success) setTiposRubrica(dataForm.tiposRubrica || []);
 
             // Cargar carreras del docente (Cascade inicio)
-            const resCarreras = await fetch('http://localhost:3000/api/teacher/evaluaciones/carreras', {
+            const resCarreras = await fetch(`${API_URL}/teacher/evaluaciones/carreras`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const dataCarreras = await resCarreras.json();
@@ -89,7 +93,7 @@ export default function TeacherCrearRubricas() {
         if (!codigo) return;
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:3000/api/teacher/rubricas/semestres/${codigo}`, {
+            const res = await fetch(`${API_URL}/teacher/rubricas/semestres/${codigo}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -104,7 +108,7 @@ export default function TeacherCrearRubricas() {
         if (!semestre) return;
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:3000/api/teacher/rubricas/materias/${formData.carrera_codigo}/${semestre}`, {
+            const res = await fetch(`${API_URL}/teacher/rubricas/materias/${formData.carrera_codigo}/${semestre}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -119,7 +123,7 @@ export default function TeacherCrearRubricas() {
         if (!materiaCodigo) return;
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:3000/api/teacher/rubricas/secciones/${materiaCodigo}`, {
+            const res = await fetch(`${API_URL}/teacher/rubricas/secciones/${materiaCodigo}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -134,7 +138,7 @@ export default function TeacherCrearRubricas() {
         if (!seccionId) return;
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:3000/api/teacher/rubricas/evaluaciones/${seccionId}`, {
+            const res = await fetch(`${API_URL}/teacher/rubricas/evaluaciones/${seccionId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -284,7 +288,7 @@ export default function TeacherCrearRubricas() {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:3000/api/teacher/rubricas', {
+            const res = await fetch(`${API_URL}/teacher/rubricas`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
