@@ -1,254 +1,395 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { evaluacionesService } from '../../services/evaluaciones.service';
 import Swal from 'sweetalert2';
+import { useFechasDisponibles, agruparFechasPorMes } from '../../utils/useFechasDisponibles';
 
 export default function ModalAddEvaluacion({ onClose, onSaved }) {
+    const [submitting, setSubmitting] = useState(false);
+    
+    // Catalogos
     const [carreras, setCarreras] = useState([]);
     const [materias, setMaterias] = useState([]);
     const [secciones, setSecciones] = useState([]);
-    const [rubricas, setRubricas] = useState([]);
-    const [estudiantes, setEstudiantes] = useState([]);
-    
-    const [selectedCarrera, setSelectedCarrera] = useState('');
-    const [selectedMateria, setSelectedMateria] = useState('');
-    const [selectedSeccion, setSelectedSeccion] = useState('');
-    const [selectedRubrica, setSelectedRubrica] = useState('');
-    
-    const [observaciones, setObservaciones] = useState('');
-    const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
+    const [estrategias, setEstrategias] = useState([]);
 
+    // Hook de fechas dinámicas
+    const { fechasSistema, configuracionFechas, loadingFechas, errorFechas, cargarFechas, resetFechas } = useFechasDisponibles();
+
+    const [formData, setFormData] = useState({
+        contenido: '',
+        estrategias_eval: [],
+        porcentaje: 5,
+        cant_personas: 1,
+        carrera_codigo: '',
+        materia_codigo: '',
+        id_seccion: '',
+        tipo_horario: 'Sección',
+        fecha_horario_json: '',
+        fecha_evaluacion: '',
+        id_horario: '',
+        hora_inicio: '',
+        hora_fin: '',
+        competencias: '',
+        instrumentos: ''
+    });
+
+    // Carga de catálogos iniciales (específicos de docente)
     useEffect(() => {
-        cargarDatosBasicos();
+        const loadInitialData = async () => {
+            try {
+                const [resCarreras, resEstrategias] = await Promise.all([
+                    evaluacionesService.getTeacherCarreras(),
+                    evaluacionesService.getEstrategias()
+                ]);
+                
+                if (resCarreras.success) setCarreras(resCarreras.carreras);
+                if (resEstrategias.success) setEstrategias(resEstrategias.estrategias_eval);
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+            }
+        };
+        loadInitialData();
     }, []);
 
-    const cargarDatosBasicos = async () => {
-        try {
-            const [resCarreras, resRubricas] = await Promise.all([
-                evaluacionesService.getTeacherCarreras(),
-                evaluacionesService.getTeacherRubricasActivas()
-            ]);
-            
-            if (resCarreras?.success) {
-                setCarreras(resCarreras.carreras || []);
-                if (resCarreras.carreras.length === 0) {
-                    console.log('No Careers for this teacher');
-                }
-            } else {
-                Swal.fire('Error', resCarreras?.message || 'No se pudieron cargar las carreras', 'error');
-            }
-
-            if (resRubricas?.success) {
-                setRubricas(resRubricas.rubricas || []);
-            } else {
-                Swal.fire('Error', resRubricas?.message || 'No se pudieron cargar las rúbricas', 'error');
-            }
-        } catch (error) {
-            console.error('Error fetching basic data:', error);
-            Swal.fire('Error', 'Error de conexión al cargar datos básicos', 'error');
-        }
-    };
-
-    const handleCarreraChange = async (e) => {
-        const cod = e.target.value;
-        setSelectedCarrera(cod);
-        setSelectedMateria('');
-        setSelectedSeccion('');
-        setEstudiantes([]);
+    // ── Carga jerárquica ───────────────────────────────────────────────────────
+    const handleCarreraChange = async (codigo) => {
+        setFormData(prev => ({ ...prev, carrera_codigo: codigo, materia_codigo: '', id_seccion: '', id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
+        resetFechas();
         setMaterias([]);
         setSecciones([]);
-
-        if (cod) {
-            try {
-                const res = await evaluacionesService.getTeacherMateriasByCarrera(cod);
-                setMaterias(res?.success ? res.materias : []);
-            } catch (error) {
-                console.error('Error fetching materias:', error);
-            }
+        if (codigo) {
+            const res = await evaluacionesService.getTeacherMateriasByCarrera(codigo);
+            if (res.success) setMaterias(res.materias);
         }
     };
 
-    const handleMateriaChange = async (e) => {
-        const cod = e.target.value;
-        setSelectedMateria(cod);
-        setSelectedSeccion('');
-        setEstudiantes([]);
+    const handleMateriaChange = async (codigo) => {
+        setFormData(prev => ({ ...prev, materia_codigo: codigo, id_seccion: '', id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
+        resetFechas();
         setSecciones([]);
-
-        if (cod) {
-            try {
-                const res = await evaluacionesService.getTeacherSecciones(cod);
-                setSecciones(res?.success ? res.secciones : []);
-            } catch (error) {
-                console.error('Error fetching secciones:', error);
-            }
+        if (codigo) {
+            const res = await evaluacionesService.getTeacherSecciones(codigo);
+            if (res.success) setSecciones(res.secciones);
         }
     };
 
-    const handleSeccionChange = async (e) => {
-        const seccionId = e.target.value;
-        setSelectedSeccion(seccionId);
-        setEstudiantes([]);
-
-        if (seccionId) {
-            setLoadingEstudiantes(true);
-            try {
-                const res = await evaluacionesService.getTeacherEstudiantes(seccionId);
-                setEstudiantes(res?.success ? res.estudiantes : []);
-            } catch (error) {
-                console.error('Error fetching estudiantes:', error);
-                Swal.fire('Error', 'No se pudieron cargar los estudiantes', 'error');
-            } finally {
-                setLoadingEstudiantes(false);
-            }
+    const handleSeccionChange = async (id) => {
+        setFormData(prev => ({ ...prev, id_seccion: id, id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
+        if (id) {
+            // En el modo creación (éste), pasamos un array vacío de evaluaciones existentes 
+            // para que no bloquee ninguna fecha por sí misma inicialmente.
+            await cargarFechas(id, []);
+        } else {
+            resetFechas();
         }
     };
 
-    const handleGuardar = async () => {
-        if (!selectedRubrica) {
-            Swal.fire('Atención', 'Debe seleccionar una rúbrica', 'warning');
+    const handleFechaHorarioChange = (jsonString) => {
+        if (!jsonString) {
+            setFormData(prev => ({ ...prev, fecha_horario_json: '', id_horario: '', fecha_evaluacion: '', hora_inicio: '', hora_fin: '' }));
+            return;
+        }
+        const selected = JSON.parse(jsonString);
+        setFormData(prev => ({
+            ...prev,
+            fecha_horario_json: jsonString,
+            id_horario: selected.horarioId,
+            fecha_evaluacion: selected.fecha,
+            hora_inicio: selected.horaInicio,
+            hora_fin: selected.horaCierre,
+        }));
+    };
+
+    const handleTipoHorarioChange = (tipo) => {
+        setFormData(prev => ({
+            ...prev,
+            tipo_horario: tipo,
+            fecha_horario_json: '',
+            id_horario: '',
+            fecha_evaluacion: '',
+            hora_inicio: '',
+            hora_fin: '',
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        // Validaciones preventivas
+        if (formData.estrategias_eval.length === 0) {
+            Swal.fire('Atención', 'Debe seleccionar al menos una estrategia de evaluación.', 'warning');
             return;
         }
 
-        if (estudiantes.length === 0) {
-            Swal.fire('Atención', 'No hay estudiantes seleccionados', 'warning');
+        if (formData.tipo_horario === 'Sección' && !formData.id_horario) {
+            Swal.fire('Atención', 'Debe seleccionar una fecha y horario de la lista.', 'warning');
             return;
         }
 
+        setSubmitting(true);
         try {
-            Swal.fire({ title: 'Creando...', didOpen: () => Swal.showLoading() });
-            
-            const estudiantesIds = estudiantes.map(e => e.cedula);
-            const resp = await evaluacionesService.createEvaluaciones(selectedRubrica, estudiantesIds, observaciones);
-
-            if (resp.success) {
-                Swal.fire('Éxito', resp.message || 'Evaluaciones creadas con éxito', 'success').then(() => onSaved());
+            const res = await evaluacionesService.saveEvaluacion(formData);
+            if (res.success) {
+                Swal.fire('Éxito', res.message || 'Evaluación creada correctamente', 'success').then(() => onSaved());
             } else {
-                Swal.fire('Error', resp.message || 'Error al crear', 'error');
+                Swal.fire('Error', res.message || 'No se pudo crear la evaluación', 'error');
             }
         } catch (error) {
-            console.error('Error:', error);
-            Swal.fire('Error', 'Error al crear evaluaciones', 'error');
+            console.error('Error in handleSubmit:', error);
+            Swal.fire('Error', 'Error al procesar la solicitud', 'error');
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    const rubricaInfo = selectedRubrica ? rubricas.find(r => r.id.toString() === selectedRubrica) : null;
-
     return (
-        <div className="modal active">
-            <div className="modal-content" style={{ maxWidth: '800px', width: '90%', background: 'white', borderRadius: '12px', padding: '30px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', borderBottom: '1px solid #e2e8f0', paddingBottom: '15px' }}>
-                    <h2 style={{ margin: 0, color: '#1e293b' }}><i className="fas fa-plus-circle" style={{ color: '#10b981' }}></i> Nueva Evaluación</h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2em', cursor: 'pointer', color: '#64748b' }}><i className="fas fa-times"></i></button>
+        <div className="modal-premium-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="modal-premium-content" style={{ maxWidth: '900px', width: '95%', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div className="modal-premium-header">
+                    <h2><i className="fas fa-plus-circle"></i> Nueva Evaluación</h2>
+                    <button className="close-btn" onClick={onClose}>&times;</button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '25px' }}>
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Carrera</label>
-                        <select 
-                            value={selectedCarrera} 
-                            onChange={handleCarreraChange}
-                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                        >
-                            <option value="">Seleccione una carrera</option>
-                            {carreras.map(c => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
-                        </select>
+                <form onSubmit={handleSubmit} className="modal-premium-form">
+                    
+                    {/* ── Sección: Materia ──────────────────────── */}
+                    <div className="form-section-premium">
+                        <h4><i className="fas fa-book"></i> Datos de la Materia</h4>
+                        <div className="form-grid-premium">
+                            <div className="form-field">
+                                <label>Carrera</label>
+                                <select
+                                    value={formData.carrera_codigo}
+                                    onChange={(e) => handleCarreraChange(e.target.value)}
+                                    required
+                                >
+                                    <option value="">Seleccione carrera...</option>
+                                    {carreras.map(c => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
+                                </select>
+                            </div>
+                            <div className="form-field">
+                                <label>Materia</label>
+                                <select
+                                    value={formData.materia_codigo}
+                                    onChange={(e) => handleMateriaChange(e.target.value)}
+                                    disabled={!formData.carrera_codigo}
+                                    required
+                                >
+                                    <option value="">Seleccione materia...</option>
+                                    {materias.map(m => (
+                                        <option key={m.codigo} value={m.codigo}>
+                                            {m.nombre} (Semestre {m.semestre})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-field">
+                                <label>Sección</label>
+                                <select
+                                    value={formData.id_seccion}
+                                    onChange={(e) => handleSeccionChange(e.target.value)}
+                                    disabled={!formData.materia_codigo}
+                                    required
+                                >
+                                    <option value="">Seleccione sección...</option>
+                                    {secciones.map(s => (
+                                        <option key={s.id} value={s.id}>Sección {s.codigo}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Rúbrica</label>
-                        <select 
-                            value={selectedRubrica} 
-                            onChange={e => setSelectedRubrica(e.target.value)}
-                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                        >
-                            <option value="">Seleccione una rúbrica</option>
-                            {rubricas.map(r => <option key={r.id} value={r.id}>{r.nombre_rubrica}</option>)}
-                        </select>
+                    {/* ── Sección: Detalles ─────────────────────── */}
+                    <div className="form-section-premium">
+                        <h4><i className="fas fa-tasks"></i> Detalles de la Evaluación</h4>
+                        <div className="form-field full-width">
+                            <label>Contenido / Título</label>
+                            <input
+                                type="text"
+                                value={formData.contenido}
+                                onChange={(e) => setFormData({ ...formData, contenido: e.target.value })}
+                                required
+                                placeholder="Ej: Primer Parcial de Programación"
+                            />
+                        </div>
+                        <div className="form-grid-premium">
+                            <div className="form-field">
+                                <label>Ponderación (%)</label>
+                                <input
+                                    type="number" min="1" max="100"
+                                    value={formData.porcentaje}
+                                    onChange={(e) => setFormData({ ...formData, porcentaje: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label>Modalidad</label>
+                                <select
+                                    value={formData.cant_personas}
+                                    onChange={(e) => setFormData({ ...formData, cant_personas: e.target.value })}
+                                >
+                                    <option value="1">Individual</option>
+                                    <option value="2">Parejas</option>
+                                    <option value="3">Grupal (3+)</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Materia</label>
-                        <select 
-                            value={selectedMateria} 
-                            onChange={handleMateriaChange}
-                            disabled={!selectedCarrera || materias.length === 0}
-                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', background: (!selectedCarrera || materias.length === 0) ? '#f1f5f9' : 'white' }}
-                        >
-                            <option value="">Seleccione una materia</option>
-                            {materias.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre}</option>)}
-                        </select>
-                    </div>
+                    {/* ── Sección: Horario ──────────────────────── */}
+                    <div className="form-section-premium">
+                        <h4><i className="fas fa-clock"></i> Horario</h4>
+                        <div className="form-grid-premium">
+                            <div className="form-field">
+                                <label>Tipo de Horario</label>
+                                <select
+                                    value={formData.tipo_horario}
+                                    onChange={(e) => handleTipoHorarioChange(e.target.value)}
+                                    disabled={!formData.id_seccion}
+                                >
+                                    <option value="Sección">Dentro de Horario de Sección</option>
+                                    <option value="Otro">Fuera de Horario</option>
+                                </select>
+                            </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Sección</label>
-                        <select 
-                            value={selectedSeccion} 
-                            onChange={handleSeccionChange}
-                            disabled={!selectedMateria || secciones.length === 0}
-                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', background: (!selectedMateria || secciones.length === 0) ? '#f1f5f9' : 'white' }}
-                        >
-                            <option value="">Seleccione una sección</option>
-                            {secciones.map(s => <option key={s.id} value={s.id}>Sección {s.codigo}</option>)}
-                        </select>
-                    </div>
-                </div>
-
-                {rubricaInfo && (
-                    <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', marginBottom: '25px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', color: '#475569', fontSize: '0.9em' }}>
-                        <div><strong>Materia: </strong> {rubricaInfo.materia_nombre || 'N/A'}</div>
-                        <div><strong>Tipo: </strong> {rubricaInfo.tipo_evaluacion || 'N/A'}</div>
-                        <div><strong>Porcentaje: </strong> {rubricaInfo.porcentaje_evaluacion || 0}%</div>
-                    </div>
-                )}
-
-                <div style={{ marginBottom: '25px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '15px', minHeight: '150px', maxHeight: '250px', overflowY: 'auto' }}>
-                    <h4 style={{ margin: '0 0 15px 0', color: '#334155' }}>Estudiantes a evaluar</h4>
-                    {loadingEstudiantes ? (
-                        <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}><i className="fas fa-spinner fa-spin"></i> Cargando estudiantes...</div>
-                    ) : estudiantes.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {estudiantes.map(est => (
-                                <div key={est.cedula} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '10px', borderRadius: '6px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <div style={{ background: '#3b82f6', color: 'white', width: '30px', height: '30px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8em', fontWeight: 'bold' }}>
-                                            {est.nombre.charAt(0)}{est.apellido.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <div style={{ fontWeight: '500', color: '#1e293b', fontSize: '0.9em' }}>{est.nombre} {est.apellido}</div>
-                                            <div style={{ fontSize: '0.8em', color: '#64748b' }}>CI: {est.cedula}</div>
-                                        </div>
-                                    </div>
-                                    <i className="fas fa-check-circle" style={{ color: '#10b981' }}></i>
+                            {formData.tipo_horario === 'Sección' ? (
+                                <div className="form-field">
+                                    <label>
+                                        Fecha y Horario Disponible
+                                        {loadingFechas && <span style={{ marginLeft: 8, fontSize: '0.8em', color: '#888' }}>Cargando...</span>}
+                                    </label>
+                                    {errorFechas ? (
+                                        <p style={{ color: 'red', fontSize: '0.85em' }}>{errorFechas}</p>
+                                    ) : (
+                                        <select
+                                            value={formData.fecha_horario_json}
+                                            onChange={(e) => handleFechaHorarioChange(e.target.value)}
+                                            disabled={!formData.id_seccion || loadingFechas}
+                                            required
+                                        >
+                                            <option value="">
+                                                {loadingFechas ? 'Cargando fechas...' : '-- Seleccione una fecha --'}
+                                            </option>
+                                            {!loadingFechas && fechasSistema.length === 0 && (
+                                                <option disabled>No hay fechas disponibles</option>
+                                            )}
+                                            {!loadingFechas && Object.entries(agruparFechasPorMes(fechasSistema)).map(([mes, fechas]) => (
+                                                <optgroup key={mes} label={mes}>
+                                                    {fechas.map(f => {
+                                                        const optionData = JSON.stringify({
+                                                            fecha: f.fechaStr,
+                                                            horarioId: f.horarioId,
+                                                            diaNumero: f.diaNumero,
+                                                            horaInicio: f.horaInicio,
+                                                            horaCierre: f.horaCierre,
+                                                        });
+                                                        return (
+                                                            <option key={`${f.fechaStr}_${f.horarioId}`} value={optionData}>
+                                                                {f.fechaLocal} ({f.diaSemana}) — {f.horaInicio?.substring(0, 5)} a {f.horaCierre?.substring(0, 5)} — Aula: {f.aula}
+                                                            </option>
+                                                        );
+                                                    })}
+                                                </optgroup>
+                                            ))}
+                                        </select>
+                                    )}
+                                    {configuracionFechas && (
+                                        <small style={{ color: '#888', marginTop: 4, display: 'block' }}>
+                                            <i className="fas fa-info-circle"></i> Período: {configuracionFechas.periodo}
+                                        </small>
+                                    )}
                                 </div>
-                            ))}
+                            ) : (
+                                <>
+                                    <div className="form-field">
+                                        <label>Fecha</label>
+                                        <input
+                                            type="date"
+                                            value={formData.fecha_evaluacion}
+                                            min={configuracionFechas?.fechaInicio?.slice(0, 10)}
+                                            max={configuracionFechas?.fechaFin?.slice(0, 10)}
+                                            onChange={(e) => setFormData({ ...formData, fecha_evaluacion: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-field">
+                                        <label>Hora Inicio</label>
+                                        <input
+                                            type="time"
+                                            value={formData.hora_inicio}
+                                            onChange={(e) => setFormData({ ...formData, hora_inicio: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-field">
+                                        <label>Hora Fin</label>
+                                        <input
+                                            type="time"
+                                            value={formData.hora_fin}
+                                            onChange={(e) => setFormData({ ...formData, hora_fin: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </div>
-                    ) : (
-                        <div style={{ textAlign: 'center', color: '#64748b', padding: '20px', fontStyle: 'italic' }}>
-                            {selectedSeccion ? 'No hay estudiantes en esta sección' : 'Seleccione carrera, materia y sección para cargar estudiantes'}
+                    </div>
+
+                    {/* ── Sección: Estrategias ──────────────────── */}
+                    <div className="form-section-premium">
+                        <h4><i className="fas fa-list-ul"></i> Estrategias, Competencias e Instrumentos</h4>
+                        <div className="form-field full-width">
+                            <label>Estrategias (Múltiple)</label>
+                            <div className="chips-container-premium">
+                                {estrategias.map(est => (
+                                    <label key={est.id} className={`chip-premium ${formData.estrategias_eval.includes(est.id) ? 'selected' : ''}`}>
+                                        <input
+                                            type="checkbox"
+                                            value={est.id}
+                                            checked={formData.estrategias_eval.includes(est.id)}
+                                            onChange={(e) => {
+                                                const id = parseInt(e.target.value);
+                                                const newEst = e.target.checked
+                                                    ? [...formData.estrategias_eval, id]
+                                                    : formData.estrategias_eval.filter(x => x !== id);
+                                                setFormData({ ...formData, estrategias_eval: newEst });
+                                            }}
+                                        />
+                                        {est.nombre}
+                                    </label>
+                                ))}
+                            </div>
                         </div>
-                    )}
-                </div>
+                        <div className="form-grid-premium">
+                            <div className="form-field">
+                                <label>Competencias</label>
+                                <textarea
+                                    rows="3"
+                                    value={formData.competencias}
+                                    onChange={(e) => setFormData({ ...formData, competencias: e.target.value })}
+                                    placeholder="Describa las competencias..."
+                                />
+                            </div>
+                            <div className="form-field">
+                                <label>Instrumentos</label>
+                                <textarea
+                                    rows="3"
+                                    value={formData.instrumentos}
+                                    onChange={(e) => setFormData({ ...formData, instrumentos: e.target.value })}
+                                    placeholder="Describa los instrumentos..."
+                                />
+                            </div>
+                        </div>
+                    </div>
 
-                <div style={{ marginBottom: '25px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Observaciones Iniciales (opcional)</label>
-                    <textarea 
-                        value={observaciones}
-                        onChange={e => setObservaciones(e.target.value)}
-                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', resize: 'vertical' }}
-                        rows="2"
-                    />
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
-                    <button onClick={onClose} style={{ padding: '10px 20px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Cancelar</button>
-                    <button 
-                        onClick={handleGuardar} 
-                        disabled={!selectedRubrica || estudiantes.length === 0}
-                        style={{ padding: '10px 20px', background: (!selectedRubrica || estudiantes.length === 0) ? '#94a3b8' : '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: (!selectedRubrica || estudiantes.length === 0) ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}
-                    >
-                        <i className="fas fa-save" style={{ marginRight: '8px' }}></i> Crear Evaluaciones
-                    </button>
-                </div>
+                    <div className="modal-premium-footer">
+                        <button type="button" className="btn-cancel" onClick={onClose}>Cancelar</button>
+                        <button type="submit" className="btn-save" disabled={submitting}>
+                            {submitting ? 'Guardando...' : 'Crear Evaluación'}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );

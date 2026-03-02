@@ -64,20 +64,11 @@ export default function TeacherCrearRubricas() {
     const loadInitialData = async () => {
         try {
             setGlobalLoading(false); // Apagar el overlay del menú
-            const token = localStorage.getItem('token');
-            // Cargar tipos de rúbrica
-            const resForm = await fetch(`${API_URL}/teacher/rubricas/form-data`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const dataForm = await resForm.json();
-            if (dataForm.success) setTiposRubrica(dataForm.tiposRubrica || []);
-
-            // Cargar carreras del docente (Cascade inicio)
-            const resCarreras = await fetch(`${API_URL}/teacher/evaluaciones/carreras`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const dataCarreras = await resCarreras.json();
-            if (dataCarreras.success) setCarreras(dataCarreras.carreras);
+            
+            // Cargar tipos de rúbrica y otros datos del formulario usando el servicio
+            const dataForm = await teacherRubricasService.getFormData();
+            setTiposRubrica(dataForm.tipos || []);
+            setCarreras(dataForm.carreras || []);
 
         } catch (error) {
             console.error(error);
@@ -92,12 +83,8 @@ export default function TeacherCrearRubricas() {
         
         if (!codigo) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/teacher/rubricas/semestres/${codigo}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            setSemestres(data);
+            const data = await teacherRubricasService.getSemestres(codigo);
+            setSemestres(data || []);
         } catch (error) { console.error(error); }
     };
 
@@ -107,12 +94,8 @@ export default function TeacherCrearRubricas() {
 
         if (!semestre) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/teacher/rubricas/materias/${formData.carrera_codigo}/${semestre}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            setMaterias(data);
+            const data = await teacherRubricasService.getMaterias(formData.carrera_codigo, semestre);
+            setMaterias(data || []);
         } catch (error) { console.error(error); }
     };
 
@@ -122,12 +105,8 @@ export default function TeacherCrearRubricas() {
 
         if (!materiaCodigo) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/teacher/rubricas/secciones/${materiaCodigo}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            setSecciones(data);
+            const data = await teacherRubricasService.getSecciones(materiaCodigo);
+            setSecciones(data || []);
         } catch (error) { console.error(error); }
     };
 
@@ -137,12 +116,8 @@ export default function TeacherCrearRubricas() {
 
         if (!seccionId) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/teacher/rubricas/evaluaciones/${seccionId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            setEvaluaciones(data);
+            const data = await teacherRubricasService.getEvaluaciones(seccionId);
+            setEvaluaciones(data || []);
         } catch (error) { console.error(error); }
     };
 
@@ -287,16 +262,7 @@ export default function TeacherCrearRubricas() {
 
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/teacher/rubricas`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            });
-            const data = await res.json();
+            const data = await teacherRubricasService.crearRubrica(formData);
 
             if (data.status === 'ok' || data.success) {
                 Swal.fire('Éxito', 'Rúbrica creada correctamente', 'success');
