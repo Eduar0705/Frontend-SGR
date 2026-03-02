@@ -6,6 +6,7 @@ import { evaluacionesService } from '../services/evaluaciones.service';
 import Swal from 'sweetalert2';
 import '../assets/css/home.css';
 import '../assets/css/evaluacion.css';
+import { useUI } from '../context/UIContext';
 
 export default function Evaluaciones() {
     const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function Evaluaciones() {
     const [modalMode, setModalMode] = useState('create');
     const [currentEvalId, setCurrentEvalId] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const { setLoading: setGlobalLoading } = useUI();
 
     // Catalogos Modal
     const [carreras, setCarreras] = useState([]);
@@ -64,8 +66,9 @@ export default function Evaluaciones() {
             Swal.fire('Error', 'No se pudieron cargar las evaluaciones', 'error');
         } finally {
             setLoading(false);
+            setGlobalLoading(false);
         }
-    }, []);
+    }, [setGlobalLoading]);
 
     useEffect(() => {
         if (!user) navigate('/login');
@@ -136,6 +139,7 @@ export default function Evaluaciones() {
 
     const handleOpenEdit = async (ev) => {
         try {
+            setGlobalLoading(true);
             const res = await evaluacionesService.getEvaluacionById(ev.evaluacion_id);
             if (res.success) {
                 const data = res.evaluacion;
@@ -159,6 +163,8 @@ export default function Evaluaciones() {
         } catch (error) {
             console.error(error);
             Swal.fire('Error', 'No se pudo cargar el detalle', 'error');
+        } finally {
+            setGlobalLoading(false);
         }
     };
 

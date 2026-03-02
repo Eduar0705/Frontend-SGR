@@ -4,9 +4,11 @@ import Menu from '../components/menu';
 import Header from '../components/header';
 import dashboardService from '../services/dashboard.service';
 import '../assets/css/home.css';
+import { useUI } from '../context/UIContext';
 
 export default function Home() {
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -23,8 +25,9 @@ export default function Home() {
             console.error('Error al cargar métricas:', error);
         } finally {
             setLoading(false);
+            setGlobalLoading(false);
         }
-    }, []);
+    }, [setGlobalLoading]);
 
     useEffect(() => {
         const token = localStorage.getItem('token');

@@ -7,8 +7,11 @@ import Swal from 'sweetalert2';
 import '../assets/css/home.css';
 import '../assets/css/crearRubrica.css';
 
+import { useUI } from '../context/UIContext';
+
 export default function CrearRubricas() {
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
@@ -54,8 +57,9 @@ export default function CrearRubricas() {
             Swal.fire('Error', 'No se pudieron cargar los datos iniciales', 'error');
         } finally {
             setLoading(false);
+            setGlobalLoading(false);
         }
-    }, []);
+    }, [setGlobalLoading]);
 
     useEffect(() => {
         if (!user) {
@@ -67,25 +71,32 @@ export default function CrearRubricas() {
         }
     }, [user, navigate, loadInitialData]);
 
-    const distribuirPuntajes = () => {
-        if (criterios.length === 0) return;
+    const redistribuirPuntajes = (porcentaje, listaCriterios) => {
+        if (!listaCriterios.length) return [];
+        
+        const numCriterios = listaCriterios.length;
+        const puntajeBase = Math.floor((porcentaje / numCriterios) * 1000) / 1000;
+        const resto = parseFloat((porcentaje - (puntajeBase * numCriterios)).toFixed(3));
 
-        const porcentajeTotal = parseFloat(formData.porcentaje_evaluacion) || 0;
-        const puntajePorCriterio = Math.max(1, Math.floor((porcentajeTotal / criterios.length) * 100) / 100);
-
-        setCriterios(prevCriterios => prevCriterios.map(criterio => {
-            const nuevosNiveles = criterio.niveles.map((nivel, idx) => {
-                const factor = (criterio.niveles.length - idx) / criterio.niveles.length;
-                let puntaje = puntajePorCriterio * factor;
-                puntaje = Math.max(0.25, Math.round(puntaje * 100) / 100);
-                return { ...nivel, puntaje: puntaje.toFixed(2) };
-            });
+        return listaCriterios.map((c, idx) => {
+            const nuevoMax = idx === numCriterios - 1 ? parseFloat((puntajeBase + resto).toFixed(3)) : puntajeBase;
+            
             return {
-                ...criterio,
-                puntaje_maximo: puntajePorCriterio.toFixed(2),
-                niveles: nuevosNiveles
+                ...c,
+                puntaje_maximo: nuevoMax.toFixed(3),
+                niveles: c.niveles.map((n) => {
+                    let nuevoPuntaje = n.puntaje;
+                    if (n.nombre === 'Sobresaliente' || n.nombre === 'Excelente') nuevoPuntaje = nuevoMax;
+                    else if (n.nombre === 'Notable') nuevoPuntaje = parseFloat((nuevoMax * 0.8).toFixed(3));
+                    else if (n.nombre === 'Aprobado' || n.nombre === 'Regular') nuevoPuntaje = parseFloat((nuevoMax * 0.6).toFixed(3));
+                    else if (n.nombre === 'Insuficiente' || n.nombre === 'Deficiente') nuevoPuntaje = 0;
+                    
+                    if (n.nombre !== 'Insuficiente' && n.nombre !== 'Deficiente' && nuevoPuntaje < 0.025) nuevoPuntaje = 0.025;
+                    
+                    return { ...n, puntaje: parseFloat(nuevoPuntaje).toFixed(3) };
+                })
             };
-        }));
+        });
     };
 
     const handleCarreraChange = async (e) => {
@@ -149,12 +160,17 @@ export default function CrearRubricas() {
         const evaluacion = evaluaciones.find(ev => ev.evaluacion_id === parseInt(id));
         
         if (evaluacion) {
+            const nuevoPorcentaje = evaluacion.valor || 10;
+            const nuevosCriterios = redistribuirPuntajes(nuevoPorcentaje, criterios);
             setFormData(prev => ({
                 ...prev,
                 evaluacion_id: id,
-                fecha_evaluacion: evaluacion.fecha_evaluacion ? new Date(evaluacion.fecha_evaluacion).toISOString().split('T')[0] : '',
-                porcentaje_evaluacion: evaluacion.valor || 10
+                fecha_evaluacion: (evaluacion.fecha_evaluacion && !isNaN(new Date(evaluacion.fecha_evaluacion).getTime())) 
+                    ? new Date(evaluacion.fecha_evaluacion).toISOString().split('T')[0] 
+                    : '',
+                porcentaje_evaluacion: nuevoPorcentaje
             }));
+            setCriterios(nuevosCriterios);
         } else {
             setFormData(prev => ({ ...prev, evaluacion_id: '', fecha_evaluacion: '', porcentaje_evaluacion: 10 }));
         }
@@ -167,30 +183,29 @@ export default function CrearRubricas() {
 
     const agregarCriterio = () => {
         const id = Date.now();
-        const porcentaje = parseFloat(formData.porcentaje_evaluacion) || 10;
-        const numActual = criterios.length + 1;
-        const puntajeSugerido = Math.max(1, (porcentaje / numActual)).toFixed(2);
-
         const nuevoCriterio = {
             id,
             descripcion: '',
-            puntaje_maximo: puntajeSugerido,
-            orden: numActual,
+            puntaje_maximo: 0,
+            orden: criterios.length + 1,
             niveles: [
-                { id: id + 1, nombre: 'Sobresaliente', puntaje: puntajeSugerido, descripcion: '', orden: 1 },
-                { id: id + 2, nombre: 'Notable', puntaje: (puntajeSugerido * 0.8).toFixed(2), descripcion: '', orden: 2 },
-                { id: id + 3, nombre: 'Aprobado', puntaje: (puntajeSugerido * 0.6).toFixed(2), descripcion: '', orden: 3 },
-                { id: id + 4, nombre: 'Insuficiente', puntaje: Math.max(0.25, puntajeSugerido * 0.4).toFixed(2), descripcion: '', orden: 4 }
+                { id: id + 1, nombre: 'Sobresaliente', puntaje: 0, descripcion: '', orden: 1 },
+                { id: id + 2, nombre: 'Notable', puntaje: 0, descripcion: '', orden: 2 },
+                { id: id + 3, nombre: 'Aprobado', puntaje: 0, descripcion: '', orden: 3 },
+                { id: id + 4, nombre: 'Insuficiente', puntaje: 0, descripcion: '', orden: 4 }
             ]
         };
-        setCriterios([...criterios, nuevoCriterio]);
+        const nuevosCriterios = redistribuirPuntajes(parseFloat(formData.porcentaje_evaluacion) || 10, [...criterios, nuevoCriterio]);
+        setCriterios(nuevosCriterios);
     };
 
     const eliminarCriterio = (id) => {
         if (criterios.length <= 1) {
             return Swal.fire('Atención', 'Debe mantener al menos un criterio', 'warning');
         }
-        setCriterios(criterios.filter(c => c.id !== id));
+        const tempCriterios = criterios.filter(c => c.id !== id);
+        const nuevosCriterios = redistribuirPuntajes(parseFloat(formData.porcentaje_evaluacion) || 10, tempCriterios);
+        setCriterios(nuevosCriterios);
     };
 
     const handleCriterioChange = (cId, field, value) => {
@@ -374,7 +389,7 @@ export default function CrearRubricas() {
                                         
                                         <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', paddingRight: '40px' }}>
                                             <input type="text" placeholder="Descripción del criterio (Ej: Dominio del tema)" value={c.descripcion} onChange={(e) => handleCriterioChange(c.id, 'descripcion', e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
-                                            <input type="number" placeholder="Pts" value={c.puntaje_maximo} onChange={(e) => handleCriterioChange(c.id, 'puntaje_maximo', e.target.value)} style={{ width: '80px', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
+                                            <input type="number" step="0.001" placeholder="Pts" value={c.puntaje_maximo} onChange={(e) => handleCriterioChange(c.id, 'puntaje_maximo', e.target.value)} style={{ width: '80px', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required disabled />
                                         </div>
 
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>

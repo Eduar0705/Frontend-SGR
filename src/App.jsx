@@ -4,6 +4,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Index from './index';
 import Login from './auth/login';
 import Register from './auth/register';
+import Recovery from './auth/recovery';
+import ResetPassword from './auth/resetPassword';
 
 //Importar archivos de Administrador
 import Home from './admin/home';
@@ -31,13 +33,16 @@ import StudentCalificaciones from './students/calificaciones';
 import StudentEvaluaciones from './students/evaluaciones';
 import UserProfile from './components/UserProfile';
 
-import { UIProvider } from './context/UIContext';
+import { UIProvider, useUI } from './context/UIContext';
+import Loader from './components/Loader';
 
-function App() {
+function AppContent() {
+    const { loading } = useUI();
+    
     return (
-        <UIProvider>
-            <BrowserRouter>
-                <Routes>
+        <BrowserRouter>
+            <Loader show={loading} />
+            <Routes>
                     {/* Página principal */}
                     <Route path="/" element={<Index />} />
                     <Route path="/index" element={<Navigate to="/" replace />} />
@@ -45,6 +50,8 @@ function App() {
                     {/* Auth */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/recovery" element={<Recovery />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     
                     {/* Rutas de Administrador */}
                     <Route path='/home' element={<Home />} />
@@ -72,11 +79,17 @@ function App() {
                     <Route path="/student/calificaciones" element={<StudentCalificaciones />} />
                     <Route path="/student/evaluaciones" element={<StudentEvaluaciones />} />
                     <Route path="/student/config" element={<UserProfile user={JSON.parse(localStorage.getItem('user'))} onLogout={() => window.location.href = '/login'} />} />
-
                     {/* Ruta por defecto */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
-            </BrowserRouter>
+        </BrowserRouter>
+    );
+}
+
+function App() {
+    return (
+        <UIProvider>
+            <AppContent />
         </UIProvider>
     );
 }

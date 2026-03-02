@@ -3,7 +3,7 @@ const API_URL = 'http://localhost:3000/api';
 export const rubricasService = {
     async getRubricas() {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/rubricas`, {
+        const response = await fetch(`${API_URL}/rubricas/admin/rubricas`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -14,6 +14,69 @@ export const rubricasService = {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_URL}/rubricas/hierarchical-data`, {
             headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await response.json();
+    },
+
+    async getTiposRubrica() {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/rubricas/admin/tipos_rubrica/`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await response.json();
+    },
+
+    async getEstrategiasEval() {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/evaluaciones/estrategias`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        return data.estrategias_eval || [];
+    },
+
+    async getRubricaDetalle(id) {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/rubricas/admin/rubricas/detalle/${id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await response.json();
+    },
+
+    async getRubricaForEdit(id) {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/rubricas/admin/rubricas/editar/${id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await response.json();
+    },
+
+    async getCarreraMateria(materiaCodigo) {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/rubricas/admin/rubricas/carrera-materia/${materiaCodigo}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await response.json();
+    },
+
+    async getEvaluacionesConRubrica(seccionId) {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/rubricas/admin/evaluaciones_con_rubrica/${seccionId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        return data.evaluaciones || [];
+    },
+
+    async updateRubrica(id, rubricaData) {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/rubricas/rubrica/actualizar/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(rubricaData)
         });
         return await response.json();
     },
@@ -64,33 +127,12 @@ export const rubricasService = {
         return await response.json();
     },
 
-    async getRubricaDetalle(id) {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/rubricas/admin/rubricas/detalle/${id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        return await response.json();
-    },
-
-    async updateRubrica(id, rubricaData) {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/rubricas/actualizar/${id}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(rubricaData)
-        });
-        return await response.json();
-    },
-
     async deleteRubrica(id) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/rubricas/delete/${id}`, {
+        const response = await fetch(`${API_URL}/rubricas/admin/deleteRubrica/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.json();
     }
-};
+}

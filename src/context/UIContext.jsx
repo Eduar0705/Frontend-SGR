@@ -5,6 +5,8 @@ const UIContext = createContext();
 export function UIProvider({ children }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    const [loading, setLoading] = useState(false);
+
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
     };
@@ -18,13 +20,19 @@ export function UIProvider({ children }) {
     };
 
     return (
-        <UIContext.Provider value={{ isSidebarOpen, toggleSidebar, closeSidebar, openSidebar }}>
+        <UIContext.Provider value={{ 
+            isSidebarOpen, 
+            toggleSidebar, 
+            closeSidebar, 
+            openSidebar,
+            loading,
+            setLoading 
+        }}>
             {children}
         </UIContext.Provider>
     );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useUI() {
     const context = useContext(UIContext);
     if (!context) {

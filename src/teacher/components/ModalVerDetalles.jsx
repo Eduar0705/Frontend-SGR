@@ -13,7 +13,7 @@ export default function ModalVerDetalles({ data, onClose }) {
 
     const cargarDetalles = async () => {
         try {
-            const resp = await evaluacionesService.getDetalles(idEvaluacion, cedula);
+            const resp = await evaluacionesService.getEvaluacionDetalles(idEvaluacion, cedula);
             if (resp.success) {
                 setEvalData(resp);
             } else {

@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth.service';
 import swal from 'sweetalert2';
 import '../assets/css/login.css';
+import { useUI } from '../context/UIContext';
 
 export default function Login() {
     const navigate = useNavigate();
+    const { setLoading: setGlobalLoading } = useUI();
     const [cedula, setCedula] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -42,7 +44,7 @@ export default function Login() {
             return;
         }
 
-        setLoading(true);
+        setGlobalLoading(true);
 
         try {
             const response = await authService.login(cedula, password);
@@ -68,10 +70,17 @@ export default function Login() {
         } catch (err) {
             showError(err.message || 'Error al iniciar sesión');
         } finally {
-            setLoading(false);
+            setGlobalLoading(false);
         }
     };
-    let color = { color: '#ffffff' };
+
+    const isCedulaValid = cedula.length >= 7 && cedula.length <= 9;
+    const cedulaStyle = cedula.length > 0 
+        ? (isCedulaValid 
+            ? { borderColor: '#28a745', boxShadow: '0 0 0 0.2rem rgba(40, 167, 69, 0.25)' } 
+            : { borderColor: '#dc3545', boxShadow: '0 0 0 0.2rem rgba(220, 53, 69, 0.25)' })
+        : {};
+
     return (
         <div className="login-wrapper">
             <div className="login-container">
@@ -103,10 +112,13 @@ export default function Login() {
                                 onChange={handleCedulaChange}
                                 required
                                 autoComplete="off"
+                                style={cedulaStyle}
                             />
-                            <span style={{ fontSize: '12px', color: '#dc2626', marginTop: '-4px' }}>
-                                El mínimo de dígitos son 7 y el máximo 9
-                            </span>
+                            {!isCedulaValid && cedula.length > 0 && (
+                                <span style={{ fontSize: '12px', color: '#dc2626', marginTop: '-4px' }}>
+                                    El mínimo de dígitos son 7 y el máximo 9
+                                </span>
+                            )}
                         </div>
 
                         <div className="form-group">
@@ -136,9 +148,9 @@ export default function Login() {
                             <Link to="/" className="forgot-password">
                                 <i className="fas fa-arrow-left"></i> Volver
                             </Link>
-                            <a href="#" className="forgot-password">
+                            <Link to="/recovery" className="forgot-password">
                                 ¿Olvidaste tu contraseña?
-                            </a>
+                            </Link>
                         </div>
 
                         <button
@@ -146,7 +158,7 @@ export default function Login() {
                             className={`btn-login ${loading ? 'loading' : ''}`}
                             disabled={loading}
                         >
-                            <span className="btn-text" style={color}>Login</span>
+                            <span className="btn-text" style={{ color: '#ffffff' }}>Login</span>
                             <span className="btn-loader">
                                 <i className="fas fa-spinner fa-spin"></i> Ingresando...
                             </span>
