@@ -63,23 +63,13 @@ export default function TeacherCrearRubricas() {
 
     const loadInitialData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            // Cargar tipos de rúbrica
-            const resForm = await fetch(`${API_URL}/teacher/rubricas/form-data`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const dataForm = await resForm.json();
-            if (dataForm.success) {
-                setTiposRubrica(dataForm.data.tipos || []);
-            }
-            // Cargar carreras del docente (Cascade inicio)
-            const resCarreras = await fetch(`${API_URL}/teacher/evaluaciones/carreras`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const dataCarreras = await resCarreras.json();
-            if (dataCarreras.success) {
-                setCarreras(dataCarreras.carreras);
-            }
+            setGlobalLoading(false); // Apagar el overlay del menú
+            
+            // Cargar tipos de rúbrica y otros datos del formulario usando el servicio
+            const dataForm = await teacherRubricasService.getFormData();
+            setTiposRubrica(dataForm.tipos || []);
+            setCarreras(dataForm.carreras || []);
+
         } catch (error) {
             console.error(error);
             Swal.fire('Error', 'Error al cargar datos iniciales', 'error');
@@ -120,7 +110,6 @@ export default function TeacherCrearRubricas() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
-            console.log(data)
             if (data.success) {
                 setMaterias(data.data);
             }

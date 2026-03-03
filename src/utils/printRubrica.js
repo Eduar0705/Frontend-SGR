@@ -1,21 +1,43 @@
 export const imprimirRubricaFormal = (rubrica, criterios) => {
     const ventanaImpresion = window.open('', '_blank', 'width=1200,height=900');
-    if (!ventanaImpresion) {
-        return false;
-    }
+    if (!ventanaImpresion) return false;
 
-    const primerCriterioValido = criterios.find(c => c.niveles && c.niveles.length > 0);
-    const nombresNiveles = primerCriterioValido 
-        ? primerCriterioValido.niveles.sort((a,b) => b.puntaje - a.puntaje).map(n => n.nombre_nivel)
+    // ─── FIX #1: Recopilar TODOS los nombres de niveles únicos de TODOS los
+    // criterios, no solo del primero. Si un criterio tiene niveles distintos
+    // al primero, antes quedaban celdas vacías.
+    const nivelesMap = new Map();
+    criterios.forEach(c => {
+        if (c.niveles && c.niveles.length > 0) {
+            c.niveles.forEach(n => {
+                if (!nivelesMap.has(n.nombre_nivel)) {
+                    nivelesMap.set(n.nombre_nivel, n.puntaje ?? 0);
+                }
+            });
+        }
+    });
+
+    // FIX #2: Si no hay niveles en ningún criterio, usar nombres por defecto
+    const nombresNiveles = nivelesMap.size > 0
+        ? [...nivelesMap.entries()]
+            .sort((a, b) => b[1] - a[1])   // mayor puntaje primero
+            .map(([nombre]) => nombre)
         : ['Sobresaliente', 'Notable', 'Aprobado', 'Insuficiente'];
 
-    // Convert date
-    const fechaFormat = rubrica.fecha_evaluacion ? new Date(rubrica.fecha_evaluacion).toLocaleDateString('es-ES') : '';
+    // FIX #3: Formato de fecha con timeZone UTC para evitar desfase de 1 día
+    const fechaFormat = rubrica.fecha_evaluacion
+        ? new Date(rubrica.fecha_evaluacion).toLocaleDateString('es-ES', { timeZone: 'UTC' })
+        : '';
+
+    // FIX #4: Fallback para docente cuando viene null o "Docente no encontrado"
+    const docenteNombre = (rubrica.docente_nombre && rubrica.docente_nombre !== 'Docente no encontrado')
+        ? rubrica.docente_nombre
+        : (rubrica.docente_cedula ? `Cédula: ${rubrica.docente_cedula}` : 'No asignado');
 
     const html = `
         <!DOCTYPE html>
         <html>
         <head>
+            <meta charset="UTF-8">
             <title>${rubrica.nombre_rubrica}</title>
             <style>
                 body { 
@@ -75,18 +97,21 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
                 .rubrica-table th {
                     text-align: center;
                     font-weight: bold;
+                    background: #f0f0f0;
                 }
                 .criterio-col {
                     width: 15%;
                     font-weight: bold;
                 }
-                .nivel-col {
-                    width: 21.25%;
-                }
                 .puntaje {
                     font-weight: bold;
                     display: block;
                     margin-top: 5px;
+                }
+                .nivel-vacio {
+                    color: #aaa;
+                    font-style: italic;
+                    text-align: center;
                 }
                 @media print {
                     .no-print { display: none; }
@@ -94,11 +119,15 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
             </style>
         </head>
         <body>
-            <button onclick="window.print()" class="no-print" style="margin-bottom: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Imprimir</button>
-            
+            <button onclick="window.print()" class="no-print"
+                style="margin-bottom:20px;padding:10px 20px;background:#007bff;color:white;border:none;border-radius:5px;cursor:pointer;">
+                Imprimir
+            </button>
+
             <div class="header-container">
                 <div class="logo">
-                     IUJO<br><span style="font-size:10px; color:#000;">Instituto Universitario<br>Jesús Obrero</span>
+                    IUJO<br>
+                    <span style="font-size:10px;color:#000;">Instituto Universitario<br>Jesús Obrero</span>
                 </div>
                 <div class="header-text">
                     <div class="title">RÚBRICA DE EVALUACIÓN ${rubrica.nombre_rubrica}</div>
@@ -108,7 +137,7 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
 
             <table class="meta-table">
                 <tr>
-                    <td width="50%"><span class="meta-label">Docente:</span> ${rubrica.docente_nombre || ''}</td>
+                    <td width="50%"><span class="meta-label">Docente:</span> ${docenteNombre}</td>
                     <td width="50%"><span class="meta-label">Unidad Curricular:</span> ${rubrica.materia_nombre || ''}</td>
                 </tr>
                 <tr>
@@ -127,26 +156,31 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
             <table class="rubrica-table">
                 <thead>
                     <tr>
-                        <th class="criterio-col"></th>
-                        ${nombresNiveles.map(n => `<th class="nivel-col">${n}</th>`).join('')}
+                        <th class="criterio-col">Criterio</th>
+                        ${nombresNiveles.map(n => `<th>${n}</th>`).join('')}
                     </tr>
                 </thead>
                 <tbody>
                     ${criterios.map(c => `
                         <tr>
                             <td class="criterio-col">
-                                ${c.descripcion}<br/>
+                                ${c.descripcion || ''}
                                 <span class="puntaje">(${c.puntaje_maximo} pts)</span>
                             </td>
                             ${nombresNiveles.map(nivelNombre => {
-                                const nivel = c.niveles.find(n => n.nombre_nivel === nivelNombre);
-                                return `<td>${nivel ? (nivel.descripcion || '') + `<br/><span class="puntaje">(${nivel.puntaje} pts)</span>` : ''}</td>`;
+                                // FIX #5: comparación case-insensitive y sin espacios
+                                // para evitar que "insuficiente" != "Insuficiente" cause celda vacía
+                                const nivel = (c.niveles || []).find(
+                                    n => n.nombre_nivel?.toLowerCase().trim() === nivelNombre?.toLowerCase().trim()
+                                );
+                                return nivel
+                                    ? `<td>${nivel.descripcion || ''}<span class="puntaje">(${nivel.puntaje} pts)</span></td>`
+                                    : `<td class="nivel-vacio">—</td>`;
                             }).join('')}
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
-            
         </body>
         </html>
     `;

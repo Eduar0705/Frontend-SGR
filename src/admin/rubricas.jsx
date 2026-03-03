@@ -29,7 +29,7 @@ export default function Rubricas() {
     const [currentPage, setCurrentPage] = useState(1);
 
     // Estado del Modal de Edición
-    const [modalMode, setModalMode] = useState(null); // 'edit' o null
+    const [modalMode, setModalMode] = useState(null);
     const [currentRubricaId, setCurrentRubricaId] = useState(null);
     const [formData, setFormData] = useState({
         nombre_rubrica: '',
@@ -80,8 +80,9 @@ export default function Rubricas() {
     // Filtrado y Paginación
     const filteredRubricas = useMemo(() => {
         return rubricas.filter(rubrica => {
-            const matchesSearch = rubrica.nombre_rubrica?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                rubrica.materia_nombre?.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSearch =
+                rubrica.nombre_rubrica?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                rubrica.materia_nombre?.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesProfessor = professorFilter === '' || rubrica.docente_nombre === professorFilter;
             return matchesSearch && matchesProfessor;
         });
@@ -103,7 +104,7 @@ export default function Rubricas() {
         return Math.ceil(filteredRubricas.length / parseInt(entriesPerPage)) || 1;
     }, [filteredRubricas, entriesPerPage]);
 
-    // Lógica de Impresión (Migrada de EJS script)
+    // Ver / Imprimir rúbrica
     const handleVerRubrica = async (id) => {
         try {
             Swal.fire({ title: 'Cargando rúbrica...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -119,37 +120,73 @@ export default function Rubricas() {
         }
     };
 
-    // Lógica de Edición - Apertura del Modal
+    // Manejadores de Cascada
+    const handleCarreraChange = async (codigo) => {
+        if (!codigo) { setSemestres([]); return; }
+        const data = await academicoService.getSemestres(codigo);
+        setSemestres(data);
+    };
+
+    const handleSemestreChange = async (carCod, sem) => {
+        if (!sem) { setMaterias([]); return; }
+        const data = await academicoService.getMaterias(carCod, sem);
+        setMaterias(data);
+    };
+
+    const handleMateriaChange = async (matCod, carCod) => {
+        if (!matCod) { setSecciones([]); return; }
+        const data = await academicoService.getSecciones(matCod, carCod);
+        setSecciones(data);
+    };
+
+    const handleSeccionChange = async (secId) => {
+        if (!secId) { setEvaluaciones([]); return; }
+        const data = await rubricasService.getEvaluacionesConRubrica(secId);
+        setEvaluaciones(data);
+    };
+
+    // FIX #2: usar 'valor' que es el campo real del objeto retornado por el backend
+    const handleEvaluacionChange = (evalId) => {
+        const evaluacion = evaluaciones.find(e => e.evaluacion_id == evalId);
+        if (!evaluacion) return;
+
+        const nuevoPorcentaje = evaluacion.valor || evaluacion.ponderacion || 10;
+        const nuevosCriterios = redistribuirPuntajes(nuevoPorcentaje, formData.criterios);
+
+        setFormData(prev => ({
+            ...prev,
+            evaluacion_id: evalId,
+            porcentaje_evaluacion: nuevoPorcentaje,
+            criterios: nuevosCriterios
+        }));
+    };
+
+    // Apertura del Modal de Edición
     const handleEditRubrica = async (id) => {
         try {
             Swal.fire({ title: 'Cargando datos...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            
-            // Cargar Catálogos básicos
+
             const [tipos, , carrs] = await Promise.all([
                 rubricasService.getTiposRubrica(),
                 rubricasService.getEstrategiasEval(),
                 academicoService.getCarreras()
             ]);
-            
+
             setTiposRubrica(tipos);
             setCarreras(carrs);
 
-            // Cargar Detalle de la Rúbrica
             const res = await rubricasService.getRubricaForEdit(id);
             if (res.success) {
                 const r = res.rubrica;
                 setCurrentRubricaId(id);
-                
-                // Resolver jerarquía (Carrera y Semestre a partir de Materia)
+
                 const jerarquia = await rubricasService.getCarreraMateria(r.materia_codigo);
-                
-                // Actualizar selects dependientes en cascada
-                await Promise.all([
-                    handleCarreraChange(jerarquia.carrera_codigo),
-                    handleSemestreChange(jerarquia.carrera_codigo, jerarquia.semestre),
-                    handleMateriaChange(r.materia_codigo, jerarquia.carrera_codigo),
-                    handleSeccionChange(r.seccion_id)
-                ]);
+
+                // Cargar selects en cascada secuencialmente para garantizar estado correcto
+                await handleCarreraChange(jerarquia.carrera_codigo);
+                await handleSemestreChange(jerarquia.carrera_codigo, jerarquia.semestre);
+                await handleMateriaChange(r.materia_codigo, jerarquia.carrera_codigo);
+                await handleSeccionChange(r.seccion_id);
 
                 setFormData({
                     nombre_rubrica: r.nombre_rubrica,
@@ -187,27 +224,29 @@ export default function Rubricas() {
             }
         } catch (error) {
             console.error('Error handleEditRubrica:', error);
-            Swal.fire('Error', 'Error al cargar los datos de edición', 'error');
+            Swal.fire('Error', error.message || 'Error al cargar los datos de edición', 'error');
         }
     };
 
     const redistribuirPuntajes = (porcentaje, criterios) => {
         if (!criterios.length) return criterios;
-        
+
         const numCriterios = criterios.length;
         const puntajeBase = Math.floor((porcentaje / numCriterios) * 1000) / 1000;
-        const resto = parseFloat((porcentaje - (puntajeBase * numCriterios)).toFixed(3));
+        const resto = parseFloat((porcentaje - puntajeBase * numCriterios).toFixed(3));
 
         return criterios.map((c, idx) => {
-            const nuevoMax = idx === numCriterios - 1 ? parseFloat((puntajeBase + resto).toFixed(3)) : puntajeBase;
-            
+            const nuevoMax = idx === numCriterios - 1
+                ? parseFloat((puntajeBase + resto).toFixed(3))
+                : puntajeBase;
+
             return {
                 ...c,
                 puntaje_maximo: nuevoMax,
                 niveles: c.niveles.map((n) => {
                     let nuevoPuntaje = n.puntaje;
                     const nombre = (n.nombre_nivel || n.nombre || '').toLowerCase();
-                    
+
                     if (nombre.includes('excelente') || nombre.includes('sobresaliente')) {
                         nuevoPuntaje = nuevoMax;
                     } else if (nombre.includes('notable')) {
@@ -218,11 +257,11 @@ export default function Rubricas() {
                     } else if (nombre.includes('insuficiente') || nombre.includes('deficiente')) {
                         nuevoPuntaje = 0;
                     }
-                    
+
                     if (!nombre.includes('insuficiente') && !nombre.includes('deficiente') && nuevoPuntaje < 0.025) {
                         nuevoPuntaje = 0.025;
                     }
-                    
+
                     return { ...n, puntaje: nuevoPuntaje };
                 })
             };
@@ -253,47 +292,44 @@ export default function Rubricas() {
         const tempCriterios = [...formData.criterios];
         tempCriterios.splice(idx, 1);
         const nuevosCriterios = redistribuirPuntajes(formData.porcentaje_evaluacion, tempCriterios);
-        setFormData({ ...formData, criterios: nuevosCriterios });
+        setFormData(prev => ({ ...prev, criterios: nuevosCriterios }));
     };
 
-    // Manejadores de Cascada
-    const handleCarreraChange = async (codigo) => {
-        if (!codigo) { setSemestres([]); return; }
-        const data = await academicoService.getSemestres(codigo);
-        setSemestres(data);
+    const handleCriterioChange = (idx, field, value) => {
+        const newCriterios = [...formData.criterios];
+
+        if (field === 'puntaje_maximo') {
+            const val = parseFloat(value) || 0;
+            newCriterios[idx][field] = val;
+            const excelenteIdx = newCriterios[idx].niveles.findIndex(n => n.nombre_nivel === 'Excelente');
+            if (excelenteIdx !== -1) {
+                newCriterios[idx].niveles[excelenteIdx].puntaje = val;
+            }
+        } else {
+            newCriterios[idx][field] = value;
+        }
+
+        setFormData(prev => ({ ...prev, criterios: newCriterios }));
     };
 
-    const handleSemestreChange = async (carCod, sem) => {
-        if (!sem) { setMaterias([]); return; }
-        const data = await academicoService.getMaterias(carCod, sem);
-        setMaterias(data);
-    };
+    const handleNivelChange = (cIdx, nIdx, field, value) => {
+        const newCriterios = [...formData.criterios];
 
-    const handleMateriaChange = async (matCod, carCod) => {
-        if (!matCod) { setSecciones([]); return; }
-        const data = await academicoService.getSecciones(matCod, carCod);
-        setSecciones(data);
-    };
+        if (field === 'puntaje') {
+            const val = parseFloat(value) || 0;
+            const max = parseFloat(newCriterios[cIdx].puntaje_maximo) || 0;
 
-    const handleSeccionChange = async (secId) => {
-        if (!secId) { setEvaluaciones([]); return; }
-        const data = await rubricasService.getEvaluacionesConRubrica(secId);
-        setEvaluaciones(data);
-    };
+            if (val > max) {
+                Swal.fire('Aviso', 'El puntaje del nivel no puede ser mayor al máximo del criterio', 'warning');
+                newCriterios[cIdx].niveles[nIdx][field] = max;
+            } else {
+                newCriterios[cIdx].niveles[nIdx][field] = val;
+            }
+        } else {
+            newCriterios[cIdx].niveles[nIdx][field] = value;
+        }
 
-    const handleEvaluacionChange = (evalId) => {
-        const evaluacion = evaluaciones.find(e => e.evaluacion_id == evalId);
-        if (!evaluacion) return;
-
-        const nuevoPorcentaje = evaluacion.ponderacion || 10;
-        const nuevosCriterios = redistribuirPuntajes(nuevoPorcentaje, formData.criterios);
-
-        setFormData(prev => ({
-            ...prev,
-            evaluacion_id: evalId,
-            porcentaje_evaluacion: nuevoPorcentaje,
-            criterios: nuevosCriterios
-        }));
+        setFormData(prev => ({ ...prev, criterios: newCriterios }));
     };
 
     const handleEliminarRubrica = async (id) => {
@@ -319,63 +355,30 @@ export default function Rubricas() {
         }
     };
 
-    // Lógica del Formulario
-    const handleCriterioChange = (idx, field, value) => {
-        const newCriterios = [...formData.criterios];
-        
-        if (field === 'puntaje_maximo') {
-            const val = parseFloat(value) || 0;
-            newCriterios[idx][field] = val;
-            
-            // Si el puntaje máximo cambia, el nivel "Excelente" toma ese valor automáticamente
-            const excelenteIdx = newCriterios[idx].niveles.findIndex(n => n.nombre_nivel === 'Excelente');
-            if (excelenteIdx !== -1) {
-                newCriterios[idx].niveles[excelenteIdx].puntaje = val;
-            }
-        } else {
-            newCriterios[idx][field] = value;
-        }
-        
-        setFormData({ ...formData, criterios: newCriterios });
-    };
+    const totalPuntosCriterios = formData.criterios.reduce(
+        (acc, c) => acc + (parseFloat(c.puntaje_maximo) || 0), 0
+    );
 
-    const handleNivelChange = (cIdx, nIdx, field, value) => {
-        const newCriterios = [...formData.criterios];
-        
-        if (field === 'puntaje') {
-            const val = parseFloat(value) || 0;
-            const max = parseFloat(newCriterios[cIdx].puntaje_maximo) || 0;
-            
-            if (val > max) {
-                Swal.fire('Aviso', 'El puntaje del nivel no puede ser mayor al máximo del criterio', 'warning');
-                newCriterios[cIdx].niveles[nIdx][field] = max;
-            } else {
-                newCriterios[cIdx].niveles[nIdx][field] = val;
-            }
-        } else {
-            newCriterios[cIdx].niveles[nIdx][field] = value;
-        }
-        
-        setFormData({ ...formData, criterios: newCriterios });
-    };
-
-    // Calcular suma total automáticamente (usado en el modal)
-    const totalPuntosCriterios = formData.criterios.reduce((acc, c) => acc + (parseFloat(c.puntaje_maximo) || 0), 0);
-
+    // FIX #1: NO hacer JSON.stringify a criterios — ya se serializa en el service
+    // FIX #2: el payload usa los nombres exactos que espera el backend
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        // Validaciones básicas
+
         if (!formData.nombre_rubrica || !formData.id_tipo || !formData.evaluacion_id) {
             return Swal.fire('Atención', 'Complete los campos obligatorios del encabezado', 'warning');
         }
 
-        const totalPuntos = formData.criterios.reduce((acc, c) => acc + parseFloat(c.puntaje_maximo || 0), 0);
+        const totalPuntos = formData.criterios.reduce(
+            (acc, c) => acc + parseFloat(c.puntaje_maximo || 0), 0
+        );
         if (Math.abs(totalPuntos - formData.porcentaje_evaluacion) > 0.01) {
-            return Swal.fire('Error de Puntos', `La suma de criterios (${totalPuntos}) debe ser igual al porcentaje (${formData.porcentaje_evaluacion}%)`, 'error');
+            return Swal.fire(
+                'Error de Puntos',
+                `La suma de criterios (${totalPuntos.toFixed(2)}) debe ser igual al porcentaje (${formData.porcentaje_evaluacion}%)`,
+                'error'
+            );
         }
 
-        // Validar mínimo de 0.025
         for (const crit of formData.criterios) {
             if (parseFloat(crit.puntaje_maximo) < 0.025) {
                 return Swal.fire('Error', `El puntaje del criterio "${crit.descripcion}" debe ser al menos 0.025`, 'error');
@@ -389,10 +392,15 @@ export default function Rubricas() {
 
         try {
             Swal.fire({ title: 'Actualizando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            
+
+            // Payload con nombres exactos que espera el backend y criterios como array (NO string)
             const payload = {
-                ...formData,
-                criterios: JSON.stringify(formData.criterios)
+                nombre_rubrica: formData.nombre_rubrica,
+                id_evaluacion: formData.evaluacion_id,
+                tipo_rubrica: formData.id_tipo,
+                instrucciones: formData.instrucciones,
+                porcentaje: formData.porcentaje_evaluacion,
+                criterios: formData.criterios   // ← array directo, sin JSON.stringify
             };
 
             const res = await rubricasService.updateRubrica(currentRubricaId, payload);
@@ -403,8 +411,8 @@ export default function Rubricas() {
             } else {
                 Swal.fire('Error', res.mensaje || 'Error al actualizar', 'error');
             }
-        } catch {
-            Swal.fire('Error', 'Fallo de conexión', 'error');
+        } catch (error) {
+            Swal.fire('Error', error.message || 'Fallo de conexión', 'error');
         }
     };
 
@@ -415,13 +423,13 @@ export default function Rubricas() {
             <Menu user={user} />
             <div className="content-wrapper" style={{ width: '100%' }}>
                 <Header title="Banco de Rúbricas" user={user} onLogout={() => navigate('/login')} />
-                
+
                 <div style={{ padding: '30px' }}>
                     <div className="view-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', gap: '20px' }}>
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                             <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Mostrar:</span>
-                            <select 
-                                value={entriesPerPage} 
+                            <select
+                                value={entriesPerPage}
                                 onChange={(e) => { setEntriesPerPage(e.target.value); setCurrentPage(1); }}
                                 style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                             >
@@ -435,16 +443,16 @@ export default function Rubricas() {
                         <div style={{ display: 'flex', gap: '15px', flex: 1, maxWidth: '600px' }}>
                             <div style={{ position: 'relative', flex: 1 }}>
                                 <i className="fas fa-search" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}></i>
-                                <input 
-                                    type="text" 
-                                    placeholder="Buscar por nombre o materia..." 
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por nombre o materia..."
                                     value={searchTerm}
                                     onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                                     style={{ width: '100%', padding: '10px 15px 10px 45px', borderRadius: '10px', border: '1px solid #e2e8f0' }}
                                 />
                             </div>
-                            <select 
-                                value={professorFilter} 
+                            <select
+                                value={professorFilter}
                                 onChange={(e) => { setProfessorFilter(e.target.value); setCurrentPage(1); }}
                                 style={{ padding: '10px 15px', borderRadius: '10px', border: '1px solid #e2e8f0', minWidth: '180px' }}
                             >
@@ -455,7 +463,11 @@ export default function Rubricas() {
                             </select>
                         </div>
 
-                        <button onClick={() => navigate('/admin/crear-rubricas')} className="btns" style={{ background: '#1e3a8a', color: 'white', padding: '10px 25px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}>
+                        <button
+                            onClick={() => navigate('/admin/crear-rubricas')}
+                            className="btns"
+                            style={{ background: '#1e3a8a', color: 'white', padding: '10px 25px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}
+                        >
                             <i className="fas fa-plus"></i> Nueva Rúbrica
                         </button>
                     </div>
@@ -519,18 +531,23 @@ export default function Rubricas() {
                         {/* Paginación */}
                         {entriesPerPage !== 'todos' && totalPages > 1 && (
                             <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', gap: '5px', borderTop: '1px solid #f1f5f9' }}>
-                                <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="btns" style={{ padding: '8px 12px', background: 'white', border: '1px solid #e2e8f0', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}>
+                                <button
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(p => p - 1)}
+                                    className="btns"
+                                    style={{ padding: '8px 12px', background: 'white', border: '1px solid #e2e8f0', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+                                >
                                     <i className="fas fa-chevron-left"></i>
                                 </button>
                                 {[...Array(totalPages)].map((_, i) => (
-                                    <button 
-                                        key={i + 1} 
+                                    <button
+                                        key={i + 1}
                                         onClick={() => setCurrentPage(i + 1)}
-                                        style={{ 
-                                            padding: '8px 15px', 
-                                            borderRadius: '8px', 
-                                            border: '1px solid #e2e8f0', 
-                                            background: currentPage === i + 1 ? '#1e3a8a' : 'white', 
+                                        style={{
+                                            padding: '8px 15px',
+                                            borderRadius: '8px',
+                                            border: '1px solid #e2e8f0',
+                                            background: currentPage === i + 1 ? '#1e3a8a' : 'white',
                                             color: currentPage === i + 1 ? 'white' : '#1e293b',
                                             cursor: 'pointer'
                                         }}
@@ -538,7 +555,12 @@ export default function Rubricas() {
                                         {i + 1}
                                     </button>
                                 ))}
-                                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="btns" style={{ padding: '8px 12px', background: 'white', border: '1px solid #e2e8f0', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}>
+                                <button
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage(p => p + 1)}
+                                    className="btns"
+                                    style={{ padding: '8px 12px', background: 'white', border: '1px solid #e2e8f0', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+                                >
                                     <i className="fas fa-chevron-right"></i>
                                 </button>
                             </div>
@@ -559,11 +581,22 @@ export default function Rubricas() {
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
                                     <div>
                                         <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Nombre de la Rúbrica *</label>
-                                        <input type="text" value={formData.nombre_rubrica} onChange={(e) => setFormData({...formData, nombre_rubrica: e.target.value})} className="form-input" required />
+                                        <input
+                                            type="text"
+                                            value={formData.nombre_rubrica}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, nombre_rubrica: e.target.value }))}
+                                            className="form-input"
+                                            required
+                                        />
                                     </div>
                                     <div>
                                         <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Tipo de Rúbrica *</label>
-                                        <select value={formData.id_tipo} onChange={(e) => setFormData({...formData, id_tipo: e.target.value})} className="form-select" required>
+                                        <select
+                                            value={formData.id_tipo}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, id_tipo: e.target.value }))}
+                                            className="form-select"
+                                            required
+                                        >
                                             <option value="">Seleccione tipo</option>
                                             {tiposRubrica.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                                         </select>
@@ -573,28 +606,59 @@ export default function Rubricas() {
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                                     <div>
                                         <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Carrera</label>
-                                        <select value={formData.carrera_codigo} onChange={(e) => { setFormData({...formData, carrera_codigo: e.target.value}); handleCarreraChange(e.target.value); }} className="form-select">
+                                        <select
+                                            value={formData.carrera_codigo}
+                                            onChange={(e) => {
+                                                setFormData(prev => ({ ...prev, carrera_codigo: e.target.value }));
+                                                handleCarreraChange(e.target.value);
+                                            }}
+                                            className="form-select"
+                                        >
                                             <option value="">Seleccione carrera</option>
                                             {carreras.map(c => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
                                         </select>
                                     </div>
                                     <div>
                                         <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Semestre</label>
-                                        <select value={formData.semestre} onChange={(e) => { setFormData({...formData, semestre: e.target.value}); handleSemestreChange(formData.carrera_codigo, e.target.value); }} className="form-select" disabled={!semestres.length}>
+                                        <select
+                                            value={formData.semestre}
+                                            onChange={(e) => {
+                                                setFormData(prev => ({ ...prev, semestre: e.target.value }));
+                                                handleSemestreChange(formData.carrera_codigo, e.target.value);
+                                            }}
+                                            className="form-select"
+                                            disabled={!semestres.length}
+                                        >
                                             <option value="">Seleccione semestre</option>
                                             {semestres.map(s => <option key={s} value={s}>Semestre {s}</option>)}
                                         </select>
                                     </div>
                                     <div>
                                         <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Materia</label>
-                                        <select value={formData.materia_codigo} onChange={(e) => { setFormData({...formData, materia_codigo: e.target.value}); handleMateriaChange(e.target.value, formData.carrera_codigo); }} className="form-select" disabled={!materias.length}>
+                                        <select
+                                            value={formData.materia_codigo}
+                                            onChange={(e) => {
+                                                setFormData(prev => ({ ...prev, materia_codigo: e.target.value }));
+                                                handleMateriaChange(e.target.value, formData.carrera_codigo);
+                                            }}
+                                            className="form-select"
+                                            disabled={!materias.length}
+                                        >
                                             <option value="">Seleccione materia</option>
                                             {materias.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre}</option>)}
                                         </select>
                                     </div>
                                     <div>
                                         <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Sección</label>
-                                        <select value={formData.seccion_id} onChange={(e) => { setFormData({...formData, seccion_id: e.target.value}); handleSeccionChange(e.target.value); }} className="form-select" disabled={!secciones.length}>
+                                        <select
+                                            value={formData.seccion_id}
+                                            onChange={(e) => {
+                                                setFormData(prev => ({ ...prev, seccion_id: e.target.value }));
+                                                handleSeccionChange(e.target.value);
+                                            }}
+                                            className="form-select"
+                                            disabled={!secciones.length}
+                                        >
                                             <option value="">Seleccione sección</option>
                                             {secciones.map(s => <option key={s.id} value={s.id}>{s.codigo}</option>)}
                                         </select>
@@ -602,15 +666,25 @@ export default function Rubricas() {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                                         <div style={{ flex: 1, marginRight: '20px' }}>
                                             <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Evaluación</label>
-                                            <select value={formData.evaluacion_id} onChange={(e) => handleEvaluacionChange(e.target.value)} className="form-select" required disabled={!evaluaciones.length}>
+                                            <select
+                                                value={formData.evaluacion_id}
+                                                onChange={(e) => handleEvaluacionChange(e.target.value)}
+                                                className="form-select"
+                                                required
+                                                disabled={!evaluaciones.length}
+                                            >
                                                 <option value="">Seleccione evaluación</option>
-                                                {evaluaciones.map(ev => <option key={ev.evaluacion_id} value={ev.evaluacion_id}>{ev.contenido_evaluacion || ev.competencias} ({ev.ponderacion || ev.valor}%)</option>)}
+                                                {evaluaciones.map(ev => (
+                                                    <option key={ev.evaluacion_id} value={ev.evaluacion_id}>
+                                                        {ev.contenido_evaluacion || ev.competencias} ({ev.valor || ev.ponderacion}%)
+                                                    </option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
                                             <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', textTransform: 'uppercase' }}>Suma de Criterios</div>
                                             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios - formData.porcentaje_evaluacion) < 0.01 ? '#059669' : '#ef4444' }}>
-                                                {totalPuntosCriterios} / {formData.porcentaje_evaluacion}
+                                                {totalPuntosCriterios.toFixed(2)} / {formData.porcentaje_evaluacion}
                                             </div>
                                         </div>
                                     </div>
@@ -619,32 +693,42 @@ export default function Rubricas() {
                                 <div className="criterios-container">
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #1e3a8a', paddingBottom: '10px', marginBottom: '20px' }}>
                                         <h3 style={{ margin: 0, color: '#1e3a8a' }}>Criterios de Evaluación</h3>
-                                        <button type="button" onClick={handleAddCriterio} className="btns" style={{ background: '#10b981', color: 'white', padding: '8px 15px', borderRadius: '8px', fontSize: '0.9rem' }}>
+                                        <button
+                                            type="button"
+                                            onClick={handleAddCriterio}
+                                            className="btns"
+                                            style={{ background: '#10b981', color: 'white', padding: '8px 15px', borderRadius: '8px', fontSize: '0.9rem' }}
+                                        >
                                             <i className="fas fa-plus"></i> Agregar Criterio
                                         </button>
                                     </div>
 
                                     {formData.criterios.map((c, cIdx) => (
                                         <div key={c.id_local || cIdx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', marginBottom: '20px', position: 'relative' }}>
-                                            <button type="button" onClick={() => handleRemoveCriterio(cIdx)} style={{ position: 'absolute', top: '10px', right: '10px', background: '#fee2e2', color: '#ef4444', border: 'none', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Eliminar criterio">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveCriterio(cIdx)}
+                                                style={{ position: 'absolute', top: '10px', right: '10px', background: '#fee2e2', color: '#ef4444', border: 'none', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                title="Eliminar criterio"
+                                            >
                                                 <i className="fas fa-trash"></i>
                                             </button>
 
                                             <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', paddingRight: '40px' }}>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Descripción del criterio..." 
-                                                    value={c.descripcion} 
+                                                <input
+                                                    type="text"
+                                                    placeholder="Descripción del criterio..."
+                                                    value={c.descripcion}
                                                     onChange={(e) => handleCriterioChange(cIdx, 'descripcion', e.target.value)}
                                                     style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
                                                     required
                                                 />
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                    <input 
-                                                        type="number" 
+                                                    <input
+                                                        type="number"
                                                         step="0.001"
-                                                        placeholder="Pts" 
-                                                        value={c.puntaje_maximo} 
+                                                        placeholder="Pts"
+                                                        value={c.puntaje_maximo}
                                                         onChange={(e) => handleCriterioChange(cIdx, 'puntaje_maximo', e.target.value)}
                                                         style={{ width: '100px', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 'bold' }}
                                                         required
@@ -652,28 +736,29 @@ export default function Rubricas() {
                                                     <span style={{ fontWeight: 'bold' }}>Pts</span>
                                                 </div>
                                             </div>
+
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                                                 {c.niveles.map((n, nIdx) => (
                                                     <div key={n.id_local || nIdx} style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
-                                                        <input 
-                                                            type="text" 
-                                                            value={n.nombre_nivel} 
+                                                        <input
+                                                            type="text"
+                                                            value={n.nombre_nivel}
                                                             onChange={(e) => handleNivelChange(cIdx, nIdx, 'nombre_nivel', e.target.value)}
                                                             style={{ fontWeight: 'bold', border: 'none', background: 'transparent', width: '100%', marginBottom: '5px', color: '#475569' }}
                                                         />
-                                                        <textarea 
-                                                            value={n.descripcion} 
+                                                        <textarea
+                                                            value={n.descripcion}
                                                             onChange={(e) => handleNivelChange(cIdx, nIdx, 'descripcion', e.target.value)}
                                                             style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '0.85rem', padding: '8px', marginBottom: '5px', resize: 'vertical' }}
                                                             rows="3"
                                                             placeholder="Descripción del nivel..."
                                                         />
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                            <input 
-                                                                type="number" 
+                                                            <input
+                                                                type="number"
                                                                 step="0.001"
                                                                 min="0"
-                                                                value={n.puntaje} 
+                                                                value={n.puntaje}
                                                                 onChange={(e) => handleNivelChange(cIdx, nIdx, 'puntaje', e.target.value)}
                                                                 style={{ width: '80px', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px', fontSize: '0.9rem', color: '#1e3a8a', fontWeight: 'bold' }}
                                                                 placeholder="0"
@@ -688,8 +773,19 @@ export default function Rubricas() {
                                 </div>
 
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px', borderTop: '1px solid #e5e7eb', paddingTop: '25px', marginTop: '30px' }}>
-                                    <button type="button" onClick={() => setModalMode(null)} className="btns" style={{ background: '#94a3b8', color: 'white', padding: '12px 30px', borderRadius: '10px' }}>Cancelar</button>
-                                    <button type="submit" className="btns" style={{ background: '#1e3a8a', color: 'white', padding: '12px 45px', borderRadius: '10px', fontWeight: 'bold' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setModalMode(null)}
+                                        className="btns"
+                                        style={{ background: '#94a3b8', color: 'white', padding: '12px 30px', borderRadius: '10px' }}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="btns"
+                                        style={{ background: '#1e3a8a', color: 'white', padding: '12px 45px', borderRadius: '10px', fontWeight: 'bold' }}
+                                    >
                                         <i className="fas fa-save" style={{ marginRight: '8px' }}></i> Guardar Cambios
                                     </button>
                                 </div>

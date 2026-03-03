@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/api';
 
 export const teacherRubricasService = {
     async getFormData() {
@@ -40,7 +40,7 @@ export const teacherRubricasService = {
 
     async crearRubrica(rubricaData) {
         const token = localStorage.getItem('token');
-        const res = await fetch(API_URL, {
+        const res = await fetch(`${API_URL}/teacher/rubricas`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -53,7 +53,7 @@ export const teacherRubricasService = {
 
     async getRubricas() {
         const token = localStorage.getItem('token');
-        const res = await fetch(API_URL, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/teacher/rubricas`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (!res.ok) throw new Error('Error al obtener rúbricas');
         return await res.json();
     },
