@@ -402,6 +402,7 @@ export default function TeacherEditarRubrica() {
                                                 {evaluaciones.map(e => <option key={e.id} value={e.id}>Evaluación {e.fecha_evaluacion ? e.fecha_evaluacion.split('T')[0] : 'Sin fecha'} - {e.ponderacion}%</option>)}
                                             </select>
                                         </div>
+                                    </div>
                                         <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
                                             <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', textTransform: 'uppercase' }}>Suma de Criterios</div>
                                             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios - formData.porcentaje_evaluacion) < 0.01 ? '#059669' : '#ef4444' }}>
@@ -409,7 +410,6 @@ export default function TeacherEditarRubrica() {
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
                                     <div className="form-group">
