@@ -69,15 +69,17 @@ export default function TeacherCrearRubricas() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const dataForm = await resForm.json();
-            if (dataForm.success) setTiposRubrica(dataForm.tiposRubrica || []);
-
+            if (dataForm.success) {
+                setTiposRubrica(dataForm.data.tipos || []);
+            }
             // Cargar carreras del docente (Cascade inicio)
             const resCarreras = await fetch(`${API_URL}/teacher/evaluaciones/carreras`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const dataCarreras = await resCarreras.json();
-            if (dataCarreras.success) setCarreras(dataCarreras.carreras);
-
+            if (dataCarreras.success) {
+                setCarreras(dataCarreras.carreras);
+            }
         } catch (error) {
             console.error(error);
             Swal.fire('Error', 'Error al cargar datos iniciales', 'error');
@@ -93,15 +95,17 @@ export default function TeacherCrearRubricas() {
     const handleCarreraChange = async (codigo) => {
         setFormData(prev => ({ ...prev, carrera_codigo: codigo, semestre: '', materia_codigo: '', seccion_id: '', evaluacion_id: '' }));
         setSemestres([]); setMaterias([]); setSecciones([]); setEvaluaciones([]);
-        
+
         if (!codigo) return;
         try {
             const token = localStorage.getItem('token');
             const res = await fetch(`${API_URL}/teacher/rubricas/semestres/${codigo}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            const data = res.json
-            setSemestres(data);
+            const data = await res.json()
+            if (data.success) {
+                setSemestres(data.data);
+            }
         } catch (error) { console.error(error); }
     };
 
@@ -116,7 +120,10 @@ export default function TeacherCrearRubricas() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
-            setMaterias(data);
+            console.log(data)
+            if (data.success) {
+                setMaterias(data.data);
+            }
         } catch (error) { console.error(error); }
     };
 
@@ -131,7 +138,9 @@ export default function TeacherCrearRubricas() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
-            setSecciones(data);
+            if (data.success) {
+                setSecciones(data.data);
+            }
         } catch (error) { console.error(error); }
     };
 
@@ -146,34 +155,37 @@ export default function TeacherCrearRubricas() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
-            setEvaluaciones(data);
+            console.log(data)
+            if (data.success) {
+                setEvaluaciones(data.evaluaciones);
+            }
         } catch (error) { console.error(error); }
     };
 
     const redistribuirPuntajes = (porcentaje, criterios) => {
         if (!criterios.length) return criterios;
-        
+
         const numCriterios = criterios.length;
         const puntajeBase = Math.floor((porcentaje / numCriterios) * 1000) / 1000;
         const resto = parseFloat((porcentaje - (puntajeBase * numCriterios)).toFixed(3));
 
         return criterios.map((c, idx) => {
             const nuevoMax = idx === numCriterios - 1 ? parseFloat((puntajeBase + resto).toFixed(3)) : puntajeBase;
-            
+
             return {
                 ...c,
                 puntaje_maximo: nuevoMax.toFixed(3),
                 niveles: c.niveles.map((n) => {
                     let nuevoPuntaje = n.puntaje;
                     const nombre = n.nombre_nivel;
-                    
+
                     if (nombre === 'Excelente' || nombre === 'Sobresaliente') nuevoPuntaje = nuevoMax;
                     else if (nombre === 'Notable') nuevoPuntaje = parseFloat((nuevoMax * 0.8).toFixed(3));
                     else if (nombre === 'Regular' || nombre === 'Aprobado') nuevoPuntaje = parseFloat((nuevoMax * 0.6).toFixed(3));
                     else if (nombre === 'Deficiente' || nombre === 'Insuficiente') nuevoPuntaje = 0;
-                    
+
                     if (nombre !== 'Deficiente' && nombre !== 'Insuficiente' && nuevoPuntaje < 0.025) nuevoPuntaje = 0.025;
-                    
+
                     return { ...n, puntaje: parseFloat(nuevoPuntaje).toFixed(3) };
                 })
             };
@@ -225,11 +237,11 @@ export default function TeacherCrearRubricas() {
 
     const handleCriterioChange = (idx, field, value) => {
         const newCriterios = [...formData.criterios];
-        
+
         if (field === 'puntaje_maximo') {
             const val = parseFloat(value) || 0;
             newCriterios[idx][field] = val;
-            
+
             // Si el puntaje máximo cambia, el nivel "Excelente" toma ese valor automáticamente
             const excelenteIdx = newCriterios[idx].niveles.findIndex(n => n.nombre_nivel === 'Excelente');
             if (excelenteIdx !== -1) {
@@ -238,17 +250,17 @@ export default function TeacherCrearRubricas() {
         } else {
             newCriterios[idx][field] = value;
         }
-        
+
         setFormData({ ...formData, criterios: newCriterios });
     };
 
     const handleNivelChange = (cIdx, nIdx, field, value) => {
         const newCriterios = [...formData.criterios];
-        
+
         if (field === 'puntaje') {
             const val = parseFloat(value) || 0;
             const max = parseFloat(newCriterios[cIdx].puntaje_maximo) || 0;
-            
+
             if (val > max) {
                 Swal.fire('Aviso', 'El puntaje del nivel no puede ser mayor al máximo del criterio', 'warning');
                 newCriterios[cIdx].niveles[nIdx][field] = max;
@@ -258,7 +270,7 @@ export default function TeacherCrearRubricas() {
         } else {
             newCriterios[cIdx].niveles[nIdx][field] = value;
         }
-        
+
         setFormData({ ...formData, criterios: newCriterios });
     };
 
@@ -267,7 +279,7 @@ export default function TeacherCrearRubricas() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!formData.nombre_rubrica || !formData.tipo_rubrica || !formData.evaluacion_id) {
             return Swal.fire('Atención', 'Complete los campos obligatorios del encabezado', 'warning');
         }
@@ -294,7 +306,7 @@ export default function TeacherCrearRubricas() {
             const token = localStorage.getItem('token');
             const res = await fetch(`${API_URL}/teacher/rubricas`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
@@ -323,7 +335,7 @@ export default function TeacherCrearRubricas() {
             <Menu user={user} />
             <div className="content-wrapper" style={{ width: '100%' }}>
                 <Header title="Crear Nueva Rúbrica" user={user} onLogout={() => navigate('/login')} />
-                
+
                 <div style={{ padding: '30px' }}>
                     <div className="card" style={{ borderRadius: '15px', background: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', padding: '30px' }}>
                         <form onSubmit={handleSubmit}>
@@ -331,11 +343,11 @@ export default function TeacherCrearRubricas() {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
                                 <div>
                                     <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Nombre de la Rúbrica *</label>
-                                    <input type="text" value={formData.nombre_rubrica} onChange={(e) => setFormData({...formData, nombre_rubrica: e.target.value})} className="form-input" required placeholder="Ej: Rúbrica de Proyecto Final" />
+                                    <input type="text" value={formData.nombre_rubrica} onChange={(e) => setFormData({ ...formData, nombre_rubrica: e.target.value })} className="form-input" required placeholder="Ej: Rúbrica de Proyecto Final" />
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Tipo de Rúbrica *</label>
-                                    <select value={formData.tipo_rubrica} onChange={(e) => setFormData({...formData, tipo_rubrica: e.target.value})} className="form-select" required>
+                                    <select value={formData.tipo_rubrica} onChange={(e) => setFormData({ ...formData, tipo_rubrica: e.target.value })} className="form-select" required>
                                         <option value="">Seleccione tipo</option>
                                         {tiposRubrica.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                                     </select>
@@ -380,6 +392,7 @@ export default function TeacherCrearRubricas() {
                                             {evaluaciones.map(ev => <option key={ev.id} value={ev.id}>{ev.competencias} ({ev.ponderacion}%)</option>)}
                                         </select>
                                     </div>
+                                </div>
                                     <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
                                         <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', textTransform: 'uppercase' }}>Suma de Criterios</div>
                                         <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: totalPuntosCriterios === formData.porcentaje_evaluacion ? '#059669' : '#ef4444' }}>
@@ -387,12 +400,11 @@ export default function TeacherCrearRubricas() {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
                             {/* Instrucciones */}
                             <div style={{ marginBottom: '30px' }}>
                                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Instrucciones Generales</label>
-                                <textarea className="form-textarea" rows="3" value={formData.instrucciones} onChange={(e) => setFormData({...formData, instrucciones: e.target.value})} placeholder="Instrucciones para el estudiante..."></textarea>
+                                <textarea className="form-textarea" rows="3" value={formData.instrucciones} onChange={(e) => setFormData({ ...formData, instrucciones: e.target.value })} placeholder="Instrucciones para el estudiante..."></textarea>
                             </div>
 
                             {/* Criterios */}
@@ -409,7 +421,7 @@ export default function TeacherCrearRubricas() {
                                         <button type="button" onClick={() => removeCriterio(cIdx)} style={{ position: 'absolute', top: '10px', right: '10px', background: '#fee2e2', color: '#ef4444', border: 'none', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Eliminar criterio">
                                             <i className="fas fa-trash"></i>
                                         </button>
-                                        
+
                                         <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', paddingRight: '40px' }}>
                                             <input type="text" placeholder="Descripción del criterio (Ej: Dominio del tema)" value={c.descripcion} onChange={(e) => handleCriterioChange(cIdx, 'descripcion', e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
