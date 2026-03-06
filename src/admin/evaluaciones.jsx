@@ -9,10 +9,6 @@ import { useFechasDisponibles, agruparFechasPorMes } from '../utils/useFechasDis
 import '../assets/css/home.css';
 import '../assets/css/evaluacion.css';
 
-import { useFechasDisponibles, agruparFechasPorMes } from '../utils/useFechasDisponibles';
-
-import { useUI } from '../context/UIContext';
-
 const transformDateJSON = (formData) => {
     const fecha_data = JSON.parse(formData.fecha_horario_json)
     formData.id_horario = fecha_data.horarioId

@@ -73,16 +73,16 @@ export default function TeacherEditarRubrica() {
             const data = await teacherRubricasService.getFormData();
             setCarreras(data.carreras || []);
             setTiposRubrica(data.tipos || []);
-            
+
             // Load the rubric data to be edited
             const editData = await teacherRubricasService.getRubricaForEdit(id);
             if (!editData.success) throw new Error(editData.message || 'Error al cargar rúbrica');
-            
+
             const r = editData.rubrica;
-            
+
             // Pre-load the cascade selects
             const sems = await teacherRubricasService.getSemestres(r.carrera_id || r.seccion_codigo.split('-')[0]); // Fallback info if carrera_id not there directly
-            
+
             // Note: The backend getRubricaForEdit provides `r.materia_codigo`, `r.seccion_id`, etc.
             // We need to fetch the dropdown items just like when changing them
             // Usually, getRubricaForEdit gives us enough context, but extracting carrera from seccion_codigo format:
@@ -109,17 +109,17 @@ export default function TeacherEditarRubrica() {
             });
 
             // We mock the dropdowns just with the selected item so it looks correct without full cascade loading
-            setCarreras(prev => prev.some(c => c.codigo == carrera_id) ? prev : [...prev, {codigo: carrera_id, nombre: carrera_id}]);
+            setCarreras(prev => prev.some(c => c.codigo == carrera_id) ? prev : [...prev, { codigo: carrera_id, nombre: carrera_id }]);
             setSemestres([r.lapse_academico]);
-            setFormData(prev => ({...prev, semestre: r.lapse_academico}));
-            setMaterias([{codigo: r.materia_codigo, nombre: r.materia_nombre}]);
-            setSecciones([{id: r.seccion_id, letra: r.seccion_codigo.split(' ')[1], codigo_periodo: r.lapse_academico}]);
-            setEvaluaciones([{id: r.evaluacion_id, fecha_evaluacion: r.fecha_evaluacion, ponderacion: r.porcentaje_evaluacion}]);
+            setFormData(prev => ({ ...prev, semestre: r.lapse_academico }));
+            setMaterias([{ codigo: r.materia_codigo, nombre: r.materia_nombre }]);
+            setSecciones([{ id: r.seccion_id, letra: r.seccion_codigo.split(' ')[1], codigo_periodo: r.lapse_academico }]);
+            setEvaluaciones([{ id: r.evaluacion_id, fecha_evaluacion: r.fecha_evaluacion, ponderacion: r.porcentaje_evaluacion, contenido: r.contenido_evaluacion }]);
 
             if (editData.criterios && editData.criterios.length > 0) {
                 setCriterios(editData.criterios.map(c => ({
                     ...c,
-                    niveles: c.niveles.map(n => ({...n, id: n.id || Math.random(), puntaje: n.puntaje}))
+                    niveles: c.niveles.map(n => ({ ...n, id: n.id || Math.random(), puntaje: n.puntaje }))
                 })));
             }
         } catch (error) {
@@ -143,7 +143,7 @@ export default function TeacherEditarRubrica() {
                 const sems = await teacherRubricasService.getSemestres(value);
                 setSemestres(sems);
             }
-        } 
+        }
         else if (name === 'semestre') {
             setFormData(prev => ({ ...prev, materia_codigo: '', seccion_id: '', evaluacion_id: '', competencias: '', fecha_evaluacion: '' }));
             setMaterias([]); setSecciones([]); setEvaluaciones([]);
@@ -185,28 +185,28 @@ export default function TeacherEditarRubrica() {
     const redistribuirPuntajes = () => {
         if (!criterios.length) return;
         const totalPorcentaje = parseFloat(formData.porcentaje_evaluacion) || 10;
-        
+
         const numCriterios = criterios.length;
         const puntajeBase = Math.floor((totalPorcentaje / numCriterios) * 1000) / 1000;
         const resto = parseFloat((totalPorcentaje - (puntajeBase * numCriterios)).toFixed(3));
 
         setCriterios(prevCriterios => prevCriterios.map((c, idx) => {
             const nuevoMax = idx === numCriterios - 1 ? parseFloat((puntajeBase + resto).toFixed(3)) : puntajeBase;
-            
+
             return {
                 ...c,
                 puntaje_maximo: nuevoMax.toFixed(3),
                 niveles: c.niveles.map((n) => {
                     let nuevoPuntaje = n.puntaje;
                     const nombre = n.nombre_nivel;
-                    
+
                     if (nombre === 'Excelente' || nombre === 'Sobresaliente') nuevoPuntaje = nuevoMax;
                     else if (nombre === 'Notable') nuevoPuntaje = parseFloat((nuevoMax * 0.8).toFixed(3));
                     else if (nombre === 'Regular' || nombre === 'Aprobado') nuevoPuntaje = parseFloat((nuevoMax * 0.6).toFixed(3));
                     else if (nombre === 'Deficiente' || nombre === 'Insuficiente') nuevoPuntaje = 0;
-                    
+
                     if (nombre !== 'Deficiente' && nombre !== 'Insuficiente' && nuevoPuntaje < 0.025) nuevoPuntaje = 0.025;
-                    
+
                     return { ...n, puntaje: parseFloat(nuevoPuntaje).toFixed(3) };
                 })
             };
@@ -290,7 +290,7 @@ export default function TeacherEditarRubrica() {
     // --- Submission ---
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         // Basic validation
         if (parseFloat(formData.porcentaje_evaluacion) < 5) {
             Swal.fire('Error', 'El porcentaje debe ser al menos 5%', 'error');
@@ -337,15 +337,28 @@ export default function TeacherEditarRubrica() {
     return (
         <main className="main-content">
             <Menu user={user} />
-            <div className="content-wrapper" style={{ width: '100%' }}>
+            <div className="content-wrapper" style={{
+                width: '100%', flex: 1, display: 'flex',
+                flexDirection: 'column',
+                Width: '100%',
+                maxWidth: '100%'
+            }}>
                 <Header title="Crear Rúbrica" user={user} onLogout={() => navigate('/login')} />
 
                 <div className="view active" style={{ padding: '20px' }}>
-                    <div className="card form-container" style={{ padding: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                    <div className="card form-container" style={{
+                        padding: '40px',
+                        background: '#fff',
+                        borderRadius: '12px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        maxWidth: '100%',
+                        margin: '0 auto', // Centra si la pantalla es muy grande
+                        width: '100%' // Ocupa todo el ancho disponible
+                    }}>
                         <div className="card-header" style={{ marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
                             <h2 style={{ color: '#1e3a8a' }}><i className="fas fa-edit"></i> Editar Rúbrica</h2>
                         </div>
-                        
+
                         <div className="alert alert-info" style={{ background: '#eff6ff', color: '#1e40af', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
                             <i className="fas fa-info-circle"></i> Complete todos los campos requeridos. Los puntajes se distribuirán automáticamente según el porcentaje de la evaluación seleccionada.
                         </div>
@@ -356,7 +369,7 @@ export default function TeacherEditarRubrica() {
                                     <label>Nombre de la Rúbrica *</label>
                                     <input type="text" name="nombre_rubrica" value={formData.nombre_rubrica} onChange={handleChange} className="form-input" style={inputStyle} required />
                                 </div>
-                                
+
                                 <div className="form-group" style={{ marginBottom: '15px' }}>
                                     <label>Tipo de Rúbrica *</label>
                                     <select name="tipo_rubrica" value={formData.tipo_rubrica} onChange={handleChange} className="form-select" style={inputStyle} required>
@@ -394,22 +407,21 @@ export default function TeacherEditarRubrica() {
                                             {secciones.map(s => <option key={s.id} value={s.id}>{s.letra} ({s.codigo_periodo})</option>)}
                                         </select>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                                        <div style={{ flex: 1, marginRight: '20px' }}>
-                                            <label>Evaluación que la utilizará *</label>
-                                            <select name="evaluacion_id" value={formData.evaluacion_id} onChange={handleChange} className="form-select" style={inputStyle} required disabled={!formData.seccion_id}>
-                                                <option value="">{formData.seccion_id ? 'Seleccione evaluación' : 'Primero seleccione sección'}</option>
-                                                {evaluaciones.map(e => <option key={e.id} value={e.id}>Evaluación {e.fecha_evaluacion ? e.fecha_evaluacion.split('T')[0] : 'Sin fecha'} - {e.ponderacion}%</option>)}
-                                            </select>
+                                    <div className="form-group">
+
+                                        <label>Evaluación que la utilizará *</label>
+                                        <select name="evaluacion_id" value={formData.evaluacion_id} onChange={handleChange} className="form-select" style={inputStyle} required disabled={!formData.seccion_id}>
+                                            <option value="">{formData.seccion_id ? 'Seleccione evaluación' : 'Primero seleccione sección'}</option>
+                                            {evaluaciones.map(e => <option key={e.id} value={e.id}>{e.contenido} ({e.ponderacion}%)</option>)}
+                                        </select>
+                                    </div>
+                                    <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
+                                        <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', textTransform: 'uppercase' }}>Suma de Criterios</div>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios - formData.porcentaje_evaluacion) < 0.01 ? '#059669' : '#ef4444' }}>
+                                            {totalPuntosCriterios.toFixed(2)} / {formData.porcentaje_evaluacion}
                                         </div>
                                     </div>
-                                        <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
-                                            <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', textTransform: 'uppercase' }}>Suma de Criterios</div>
-                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios - formData.porcentaje_evaluacion) < 0.01 ? '#059669' : '#ef4444' }}>
-                                                {totalPuntosCriterios.toFixed(2)} / {formData.porcentaje_evaluacion}
-                                            </div>
-                                        </div>
-                                    </div>
+                                </div>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
                                     <div className="form-group">
@@ -487,12 +499,12 @@ export default function TeacherEditarRubrica() {
 }
 
 const inputStyle = {
-    width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', 
+    width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1',
     fontSize: '14px', boxSizing: 'border-box', outline: 'none'
 };
 
 const btnStyle = (bg, color, fontSize = '14px', padding = '10px 15px') => ({
-    background: bg, color: color, padding: padding, fontSize: fontSize, 
-    border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', 
+    background: bg, color: color, padding: padding, fontSize: fontSize,
+    border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex',
     alignItems: 'center', gap: '6px', fontWeight: 'bold'
 });

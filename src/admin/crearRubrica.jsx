@@ -310,7 +310,7 @@ export default function CrearRubricas() {
                 <Header title="Crear Nueva Rúbrica" user={user} onLogout={() => navigate('/login')} />
                 
                 <div style={{ padding: '30px' }}>
-                    <div className="card" style={{ borderRadius: '15px', background: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', padding: '30px' }}>
+                    <div className="card" style={{ borderRadius: '5px', background: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', padding: '30px' }}>
                         <form onSubmit={handleSubmit}>
                             {/* Encabezado */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
