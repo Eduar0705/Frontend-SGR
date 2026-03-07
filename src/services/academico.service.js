@@ -143,10 +143,10 @@ export const academicoService = {
         const data = await response.json();
         return data;
     },
-
-    async getCarreraMateria(materiaCodigo) {
+    //POSIBLEMENTE NO EN USO
+    async getCarreraXSeccion(idSecc) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/admin/rubricas/carrera-materia/${materiaCodigo}`, {
+        const response = await fetch(`${API_URL}/admin/rubricas/carrera-seccion/${idSecc}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import { rubricasService } from '../services/rubricas.service';
@@ -11,6 +12,7 @@ import '../assets/css/home.css';
 import { useUI } from '../context/UIContext';
 
 export default function Rubricas() {
+    const { periodoActual } = useUI();
     const navigate = useNavigate();
     const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
@@ -75,7 +77,7 @@ export default function Rubricas() {
         } else {
             loadInitialData();
         }
-    }, [user, navigate, loadInitialData]);
+    }, [periodoActual, user, navigate, loadInitialData]);
 
     // Filtrado y Paginación
     const filteredRubricas = useMemo(() => {
@@ -180,7 +182,7 @@ export default function Rubricas() {
                 const r = res.rubrica;
                 setCurrentRubricaId(id);
 
-                const jerarquia = await rubricasService.getCarreraMateria(r.materia_codigo);
+                const jerarquia = await rubricasService.getCarreraXSeccion(r.id_seccion);
 
                 // Cargar selects en cascada secuencialmente para garantizar estado correcto
                 await handleCarreraChange(jerarquia.carrera_codigo);
