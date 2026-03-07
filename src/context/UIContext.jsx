@@ -6,7 +6,7 @@ export function UIProvider({ children }) {
     const [periodoActual, setPeriodoActual] = useState(() => {
         try {
             const user = JSON.parse(localStorage.getItem('user'));
-            return user?.periodo_actual || null;
+            return user?.periodo_usuario || null;
         } catch {
             return null;
         }
@@ -15,10 +15,9 @@ export function UIProvider({ children }) {
     const updatePeriodo = (nuevoPeriodo) => {
         setPeriodoActual(nuevoPeriodo);
         try {
-            // ✅ FIX: hay que parsear el string antes de modificarlo
             const user = JSON.parse(localStorage.getItem('user'));
             if (user) {
-                user.periodo_actual = nuevoPeriodo;
+                user.periodo_usuario = nuevoPeriodo;
                 localStorage.setItem('user', JSON.stringify(user));
             }
         } catch (error) {

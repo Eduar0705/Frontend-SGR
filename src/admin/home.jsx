@@ -7,6 +7,7 @@ import '../assets/css/home.css';
 import { useUI } from '../context/UIContext';
 
 export default function Home() {
+    const { periodoActual } = useUI();
     const navigate = useNavigate();
     const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
@@ -40,7 +41,7 @@ export default function Home() {
                 loadStats();
             }
         }
-    }, [navigate, user, loadStats]);
+    }, [periodoActual, navigate, user, loadStats]);
 
     const handleLogout = () => {
         localStorage.removeItem('user');

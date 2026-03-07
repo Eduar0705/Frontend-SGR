@@ -26,12 +26,7 @@ export default function Header({ title, user, onLogout }) {
     const loadPeriodos = async () => {
         try {
             const result = await periodosService.getPeriodos();
-
-            // El backend devuelve { success, data: [...] }
-            // axios lo envuelve en .data, quedando result.data.data
-            const lista = Array.isArray(result.data?.data)
-                ? result.data.data
-                : [];
+            const lista = result.data.data
 
             setPeriodos(lista);
 
@@ -55,7 +50,7 @@ export default function Header({ title, user, onLogout }) {
         const nuevoPeriodo = e.target.value;
         updatePeriodo(nuevoPeriodo);
         // Recargar la página actual para que los datos se filtren por el nuevo periodo
-        window.location.reload();
+        //window.location.reload();
     };
 
     const handleMarkAsRead = async (id) => {
@@ -111,9 +106,12 @@ export default function Header({ title, user, onLogout }) {
 
             </div>
 
+            
             <div className="header-right">
+            <label>Periodo: </label>
                 <div className="form-header">
-                    <select className="form-select" value={periodoActual || ''} onChange={handlePeriodoChange}>
+                    
+                    <select id="selector_periodo" className="form-select" value={periodoActual || ''} onChange={handlePeriodoChange}>
                         {periodos.length === 0 ? (
                             <option value="" disabled>Cargando periodos...</option>
                         ) : (
