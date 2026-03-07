@@ -3,30 +3,47 @@ import React, { createContext, useState, useContext } from 'react';
 const UIContext = createContext();
 
 export function UIProvider({ children }) {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [periodoActual, setPeriodoActual] = useState(() => {
+        try {
+            const user = JSON.parse(localStorage.getItem('user'));
+            return user?.periodo_actual || null;
+        } catch {
+            return null;
+        }
+    });
 
+    const updatePeriodo = (nuevoPeriodo) => {
+        setPeriodoActual(nuevoPeriodo);
+        try {
+            // ✅ FIX: hay que parsear el string antes de modificarlo
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                user.periodo_actual = nuevoPeriodo;
+                localStorage.setItem('user', JSON.stringify(user));
+            }
+        } catch (error) {
+            console.error('Error updating periodo in localStorage:', error);
+        }
+    };
+
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    const toggleSidebar = () => {
-        setIsSidebarOpen(!isSidebarOpen);
-    };
-
-    const closeSidebar = () => {
-        setIsSidebarOpen(false);
-    };
-
-    const openSidebar = () => {
-        setIsSidebarOpen(true);
-    };
+    const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+    const closeSidebar = () => setIsSidebarOpen(false);
+    const openSidebar = () => setIsSidebarOpen(true);
 
     return (
-        <UIContext.Provider value={{ 
-            isSidebarOpen, 
-            toggleSidebar, 
-            closeSidebar, 
+        <UIContext.Provider value={{
+            isSidebarOpen,
+            toggleSidebar,
+            closeSidebar,
             openSidebar,
             loading,
-            setLoading 
+            setLoading,
+            // ✅ FIX: exponer periodoActual y updatePeriodo
+            periodoActual,
+            updatePeriodo
         }}>
             {children}
         </UIContext.Provider>

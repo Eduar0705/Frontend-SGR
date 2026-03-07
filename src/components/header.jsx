@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { useUI } from '../context/UIContext';
 import notificacionesService from '../services/notificaciones.service';
+import periodosService from '../services/periodos.service';
 import { authService } from '../services/auth.service';
 
 export default function Header({ title, user, onLogout }) {
     const navigate = useNavigate();
-    const { toggleSidebar } = useUI();
+    const { toggleSidebar, periodoActual, updatePeriodo } = useUI();
     const [notificaciones, setNotificaciones] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
-
+    const [periodos, setPeriodos] = useState([]);
     const loadNotifications = async () => {
         try {
             const result = await notificacionesService.getNotifications();
@@ -22,11 +23,40 @@ export default function Header({ title, user, onLogout }) {
         }
     };
 
+    const loadPeriodos = async () => {
+        try {
+            const result = await periodosService.getPeriodos();
+
+            // El backend devuelve { success, data: [...] }
+            // axios lo envuelve en .data, quedando result.data.data
+            const lista = Array.isArray(result.data?.data)
+                ? result.data.data
+                : [];
+
+            setPeriodos(lista);
+
+            if (!periodoActual && lista.length > 0) {
+                updatePeriodo(lista[0].codigo);
+            }
+        } catch (error) {
+            console.error('Error loading periodos:', error);
+            setPeriodos([]);
+        }
+    };
+
     useEffect(() => {
         loadNotifications();
-        const interval = setInterval(loadNotifications, 60000); // Actualizar cada minuto
+        loadPeriodos();
+        const interval = setInterval(loadNotifications, 60000);
         return () => clearInterval(interval);
     }, []);
+
+    const handlePeriodoChange = (e) => {
+        const nuevoPeriodo = e.target.value;
+        updatePeriodo(nuevoPeriodo);
+        // Recargar la página actual para que los datos se filtren por el nuevo periodo
+        window.location.reload();
+    };
 
     const handleMarkAsRead = async (id) => {
         try {
@@ -77,12 +107,27 @@ export default function Header({ title, user, onLogout }) {
                 <button className="mobile-menu-toggle" id="mobileMenuToggle" onClick={toggleSidebar}>
                     <i className="fas fa-bars"></i>
                 </button>
-                <h1 className="page-title" id="pageTitle"> {title || 'Inicio'} </h1>
+                <h1 className="page-title" id="pageTitle">{title || 'Inicio'}</h1>
+
             </div>
+
             <div className="header-right">
-                <button 
-                    className="header-btn" 
-                    title="Configuración" 
+                <div className="form-header">
+                    <select className="form-select" value={periodoActual || ''} onChange={handlePeriodoChange}>
+                        {periodos.length === 0 ? (
+                            <option value="" disabled>Cargando periodos...</option>
+                        ) : (
+                            periodos.map(p => (
+                                <option key={p.codigo} value={p.codigo}>
+                                    {p.codigo}
+                                </option>
+                            ))
+                        )}
+                    </select>
+                </div>
+                <button
+                    className="header-btn"
+                    title="Configuración"
                     onClick={() => {
                         if (user?.id_rol === 1) navigate('/admin/configuracion');
                         else if (user?.id_rol === 2) navigate('/teacher/config');
@@ -91,11 +136,12 @@ export default function Header({ title, user, onLogout }) {
                     }}>
                     <i className="fas fa-cog"></i>
                 </button>
+
                 <div className="notification-wrapper" style={{ position: 'relative' }}>
-                    <button 
-                        className="header-btn" 
-                        title="Notificaciones" 
-                        id="notificaciones" 
+                    <button
+                        className="header-btn"
+                        title="Notificaciones"
+                        id="notificaciones"
                         onClick={() => setShowDropdown(!showDropdown)}
                     >
                         <i className="fas fa-bell"></i>
@@ -114,8 +160,8 @@ export default function Header({ title, user, onLogout }) {
                                     <div className="no-notifications">No tienes notificaciones</div>
                                 ) : (
                                     notificaciones.map(n => (
-                                        <div 
-                                            key={n.id} 
+                                        <div
+                                            key={n.id}
                                             className={`notification-item ${!n.leido ? 'unread' : ''}`}
                                             onClick={() => !n.leido && handleMarkAsRead(n.id)}
                                         >
@@ -131,6 +177,7 @@ export default function Header({ title, user, onLogout }) {
                         </div>
                     )}
                 </div>
+
                 <button className="header-btn" id="salir" title="Salir" onClick={cerrarSesion}>
                     <i className="fas fa-sign-out-alt"></i>
                 </button>

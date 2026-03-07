@@ -967,6 +967,12 @@ body {
     gap: var(--spacing-lg);
 }
 
+.form-header {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+}
+
 .form-actions {
     display: flex;
     gap: var(--spacing-md);
