@@ -43,6 +43,7 @@ export const permisosService = {
     async getSemestres(carreraCodigo) {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_URL}/admin/semestres/${carreraCodigo}`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.json();
@@ -59,6 +60,7 @@ export const permisosService = {
     async getSecciones(materiaCodigo, carreraCodigo) {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_URL}/admin/secciones/${materiaCodigo}/${carreraCodigo}`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.json();

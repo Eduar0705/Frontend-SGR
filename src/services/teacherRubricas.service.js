@@ -11,7 +11,10 @@ export const teacherRubricasService = {
 
     async getSemestres(carrera) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/teacher/rubricas/semestres/${carrera}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/teacher/rubricas/semestres/${carrera}`, { 
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            headers: { 'Authorization': `Bearer ${token}` } 
+        });
         const data = await res.json();
         return data.data;
     },

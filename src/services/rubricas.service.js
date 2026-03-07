@@ -160,12 +160,16 @@ export const rubricasService = {
 
     async getMaterias(carrera, semestre) {
         if (!carrera || !semestre) throw new Error('Carrera y semestre son requeridos');
-        return fetchJSON(`/rubricas/materias/${carrera}/${semestre}`);
+        return fetchJSON(`/rubricas/materias/${carrera}/${semestre}`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario }
+        });
     },
 
     async getSecciones(materia, carrera) {
         if (!materia || !carrera) throw new Error('Materia y carrera son requeridas');
-        return fetchJSON(`/rubricas/secciones/${materia}/${carrera}`);
+        return fetchJSON(`/rubricas/secciones/${materia}/${carrera}`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario }
+        });
     },
 
     async getEvaluacionesPendientes(seccionId) {

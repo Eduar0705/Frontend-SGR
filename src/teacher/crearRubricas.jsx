@@ -90,6 +90,7 @@ export default function TeacherCrearRubricas() {
         try {
             const token = localStorage.getItem('token');
             const res = await fetch(`${API_URL}/teacher/rubricas/semestres/${codigo}`, {
+                params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json()

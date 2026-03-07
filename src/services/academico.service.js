@@ -1,3 +1,5 @@
+import axios from "axios";
+
 const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/api';
 
 export const academicoService = {
@@ -9,31 +11,34 @@ export const academicoService = {
         const data = await response.json();
         return data.data || [];
     },
-
+    //migrado a axios
     async getSemestres(carreraCodigo) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/admin/semestres/${carreraCodigo}`, {
+        const response = await axios.get(`${API_URL}/admin/semestres/${carreraCodigo}`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await response.json();
+        const data = response.data;
         return data || [];
     },
 
     async getMaterias(carreraCodigo, semestreId) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/admin/materias/${carreraCodigo}/${semestreId}`, {
+        const response = await axios.get(`${API_URL}/admin/materias/${carreraCodigo}/${semestreId}`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await response.json();
+        const data = await response.data
         return data || [];
     },
 
     async getSecciones(materiaCodigo, carreraCodigo) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/admin/secciones/${materiaCodigo}/${carreraCodigo}`, {
+        const response = await axios.get(`${API_URL}/admin/secciones/${materiaCodigo}/${carreraCodigo}`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await response.json();
+        const data = await response.data;
         return data || [];
     },
 
