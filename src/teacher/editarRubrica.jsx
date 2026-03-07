@@ -81,19 +81,10 @@ export default function TeacherEditarRubrica() {
             const r = editData.rubrica;
 
             // Pre-load the cascade selects
-            const sems = await teacherRubricasService.getSemestres(r.carrera_id || r.seccion_codigo.split('-')[0]); // Fallback info if carrera_id not there directly
+            //const sems = await teacherRubricasService.getSemestres(r.carrera_id || r.seccion_codigo.split('-')[0]); // Fallback info if carrera_id not there directly
 
-            // Note: The backend getRubricaForEdit provides `r.materia_codigo`, `r.seccion_id`, etc.
-            // We need to fetch the dropdown items just like when changing them
-            // Usually, getRubricaForEdit gives us enough context, but extracting carrera from seccion_codigo format:
             const parts = r.seccion_codigo.split('-');
             const carrera_id = parts[0];
-            const secParts = parts[1].split(' ');
-            const semestreCalculado = '1'; // Actually we don't have semestre in the rubric directly, let's just fetch everything based on what we have or accept it's prefilled and disabled.
-            // Actually, in edit mode, changing seccion/materia is risky. For simplicity, we can just load the exact options OR lock the top-level cascade.
-            // Let's load the cascade correctly if possible, or leave it locked.
-            // Since editing the assignment metadata might be rare, we'll allow editing the rubric details mostly, but we do need to populate formData.
-
             setFormData({
                 nombre_rubrica: r.nombre_rubrica,
                 tipo_rubrica: r.id_tipo,

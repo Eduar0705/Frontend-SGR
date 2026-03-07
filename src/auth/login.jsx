@@ -170,3 +170,6 @@ export default function Login() {
         </div>
     );
 }
+function getPeriodo() {
+
+}
