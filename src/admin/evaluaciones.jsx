@@ -18,6 +18,7 @@ const transformDateJSON = (formData) => {
 }
 
 export default function Evaluaciones() {
+    const { periodoActual } = useUI();
     const navigate = useNavigate();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
@@ -87,7 +88,7 @@ export default function Evaluaciones() {
     useEffect(() => {
         if (!user) navigate('/login');
         else loadEvaluaciones();
-    }, [user, navigate, loadEvaluaciones]);
+    }, [periodoActual, user, navigate, loadEvaluaciones]);
 
     // ── Carga de catálogos al abrir modal ──────────────────────────────────────
     useEffect(() => {
