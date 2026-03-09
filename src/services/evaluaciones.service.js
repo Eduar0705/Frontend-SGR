@@ -166,7 +166,8 @@ export const evaluacionesService = {
         const response = await axios.get(`${API_URL}/teacher/evaluaciones/${evaluacionId}/${estudianteCedula}/detalles`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        return await response.data;
+        const data = await response.data
+        return data;
     },
 
     async saveEvaluacionResultado(evaluacionId, estudianteCedula, payload) {

@@ -173,7 +173,7 @@ export default function TeacherEvaluaciones() {
                                                                                 const fullName = `${ev.estudiante_nombre} ${ev.estudiante_apellido}`.toLowerCase();
                                                                                 return fullName.includes(searchTerm) || ev.estudiante_cedula.includes(searchTerm);
                                                                             }).map(ev => (
-                                                                                <div key={ev.id} className="evaluacion-card" style={{ 
+                                                                                <div key={ev.estudiante_cedula + ev.id} className="evaluacion-card" style={{ 
                                                                                     background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px', 
                                                                                     boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)', 
                                                                                     position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '15px' 
