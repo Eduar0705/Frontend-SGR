@@ -10,6 +10,7 @@ import '../assets/css/crearRubrica.css';
 import { useUI } from '../context/UIContext';
 
 export default function CrearRubricas() {
+    const { periodoActual } = useUI();
     const navigate = useNavigate();
     const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
@@ -69,7 +70,7 @@ export default function CrearRubricas() {
         } else {
             loadInitialData();
         }
-    }, [user, navigate, loadInitialData]);
+    }, [periodoActual, user, navigate, loadInitialData]);
 
     const redistribuirPuntajes = (porcentaje, listaCriterios) => {
         if (!listaCriterios.length) return [];

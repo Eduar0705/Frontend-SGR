@@ -180,6 +180,7 @@ export default function PermisosDocente() {
             }
         } catch (error) {
             Swal.fire('Error', 'No se pudo guardar el permiso', 'error');
+            console.error(error)
         }
     };
 
@@ -202,6 +203,7 @@ export default function PermisosDocente() {
                     }
                 } catch (error) {
                     Swal.fire('Error', 'No se pudo eliminar el permiso', 'error');
+                    console.error(error)
                 }
             }
         });

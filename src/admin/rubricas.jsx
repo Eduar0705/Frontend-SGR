@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import { rubricasService } from '../services/rubricas.service';
