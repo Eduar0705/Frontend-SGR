@@ -37,6 +37,7 @@ ChartJS.register(
 import { useUI } from '../context/UIContext';
 
 export default function Reportes() {
+    const { periodoActual } = useState();
     const navigate = useNavigate();
     const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
@@ -66,7 +67,7 @@ export default function Reportes() {
         } else {
             loadStats();
         }
-    }, [user, navigate, loadStats]);
+    }, [periodoActual, user, navigate, loadStats]);
 
     if (!user) return null;
 

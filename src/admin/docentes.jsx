@@ -9,6 +9,7 @@ import { useUI } from '../context/UIContext';
 
 export default function Docentes() {
     const navigate = useNavigate();
+    const { periodoActual } = useUI();
     const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
@@ -54,7 +55,7 @@ export default function Docentes() {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             cargarProfesores();
         }
-    }, [navigate, user]);
+    }, [periodoActual, navigate, user]);
 
     // --- VALIDACIONES EN TIEMPO REAL ---
     const handleChange = (e) => {
