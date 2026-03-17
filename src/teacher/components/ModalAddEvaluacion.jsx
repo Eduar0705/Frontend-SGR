@@ -37,13 +37,15 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                const [resCarreras, resEstrategias] = await Promise.all([
+                const [resCarreras, resEstrategias, resCortes] = await Promise.all([
                     evaluacionesService.getTeacherCarreras(),
-                    evaluacionesService.getEstrategias()
+                    evaluacionesService.getEstrategias(),
+                    evaluacionesService.getCortes()
                 ]);
                 
                 if (resCarreras.success) setCarreras(resCarreras.carreras);
                 if (resEstrategias.success) setEstrategias(resEstrategias.estrategias_eval);
+                if (resCortes.success) console.log(resCortes)
             } catch (error) {
                 console.error('Error loading initial data:', error);
             }

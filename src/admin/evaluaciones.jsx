@@ -95,6 +95,7 @@ export default function Evaluaciones() {
         if (showModal) {
             evaluacionesService.getCarreras().then(res => res.success && setCarreras(res.carreras));
             evaluacionesService.getEstrategias().then(res => res.success && setEstrategias(res.estrategias_eval));
+            evaluacionesService.getCortes().then(res => res.success && console.log(res.cortes) && setCortes(res.cortes));
         }
     }, [showModal]);
 

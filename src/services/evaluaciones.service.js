@@ -24,6 +24,17 @@ export const evaluacionesService = {
         if (data.success) return data.evaluaciones;
         throw new Error(data.message || 'Error al cargar evaluaciones del docente');
     },
+    
+    async getCortes() {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_URL}/evaluaciones/cortes`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.data
+        console.log(data)
+        return data;
+    },
 
     async getCarreras() {
         const token = localStorage.getItem('token');
