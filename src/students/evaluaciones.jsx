@@ -71,13 +71,13 @@ export default function StudentEvaluaciones() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
                             {evaluaciones.map((ev) => (
                                 <div key={ev.evaluacion_id} style={cardStyle}>
-                                    <h3 style={{ color: '#1e40af', marginBottom: '12px', fontSize: '1.1rem' }}>{ev.nombre_rubrica}</h3>
+                                    <h3 style={{ color: '#1e40af', marginBottom: '12px', fontSize: '1.1rem' }}>{ev.contenido}</h3>
                                     <InfoLine icon="fa-book" label="Materia" value={ev.materia} />
-                                    <InfoLine icon="fa-user-tie" label="Profesor" value={ev.profesor} />
-                                    <InfoLine icon="fa-star" label="Puntaje Total" value={`${parseFloat(ev.puntaje_total).toFixed(1)}/100 (${(parseFloat(ev.puntaje_total) / 5).toFixed(1)}/20)`} />
-                                    <InfoLine icon="fa-calendar" label="Fecha" value={ev.fecha_evaluacion ? new Date(ev.fecha_evaluacion).toLocaleDateString('es-ES') : 'Pendiente'} />
                                     <InfoLine icon="fa-clipboard" label="Tipo" value={ev.tipo_evaluacion || '-'} />
                                     <InfoLine icon="fa-percent" label="Porcentaje" value={`${ev.porcentaje_evaluacion}%`} />
+                                    <InfoLine icon="fa-star" label="Puntaje Total" value={`${(parseFloat(ev.puntaje_total) / 5).toFixed(1)}/20 (${parseFloat(ev.puntaje_total).toFixed(1)}/100)`} />
+                                    <InfoLine icon="fa-user-tie" label="Profesor" value={ev.profesor} />
+                                    <InfoLine icon="fa-calendar" label="Fecha" value={ev.fecha_evaluacion ? new Date(ev.fecha_evaluacion).toLocaleDateString('es-ES') : 'Pendiente'} />
                                     <button
                                         onClick={() => verDetalles(ev.evaluacion_id)}
                                         style={{ marginTop: '15px', width: '100%', padding: '10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
