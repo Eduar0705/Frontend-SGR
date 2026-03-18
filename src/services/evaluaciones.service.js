@@ -32,7 +32,6 @@ export const evaluacionesService = {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.data
-        console.log(data)
         return data;
     },
 

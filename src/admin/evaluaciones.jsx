@@ -16,6 +16,15 @@ const transformDateJSON = (formData) => {
     formData.hora_inicio = fecha_data.horaInicio
     formData.hora_cierre = fecha_data.horaCierre
 }
+const formatearFecha = (fecha_formato_sql) => {
+    const fecha = new Date(fecha_formato_sql);
+    const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).replace(/\//g, '-');
+    return fechaFormateada;
+}
 
 export default function Evaluaciones() {
     const { periodoActual } = useUI();
@@ -31,6 +40,7 @@ export default function Evaluaciones() {
     const [searchTerm, setSearchTerm] = useState('');
     const [docenteFilter, setDocenteFilter] = useState('');
     const [estadoFilter, setEstadoFilter] = useState('');
+
     const [entriesPerPage, setEntriesPerPage] = useState(6);
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -46,12 +56,14 @@ export default function Evaluaciones() {
     const [materias, setMaterias] = useState([]);
     const [secciones, setSecciones] = useState([]);
     const [estrategias, setEstrategias] = useState([]);
+    const [cortes, setCortes] = useState([]);
 
     // Hook de fechas dinámicas
     const { fechasSistema, configuracionFechas, loadingFechas, errorFechas, cargarFechas, resetFechas } = useFechasDisponibles();
 
     const [formData, setFormData] = useState({
         contenido: '',
+        corte: '',
         estrategias_eval: [],
         porcentaje: 5,
         cant_personas: 1,
@@ -95,7 +107,7 @@ export default function Evaluaciones() {
         if (showModal) {
             evaluacionesService.getCarreras().then(res => res.success && setCarreras(res.carreras));
             evaluacionesService.getEstrategias().then(res => res.success && setEstrategias(res.estrategias_eval));
-            evaluacionesService.getCortes().then(res => res.success && console.log(res.cortes) && setCortes(res.cortes));
+            evaluacionesService.getCortes().then(res => res.success && setCortes(res.cortes));
         }
     }, [showModal]);
 
@@ -182,7 +194,7 @@ export default function Evaluaciones() {
         setModalMode('create');
         setCurrentEvalId(null);
         setFormData({
-            contenido: '', estrategias_eval: [], porcentaje: 5, cant_personas: 1,
+            contenido: '', corte: '', estrategias_eval: [], porcentaje: 5, cant_personas: 1,
             carrera_codigo: '', materia_codigo: '', id_seccion: '', tipo_horario: 'Sección',
             fecha_horario_json: '', fecha_evaluacion: '', id_horario: '', hora_inicio: '', hora_fin: '',
             competencias: '', instrumentos: ''
@@ -225,6 +237,8 @@ export default function Evaluaciones() {
 
                 setFormData({
                     ...data,
+                    corte: data.corte || '',
+                    cant_personas: data.cantidad_personas || '',
                     contenido: data.contenido || '',
                     estrategias_eval: data.estrategias || [],
                     fecha_evaluacion: fechaStr,
@@ -437,6 +451,20 @@ export default function Evaluaciones() {
                                                 ))}
                                             </select>
                                         </div>
+                                        <div className="form-field">
+                                            <label>Corte</label>
+                                            <select
+                                                value={formData.corte}
+                                                disabled={!formData.id_seccion || modalMode == 'view'}
+                                                onChange={(e) => setFormData({ ...formData, corte: e.target.value })}
+                                                required
+                                            >
+                                                <option value="">Seleccione el corte...</option>
+                                                {cortes.map(c => (
+                                                    <option key={c.orden} value={c.orden}>Corte {c.orden} ({formatearFecha(c.fecha_inicio)} - {formatearFecha(c.fecha_fin)})</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -465,16 +493,15 @@ export default function Evaluaciones() {
                                             />
                                         </div>
                                         <div className="form-field">
-                                            <label>Modalidad</label>
-                                            <select
+                                            <label>Cantidad de personas</label>
+                                            <input
+                                                type="number" min="1" max="50"
+                                                placeholder="Cantidad de personas en caso de ser grupal"
                                                 value={formData.cant_personas}
                                                 onChange={(e) => setFormData({ ...formData, cant_personas: e.target.value })}
                                                 disabled={modalMode === 'view'}
                                             >
-                                                <option value="1">Individual</option>
-                                                <option value="2">Parejas</option>
-                                                <option value="3">Grupal (3+)</option>
-                                            </select>
+                                            </input>
                                         </div>
                                     </div>
                                 </div>

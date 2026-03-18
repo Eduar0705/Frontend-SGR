@@ -11,7 +11,6 @@ export const docentesService = {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response;
-        console.log(data.data);
         return data.data.data; // Retorna el array de profesores
     },
 

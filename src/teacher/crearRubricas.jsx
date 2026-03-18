@@ -145,7 +145,6 @@ export default function TeacherCrearRubricas() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
-            console.log(data)
             if (data.success) {
                 setEvaluaciones(data.evaluaciones);
             }

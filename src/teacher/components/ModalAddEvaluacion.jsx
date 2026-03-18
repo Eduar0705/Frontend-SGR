@@ -253,7 +253,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                 />
                             </div>
                             <div className="form-field">
-                                <label>Modalidad</label>
+                                <label>Cantidad de personas</label>
                                 <input
                                     type = "number"
                                     min = "1" max = "50"
