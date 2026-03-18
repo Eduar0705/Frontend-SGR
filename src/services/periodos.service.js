@@ -19,6 +19,19 @@ export const periodosService = {
         }
     },
 
+    getPeriodo: async (codigoPeriodo) => {
+        try {
+            const response = await axios.get(`${API_URL}/periodos/${codigoPeriodo}`, {
+                headers: getAuthHeaders()
+            });
+            console.log(codigoPeriodo, response.data)
+            return { success: true, data: response.data };
+        } catch (error) {
+            console.error('Error fetching periodo:', error);
+            return { success: false, data: null };
+        }
+    },
+
     getPensums: async () => {
         try {
             const response = await axios.get(`${API_URL}/periodos/pensums`, {

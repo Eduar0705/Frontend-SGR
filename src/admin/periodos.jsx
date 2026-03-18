@@ -45,7 +45,8 @@ export default function Periodos() {
     const [periodoForm, setPeriodoForm] = useState({
         fecha_inicio: '',
         fecha_fin: '',
-        id_pensum: ''
+        id_pensum: '',
+        dias: ''
     });
 
     // Auth guard
@@ -148,7 +149,7 @@ export default function Periodos() {
     };
 
     const openAddPeriodoModal = () => {
-        setPeriodoForm({ fecha_inicio: '', fecha_fin: '', id_pensum: '' });
+        setPeriodoForm({ fecha_inicio: '', fecha_fin: '', id_pensum: '', dias: '' });
         setShowPeriodoModal(true);
     };
 
@@ -181,7 +182,8 @@ export default function Periodos() {
             codigo: nuevoCodigo,
             fecha_inicio: periodoForm.fecha_inicio,
             fecha_fin: periodoForm.fecha_fin,
-            id_pensum: periodoForm.id_pensum // id_pensum se manda tal cual, el backend decide formato (num/string)
+            id_pensum: periodoForm.id_pensum, // id_pensum se manda tal cual, el backend decide formato (num/string)
+            dias: parseInt(periodoForm.dias) || 0
         };
 
         const result = await periodosService.createPeriodo(payload);
@@ -658,6 +660,20 @@ export default function Periodos() {
                                         </option>
                                     ))}
                                 </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Días para pasar notas:</label>
+                                <input
+                                    type="number"
+                                    name="dias"
+                                    value={periodoForm.dias}
+                                    onChange={handlePeriodoFormChange}
+                                    required
+                                    min="1"
+                                />
+                                <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', display: 'block', marginTop: '4px', lineHeight: '1.3' }}>
+                                    Cantidad de días antes del cierre del corte en el que se le permitirá a los profesores evaluar a sus estudiantes o pasar sus notas al sistema.
+                                </small>
                             </div>
                             <div className="form-actions">
                                 <button type="button" className="btn-cancel" onClick={() => setShowPeriodoModal(false)}>Cancelar</button>
