@@ -40,7 +40,6 @@ export function UIProvider({ children }) {
             openSidebar,
             loading,
             setLoading,
-            // ✅ FIX: exponer periodoActual y updatePeriodo
             periodoActual,
             updatePeriodo
         }}>

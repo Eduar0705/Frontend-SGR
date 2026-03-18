@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useState, useCallback } from 'react';
 const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/api';
 // ── Utilidades ─────────────────────────────────────────────────────────────────
@@ -41,9 +42,11 @@ export function useFechasDisponibles() {
         setErrorFechas(null);
 
         try {
-            const response = await fetch(`${API_URL}/evaluaciones/seccion/${seccionId}/horario`);
-            const data     = await response.json();
-            console.log(data)
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${API_URL}/evaluaciones/seccion/${seccionId}/horario`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+            const data     = await response.data;
             if (!data.success || !data.horarios.length) {
                 setFechasSistema([]);
                 setLoadingFechas(false);

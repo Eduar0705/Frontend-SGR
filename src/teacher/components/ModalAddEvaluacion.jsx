@@ -5,12 +5,13 @@ import { useFechasDisponibles, agruparFechasPorMes } from '../../utils/useFechas
 
 export default function ModalAddEvaluacion({ onClose, onSaved }) {
     const [submitting, setSubmitting] = useState(false);
-    
+
     // Catalogos
     const [carreras, setCarreras] = useState([]);
     const [materias, setMaterias] = useState([]);
     const [secciones, setSecciones] = useState([]);
     const [estrategias, setEstrategias] = useState([]);
+    const [cortes, setCortes] = useState([]);
 
     // Hook de fechas dinámicas
     const { fechasSistema, configuracionFechas, loadingFechas, errorFechas, cargarFechas, resetFechas } = useFechasDisponibles();
@@ -42,17 +43,26 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                     evaluacionesService.getEstrategias(),
                     evaluacionesService.getCortes()
                 ]);
-                
+
                 if (resCarreras.success) setCarreras(resCarreras.carreras);
                 if (resEstrategias.success) setEstrategias(resEstrategias.estrategias_eval);
-                if (resCortes.success) console.log(resCortes)
+                if (resCortes.success) setCortes(resCortes.cortes);
             } catch (error) {
                 console.error('Error loading initial data:', error);
             }
         };
         loadInitialData();
     }, []);
+    const formatearFecha = (fecha_formato_sql) => {
+        const fecha = new Date(fecha_formato_sql);
+        const dia = String(fecha.getUTCDate()).padStart(2, '0');
+        const mes = String(fecha.getUTCMonth() + 1).padStart(2, '0'); // +1 porque los meses empiezan en 0
+        const año = fecha.getUTCFullYear();
 
+        // Formato dd-mm-aaaa
+        const fechaFormateada = `${dia}-${mes}-${año}`;
+        return fechaFormateada;
+    }
     // ── Carga jerárquica ───────────────────────────────────────────────────────
     const handleCarreraChange = async (codigo) => {
         setFormData(prev => ({ ...prev, carrera_codigo: codigo, materia_codigo: '', id_seccion: '', id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
@@ -153,7 +163,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="modal-premium-form">
-                    
+
                     {/* ── Sección: Materia ──────────────────────── */}
                     <div className="form-section-premium">
                         <h4><i className="fas fa-book"></i> Datos de la Materia</h4>
@@ -196,6 +206,18 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                     <option value="">Seleccione sección...</option>
                                     {secciones.map(s => (
                                         <option key={s.id} value={s.id}>Sección {s.codigo}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-field">
+                                <label>Corte</label>
+                                <select
+                                    disabled={!formData.id_seccion}
+                                    required
+                                >
+                                    <option value="">Seleccione el corte...</option>
+                                    {cortes.map(c => (
+                                        <option key={c.orden} value={c.orden}>Corte {c.orden} ({formatearFecha(c.fecha_inicio)} - {formatearFecha(c.fecha_fin)})</option>
                                     ))}
                                 </select>
                             </div>
