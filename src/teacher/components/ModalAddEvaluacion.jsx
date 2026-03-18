@@ -18,6 +18,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
 
     const [formData, setFormData] = useState({
         contenido: '',
+        corte: '',
         estrategias_eval: [],
         porcentaje: 5,
         cant_personas: 1,
@@ -55,12 +56,11 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
     }, []);
     const formatearFecha = (fecha_formato_sql) => {
         const fecha = new Date(fecha_formato_sql);
-        const dia = String(fecha.getUTCDate()).padStart(2, '0');
-        const mes = String(fecha.getUTCMonth() + 1).padStart(2, '0'); // +1 porque los meses empiezan en 0
-        const año = fecha.getUTCFullYear();
-
-        // Formato dd-mm-aaaa
-        const fechaFormateada = `${dia}-${mes}-${año}`;
+        const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+        }).replace(/\//g, '-');
         return fechaFormateada;
     }
     // ── Carga jerárquica ───────────────────────────────────────────────────────
@@ -88,8 +88,6 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
     const handleSeccionChange = async (id) => {
         setFormData(prev => ({ ...prev, id_seccion: id, id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
         if (id) {
-            // En el modo creación (éste), pasamos un array vacío de evaluaciones existentes 
-            // para que no bloquee ninguna fecha por sí misma inicialmente.
             await cargarFechas(id, []);
         } else {
             resetFechas();
@@ -135,6 +133,11 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
 
         if (formData.tipo_horario === 'Sección' && !formData.id_horario) {
             Swal.fire('Atención', 'Debe seleccionar una fecha y horario de la lista.', 'warning');
+            return;
+        }
+
+        if (!formData.corte) {
+            Swal.fire('Atención', 'Debe seleccionar un corte al que pertenezca la evaluación.', 'warning');
             return;
         }
 
@@ -212,7 +215,9 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                             <div className="form-field">
                                 <label>Corte</label>
                                 <select
+                                    value = {formData.corte}
                                     disabled={!formData.id_seccion}
+                                    onChange={(e) => setFormData({ ...formData, corte: e.target.value })}
                                     required
                                 >
                                     <option value="">Seleccione el corte...</option>
@@ -249,14 +254,13 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                             </div>
                             <div className="form-field">
                                 <label>Modalidad</label>
-                                <select
+                                <input
+                                    type = "number"
+                                    min = "1" max = "50"
                                     value={formData.cant_personas}
                                     onChange={(e) => setFormData({ ...formData, cant_personas: e.target.value })}
                                 >
-                                    <option value="1">Individual</option>
-                                    <option value="2">Parejas</option>
-                                    <option value="3">Grupal (3+)</option>
-                                </select>
+                                </input>
                             </div>
                         </div>
                     </div>
