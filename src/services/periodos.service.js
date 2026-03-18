@@ -33,7 +33,7 @@ export const periodosService = {
 
     createPeriodo: async (data) => {
         try {
-            const response = await axios.post(`${API_URL}/periodos`, data, {
+            const response = await axios.post(`${API_URL}/periodos/crear`, data, {
                 headers: getAuthHeaders()
             });
             return { success: true, data: response.data };
