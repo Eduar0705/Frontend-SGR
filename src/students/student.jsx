@@ -73,7 +73,7 @@ export default function Student() {
                                         <div className="stat-value" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
                                             {data?.stats?.rubricasActivas || 0}
                                         </div>
-                                        <div className="stat-label" style={{ color: '#64748b' }}>Rúbricas Habilitadas</div>
+                                        <div className="stat-label" style={{ color: '#64748b' }}>Rúbricas que te evalúan</div>
                                     </div>
                                 </div>
                                 <div className="stat-card card">
@@ -95,7 +95,7 @@ export default function Student() {
                                         <div className="stat-value" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
                                             {data?.stats?.evaluacionesPendientes || 0}
                                         </div>
-                                        <div className="stat-label" style={{ color: '#64748b' }}>Tareas Pendientes</div>
+                                        <div className="stat-label" style={{ color: '#64748b' }}>Aún sin evaluar</div>
                                     </div>
                                 </div>
                             </div>
