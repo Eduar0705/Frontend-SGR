@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import { evaluacionesService } from '../services/evaluaciones.service';
+import { periodosService } from '../services/periodos.service'
 import Swal from 'sweetalert2';
 import { useUI } from '../context/UIContext';
 import { useFechasDisponibles, agruparFechasPorMes } from '../utils/useFechasDisponibles';
@@ -107,7 +108,7 @@ export default function Evaluaciones() {
         if (showModal) {
             evaluacionesService.getCarreras().then(res => res.success && setCarreras(res.carreras));
             evaluacionesService.getEstrategias().then(res => res.success && setEstrategias(res.estrategias_eval));
-            evaluacionesService.getCortes().then(res => res.success && setCortes(res.cortes));
+            periodosService.getCortes().then(res => res.success && setCortes(res.cortes));
         }
     }, [showModal]);
 

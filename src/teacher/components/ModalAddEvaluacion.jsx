@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { evaluacionesService } from '../../services/evaluaciones.service';
+import { periodosService } from '../../services/periodos.service';
 import Swal from 'sweetalert2';
 import { useFechasDisponibles, agruparFechasPorMes } from '../../utils/useFechasDisponibles';
 
@@ -42,7 +43,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                 const [resCarreras, resEstrategias, resCortes] = await Promise.all([
                     evaluacionesService.getTeacherCarreras(),
                     evaluacionesService.getEstrategias(),
-                    evaluacionesService.getCortes()
+                    periodosService.getCortes()
                 ]);
 
                 if (resCarreras.success) setCarreras(resCarreras.carreras);
