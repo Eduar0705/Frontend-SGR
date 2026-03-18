@@ -17,6 +17,7 @@ import EvaluacionDocente from './admin/evaluacionDocente';
 import Evaluaciones from './admin/evaluaciones';
 import Rubricas from './admin/rubricas';
 import PermisosDocente from './admin/PermisosDocente';
+import Periodos from './admin/periodos';
 
 //Importar archivos de Docentes
 import Teacher from './teacher/teacher';
@@ -63,6 +64,7 @@ function AppContent() {
                     <Route path='/admin/evaluaciones' element={<Evaluaciones />} />
                     <Route path='/admin/rubricas' element={<Rubricas />} />
                     <Route path='/admin/permisos/:cedula' element={<PermisosDocente />} />
+                    <Route path='/admin/periodos' element={<Periodos />} />
 
                     {/* Rutas para Docentes*/}
                     <Route path="/teacher" element={<Teacher />} />

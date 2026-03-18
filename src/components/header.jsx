@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { useUI } from '../context/UIContext';
 import notificacionesService from '../services/notificaciones.service';
 import periodosService from '../services/periodos.service';
 import { authService } from '../services/auth.service';
+import '../assets/css/periodos.css';
 
 export default function Header({ title, user, onLogout }) {
     const navigate = useNavigate();
@@ -12,7 +13,9 @@ export default function Header({ title, user, onLogout }) {
     const { toggleSidebar, periodoActual, updatePeriodo } = useUI();
     const [notificaciones, setNotificaciones] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [showConfigMenu, setShowConfigMenu] = useState(false);
     const [periodos, setPeriodos] = useState([]);
+    const configMenuRef = useRef(null);
     const loadNotifications = async () => {
         try {
             const result = await notificacionesService.getNotifications();
@@ -45,6 +48,17 @@ export default function Header({ title, user, onLogout }) {
         loadPeriodos();
         const interval = setInterval(loadNotifications, 60000);
         return () => clearInterval(interval);
+    }, []);
+
+    // Close config dropdown on outside click
+    useEffect(() => {
+        const handleOutsideClick = (e) => {
+            if (configMenuRef.current && !configMenuRef.current.contains(e.target)) {
+                setShowConfigMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleOutsideClick);
+        return () => document.removeEventListener('mousedown', handleOutsideClick);
     }, []);
 
     const handlePeriodoChange = (e) => {
@@ -124,17 +138,42 @@ export default function Header({ title, user, onLogout }) {
                         </select>
                     )}
                 </div>
-                <button
-                    className="header-btn"
-                    title="Configuración"
-                    onClick={() => {
-                        if (user?.id_rol === 1) navigate('/admin/configuracion');
-                        else if (user?.id_rol === 2) navigate('/teacher/config');
-                        else if (user?.id_rol === 3) navigate('/student/config');
-                        else navigate('/config');
-                    }}>
-                    <i className="fas fa-cog"></i>
-                </button>
+                {storedUser?.id_rol === 1 ? (
+                    <div className="config-dropdown-wrapper" ref={configMenuRef}>
+                        <button
+                            className="header-btn"
+                            title="Configuración"
+                            onClick={() => setShowConfigMenu(v => !v)}
+                        >
+                            <i className="fas fa-cog"></i>
+                        </button>
+                        {showConfigMenu && (
+                            <div className="config-dropdown-menu">
+                                <button className="dropdown-item" onClick={() => { setShowConfigMenu(false); navigate('/admin/configuracion'); }}>
+                                    <i className="fas fa-users"></i>
+                                    Configuración de Usuarios
+                                </button>
+                                <div className="config-dropdown-divider"></div>
+                                <button className="dropdown-item" onClick={() => { setShowConfigMenu(false); navigate('/admin/periodos'); }}>
+                                    <i className="fas fa-calendar-alt"></i>
+                                    Periodos Académicos
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <button
+                        className="header-btn"
+                        title="Configuración"
+                        onClick={() => {
+                            if (user?.id_rol === 2) navigate('/teacher/config');
+                            else if (user?.id_rol === 3) navigate('/student/config');
+                            else navigate('/config');
+                        }}
+                    >
+                        <i className="fas fa-cog"></i>
+                    </button>
+                )}
 
                 <div className="notification-wrapper" style={{ position: 'relative' }}>
                     <button
