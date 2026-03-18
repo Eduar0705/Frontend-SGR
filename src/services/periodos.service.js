@@ -42,7 +42,7 @@ export const periodosService = {
 
     createCorte: async (data) => {
         try {
-            const response = await axios.post(`${API_URL}/periodos/cortes`, data, {
+            const response = await axios.post(`${API_URL}/periodos/crearcorte`, data, {
                 headers: getAuthHeaders()
             });
             return { success: true, data: response.data };
@@ -54,7 +54,7 @@ export const periodosService = {
 
     updateCorte: async (codigoPeriodo, orden, data) => {
         try {
-            const response = await axios.put(`${API_URL}/periodos/cortes/${codigoPeriodo}/${orden}`, data, {
+            const response = await axios.put(`${API_URL}/periodos/updcortes/${codigoPeriodo}/${orden}`, data, {
                 headers: getAuthHeaders()
             });
             return { success: true, data: response.data };
@@ -66,7 +66,7 @@ export const periodosService = {
 
     deleteCorte: async (codigoPeriodo, orden) => {
         try {
-            const response = await axios.delete(`${API_URL}/periodos/cortes/${codigoPeriodo}/${orden}`, {
+            const response = await axios.delete(`${API_URL}/periodos/deletecorte/${codigoPeriodo}/${orden}`, {
                 headers: getAuthHeaders()
             });
             return { success: true, data: response.data };
