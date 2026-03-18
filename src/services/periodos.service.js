@@ -21,7 +21,7 @@ export const periodosService = {
 
     getPensums: async () => {
         try {
-            const response = await axios.get(`${API_URL}/pensums`, {
+            const response = await axios.get(`${API_URL}/periodos/pensums`, {
                 headers: getAuthHeaders()
             });
             return { success: true, data: response.data };
