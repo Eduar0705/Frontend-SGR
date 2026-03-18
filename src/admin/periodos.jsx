@@ -281,7 +281,7 @@ export default function Periodos() {
                                                     <th style={{ padding: '12px', textAlign: 'left', fontSize: '13px' }}>Inicio</th>
                                                     <th style={{ padding: '12px', textAlign: 'left', fontSize: '13px' }}>Fin</th>
                                                     <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px' }}>Estado</th>
-                                                    <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px' }}>Cortes</th>
+                                                    <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px' }}>Acciones</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -305,14 +305,26 @@ export default function Periodos() {
                                                             </span>
                                                         </td>
                                                         <td style={{ padding: '12px', textAlign: 'center' }}>
-                                                            <button
-                                                                className="btns btn-view"
-                                                                title="Ver cortes"
-                                                                onClick={e => { e.stopPropagation(); handleSelectPeriodo(p); }}
-                                                                style={{ padding: '6px 10px', fontSize: '12px' }}
-                                                            >
-                                                                <i className="fa fa-eye"></i>
-                                                            </button>
+                                                            <div className="corte-actions">
+                                                                <button
+                                                                    className="btns btn-view"
+                                                                    title="Ver cortes"
+                                                                    onClick={e => { e.stopPropagation(); handleSelectPeriodo(p); }}
+                                                                    style={{ padding: '6px 10px', fontSize: '12px' }}
+                                                                >
+                                                                    <i className="fa fa-eye"></i>
+                                                                </button>
+                                                                {!p.modificable ? (
+                                                                <button
+                                                                    className="btns btn-delete"
+                                                                    title="Eliminar periodo"
+                                                                    onClick={e => { e.stopPropagation() }}
+                                                                    style={{ padding: '6px 10px', fontSize: '12px' }}
+                                                                >
+                                                                    <i className="fa fa-trash"></i>
+                                                                </button>
+                                                                ) : null}
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -420,9 +432,13 @@ export default function Periodos() {
                                                             <button className="btns btn-edit" title="Editar" onClick={() => openEditCorteModal(corte)}>
                                                                 <i className="fa fa-edit"></i>
                                                             </button>
-                                                            <button className="btns btn-delete" title="Eliminar" onClick={() => handleDeleteCorte(corte)}>
-                                                                <i className="fa fa-trash"></i>
-                                                            </button>
+                                                            {corte.modificable ? null :
+                                                                (
+                                                                    <button className="btns btn-delete" title="Eliminar" onClick={() => handleDeleteCorte(corte)}>
+                                                                        <i className="fa fa-trash"></i>
+                                                                    </button>
+                                                                )
+                                                            }
                                                         </div>
                                                     </div>
                                                 ))}
