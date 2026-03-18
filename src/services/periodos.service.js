@@ -19,6 +19,30 @@ export const periodosService = {
         }
     },
 
+    getPensums: async () => {
+        try {
+            const response = await axios.get(`${API_URL}/pensums`, {
+                headers: getAuthHeaders()
+            });
+            return { success: true, data: response.data };
+        } catch (error) {
+            console.error('Error fetching pensums:', error);
+            return { success: false, data: [] };
+        }
+    },
+
+    createPeriodo: async (data) => {
+        try {
+            const response = await axios.post(`${API_URL}/periodos`, data, {
+                headers: getAuthHeaders()
+            });
+            return { success: true, data: response.data };
+        } catch (error) {
+            console.error('Error creating periodo:', error);
+            return { success: false, mensaje: error.response?.data?.mensaje || 'Error al crear periodo' };
+        }
+    },
+
     deletePeriodo: async (codigoPeriodo) => {
         try {
             const response = await axios.delete(`${API_URL}/periodos/delete/${codigoPeriodo}`, {

@@ -48,10 +48,10 @@ export const evaluacionesService = {
 
     async getSecciones(materiaCodigo, carreraCodigo) {
         const token = localStorage.getItem('token');
-        const url = carreraCodigo 
+        const url = carreraCodigo
             ? `${API_URL}/evaluaciones/materia/${materiaCodigo}/${carreraCodigo}/secciones`
             : `${API_URL}/evaluaciones/materia/${materiaCodigo}/secciones`;
-            
+
         const response = await axios.get(url, {
             params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
             headers: { 'Authorization': `Bearer ${token}` }
@@ -173,15 +173,19 @@ export const evaluacionesService = {
 
     async saveEvaluacionResultado(evaluacionId, estudianteCedula, payload) {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/teacher/evaluaciones/${evaluacionId}/${estudianteCedula}/guardar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
-        });
-        return await response.data;
+
+        const response = await axios.post(
+            `${API_URL}/teacher/evaluaciones/${evaluacionId}/${estudianteCedula}/guardar`,
+            payload, 
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        );
+
+        return response.data; 
     },
 
     async saveEvaluacion(formData, id = null) {
@@ -206,7 +210,7 @@ export const evaluacionesService = {
             },
             body: JSON.stringify(formData)
         });
-        
+
         return await response.json();
     }
 };

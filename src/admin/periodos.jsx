@@ -39,12 +39,22 @@ export default function Periodos() {
     const [editingCorte, setEditingCorte] = useState(null); // null = agregar, object = editar
     const [corteForm, setCorteForm] = useState(EMPTY_CORTE);
 
+    // Nuevo Periodo
+    const [pensums, setPensums] = useState([]);
+    const [showPeriodoModal, setShowPeriodoModal] = useState(false);
+    const [periodoForm, setPeriodoForm] = useState({
+        fecha_inicio: '',
+        fecha_fin: '',
+        id_pensum: ''
+    });
+
     // Auth guard
     useEffect(() => {
         if (!user || user.id_rol !== 1) {
             navigate('/login');
         } else {
             loadPeriodos();
+            loadPensums();
         }
     }, []);
 
@@ -60,6 +70,18 @@ export default function Periodos() {
             console.error('Error cargando periodos:', err);
         } finally {
             setLoadingPeriodos(false);
+        }
+    };
+
+    const loadPensums = async () => {
+        try {
+            const result = await periodosService.getPensums();
+            if (result.success) {
+                const lista = result.data.data || result.data || [];
+                setPensums(lista);
+            }
+        } catch (err) {
+            console.error('Error cargando pensums:', err);
         }
     };
 
@@ -123,6 +145,53 @@ export default function Periodos() {
                 }
             }
         });
+    };
+
+    const openAddPeriodoModal = () => {
+        setPeriodoForm({ fecha_inicio: '', fecha_fin: '', id_pensum: '' });
+        setShowPeriodoModal(true);
+    };
+
+    const handlePeriodoFormChange = (e) => {
+        setPeriodoForm(f => ({ ...f, [e.target.name]: e.target.value }));
+    };
+
+    const handlePeriodoSubmit = async (e) => {
+        e.preventDefault();
+
+        if (new Date(periodoForm.fecha_inicio) > new Date(periodoForm.fecha_fin)) {
+            Swal.fire('Error', 'La fecha de inicio no puede ser mayor a la fecha de fin.', 'error');
+            return;
+        }
+
+        // Generar código
+        const currentYear = new Date().getFullYear();
+        const yearPeriodos = periodos.filter(p => p.codigo && p.codigo.startsWith(`${currentYear}-`));
+        let maxSuffix = 0;
+        yearPeriodos.forEach(p => {
+            const parts = p.codigo.split('-');
+            if (parts.length === 2) {
+                const num = parseInt(parts[1], 10);
+                if (!isNaN(num) && num > maxSuffix) maxSuffix = num;
+            }
+        });
+        const nuevoCodigo = `${currentYear}-${maxSuffix + 1}`;
+
+        const payload = {
+            codigo: nuevoCodigo,
+            fecha_inicio: periodoForm.fecha_inicio,
+            fecha_fin: periodoForm.fecha_fin,
+            id_pensum: periodoForm.id_pensum // id_pensum se manda tal cual, el backend decide formato (num/string)
+        };
+
+        const result = await periodosService.createPeriodo(payload);
+        if (result.success) {
+            Swal.fire('Éxito', `Periodo ${nuevoCodigo} creado correctamente.`, 'success');
+            setShowPeriodoModal(false);
+            loadPeriodos();
+        } else {
+            Swal.fire('Error', result.mensaje || 'No se pudo crear el periodo.', 'error');
+        }
     };
 
     // ────────── CRUD Cortes ──────────
@@ -272,6 +341,14 @@ export default function Periodos() {
                                         <i className="fas fa-calendar-alt" style={{ marginRight: '8px', color: 'var(--color-primary)' }}></i>
                                         Periodos
                                     </span>
+                                    <button
+                                        className="btns btn-abrir-modal"
+                                        onClick={openAddPeriodoModal}
+                                        style={{ background: '#10b981', color: '#fff', padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', fontSize: '13px' }}
+                                    >
+                                        <i className="fa fa-plus"></i>
+                                        Nuevo Periodo
+                                    </button>
                                 </div>
                                 <div className="card-content" style={{ padding: '16px' }}>
                                     {/* Búsqueda y entradas */}
@@ -532,6 +609,59 @@ export default function Periodos() {
                             <div className="form-actions">
                                 <button type="button" className="btn-cancel" onClick={() => setShowCorteModal(false)}>Cancelar</button>
                                 <button type="submit" className="btn-submit">{editingCorte ? 'Guardar Cambios' : 'Agregar'}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Modal Agregar Periodo ── */}
+            {showPeriodoModal && (
+                <div className="modal-add-usuarios active">
+                    <div className="modal-content">
+                        <span className="close-btn" onClick={() => setShowPeriodoModal(false)}>&times;</span>
+                        <h2>Agregar Nuevo Periodo</h2>
+                        <form onSubmit={handlePeriodoSubmit}>
+                            <div className="form-group">
+                                <label>Fecha de Inicio:</label>
+                                <input
+                                    type="date"
+                                    name="fecha_inicio"
+                                    value={periodoForm.fecha_inicio}
+                                    onChange={handlePeriodoFormChange}
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Fecha de Fin:</label>
+                                <input
+                                    type="date"
+                                    name="fecha_fin"
+                                    value={periodoForm.fecha_fin}
+                                    onChange={handlePeriodoFormChange}
+                                    required
+                                    min={periodoForm.fecha_inicio}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Pensum:</label>
+                                <select
+                                    name="id_pensum"
+                                    value={periodoForm.id_pensum}
+                                    onChange={handlePeriodoFormChange}
+                                    required
+                                >
+                                    <option value="" disabled>-- Seleccione un pensum --</option>
+                                    {pensums.map(pen => (
+                                        <option key={pen.id} value={pen.id}>
+                                            {pen.nombre || `Pensum ${pen.id}`}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-actions">
+                                <button type="button" className="btn-cancel" onClick={() => setShowPeriodoModal(false)}>Cancelar</button>
+                                <button type="submit" className="btn-submit">Crear Periodo</button>
                             </div>
                         </form>
                     </div>
