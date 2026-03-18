@@ -8,6 +8,7 @@ import { authService } from '../services/auth.service';
 
 export default function Header({ title, user, onLogout }) {
     const navigate = useNavigate();
+    const storedUser = JSON.parse(localStorage.getItem('user'));
     const { toggleSidebar, periodoActual, updatePeriodo } = useUI();
     const [notificaciones, setNotificaciones] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
@@ -106,22 +107,22 @@ export default function Header({ title, user, onLogout }) {
 
             </div>
 
-            
+
             <div className="header-right">
-            <label>Periodo: </label>
                 <div className="form-header">
-                    
-                    <select id="selector_periodo" className="form-select" value={periodoActual || ''} onChange={handlePeriodoChange}>
-                        {periodos.length === 0 ? (
-                            <option value="" disabled>Cargando periodos...</option>
-                        ) : (
-                            periodos.map(p => (
-                                <option key={p.codigo} value={p.codigo}>
-                                    {p.codigo}
-                                </option>
-                            ))
-                        )}
-                    </select>
+                    {storedUser?.id_rol == 1 && (
+                        <select id="selector_periodo" className="form-select" value={periodoActual || ''} onChange={handlePeriodoChange}>
+                            {periodos.length === 0 ? (
+                                <option value="" disabled>Cargando periodos...</option>
+                            ) : (
+                                periodos.map(p => (
+                                    <option key={p.codigo} value={p.codigo}>
+                                        {p.codigo}
+                                    </option>
+                                ))
+                            )}
+                        </select>
+                    )}
                 </div>
                 <button
                     className="header-btn"
