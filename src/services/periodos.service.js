@@ -19,6 +19,18 @@ export const periodosService = {
         }
     },
 
+    deletePeriodo: async (codigoPeriodo) => {
+        try {
+            const response = await axios.delete(`${API_URL}/periodos/delete/${codigoPeriodo}`, {
+                headers: getAuthHeaders()
+            });
+            return { success: true, data: response.data };
+        } catch (error) {
+            console.error('Error deleting periodo:', error);
+            return { success: false, mensaje: error.response?.data?.mensaje || 'Error al eliminar periodo' };
+        }
+    },
+
     getCortes: async () => {
         const response = await axios.get(`${API_URL}/periodos/cortes`, {
             params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },

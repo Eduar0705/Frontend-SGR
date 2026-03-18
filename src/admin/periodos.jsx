@@ -97,6 +97,34 @@ export default function Periodos() {
         return filteredPeriodos.slice(first, last);
     }, [filteredPeriodos, currentPage, entriesPerPage]);
 
+    const handleDeletePeriodo = (periodo, e) => {
+        e.stopPropagation();
+        Swal.fire({
+            title: '¿Eliminar periodo?',
+            text: `Se eliminará el periodo ${periodo.codigo} y todos sus cortes asociados. Esta acción no se puede deshacer.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then(async (res) => {
+            if (res.isConfirmed) {
+                const result = await periodosService.deletePeriodo(periodo.codigo);
+                if (result.success) {
+                    Swal.fire('Eliminado', 'El periodo ha sido eliminado.', 'success');
+                    if (selectedPeriodo?.codigo === periodo.codigo) {
+                        setSelectedPeriodo(null);
+                        setCortes([]);
+                    }
+                    loadPeriodos();
+                } else {
+                    Swal.fire('Error', result.mensaje || 'No se pudo eliminar el periodo.', 'error');
+                }
+            }
+        });
+    };
+
     // ────────── CRUD Cortes ──────────
 
     const validateCorteDates = (form, periodo) => {
@@ -318,7 +346,7 @@ export default function Periodos() {
                                                                 <button
                                                                     className="btns btn-delete"
                                                                     title="Eliminar periodo"
-                                                                    onClick={e => { e.stopPropagation() }}
+                                                                    onClick={e => handleDeletePeriodo(p, e)}
                                                                     style={{ padding: '6px 10px', fontSize: '12px' }}
                                                                 >
                                                                     <i className="fa fa-trash"></i>
