@@ -127,7 +127,7 @@ export const periodosService = {
 
     createLapso: async (data) => {
         try {
-            const response = await axios.post(`${API_URL}/periodos/crearlapso`, data, {
+            const response = await axios.post(`${API_URL}/periodos/lapsos/crear`, data, {
                 headers: getAuthHeaders()
             });
             return { success: true, data: response.data };
@@ -139,7 +139,7 @@ export const periodosService = {
 
     updateLapso: async (id, data) => {
         try {
-            const response = await axios.put(`${API_URL}/periodos/updlapso/${id}`, data, {
+            const response = await axios.put(`${API_URL}/periodos/lapsos/update/${id}`, data, {
                 headers: getAuthHeaders()
             });
             return { success: true, data: response.data };
@@ -151,7 +151,7 @@ export const periodosService = {
 
     deleteLapso: async (id) => {
         try {
-            const response = await axios.delete(`${API_URL}/periodos/deletelapso/${id}`, {
+            const response = await axios.delete(`${API_URL}/periodos/lapsos/delete/${id}`, {
                 headers: getAuthHeaders()
             });
             return { success: true, data: response.data };
