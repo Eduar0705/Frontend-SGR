@@ -12,13 +12,17 @@ const EMPTY_CORTE = {
     codigo_periodo: '',
     orden: '',
     fecha_inicio: '',
-    fecha_fin: ''
+    fecha_fin: '',
+    semana_inicio: '',
+    semana_fin: ''
 };
 
 const EMPTY_LAPSO = {
     codigo_periodo: '',
     fecha_inicio: '',
-    fecha_fin: ''
+    fecha_fin: '',
+    semana_inicio: '',
+    semana_fin: ''
 };
 
 export default function Periodos() {
@@ -61,6 +65,53 @@ export default function Periodos() {
         fecha_fin: '',
         id_pensum: ''
     });
+
+    // Helper Semanas
+    const [useWeeksForCortes, setUseWeeksForCortes] = useState(false);
+    const [useWeeksForLapsos, setUseWeeksForLapsos] = useState(false);
+
+    const getMonday = (dateStr) => {
+        if (!dateStr) return new Date();
+        const d = new Date(dateStr.split('T')[0] + 'T00:00:00');
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        return new Date(d.setDate(diff));
+    };
+
+    const addDays = (date, days) => {
+        const result = new Date(date);
+        result.setDate(result.getDate() + days);
+        return result;
+    };
+
+    const formatYMD = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
+
+    const validWeeks = useMemo(() => {
+        if (!selectedPeriodo || !selectedPeriodo.fecha_inicio || !selectedPeriodo.fecha_fin) return [];
+        const weeks = [];
+        const pFin = new Date(selectedPeriodo.fecha_fin.split('T')[0] + 'T00:00:00');
+        
+        let currentMonday = getMonday(selectedPeriodo.fecha_inicio);
+        let weekNum = 1;
+        
+        while (currentMonday <= pFin) {
+            const currentSunday = addDays(currentMonday, 6);
+            weeks.push({
+                orden: weekNum,
+                lunes: formatYMD(currentMonday),
+                domingo: formatYMD(currentSunday),
+                label: `Semana ${weekNum} (${formatYMD(currentMonday)} a ${formatYMD(currentSunday)})`
+            });
+            currentMonday = addDays(currentMonday, 7);
+            weekNum++;
+        }
+        return weeks;
+    }, [selectedPeriodo]);
 
     // Auth guard
     useEffect(() => {
@@ -296,7 +347,36 @@ export default function Periodos() {
     };
 
     const handleCorteFormChange = (e) => {
-        setCorteForm(f => ({ ...f, [e.target.name]: e.target.value }));
+        const { name, value } = e.target;
+        setCorteForm(f => {
+            const nf = { ...f, [name]: value };
+            
+            if (name === 'fecha_inicio') {
+                nf.fecha_fin = '';
+            }
+
+            if (name === 'semana_inicio') {
+                if (nf.semana_inicio && (!nf.semana_fin || parseInt(nf.semana_fin) < parseInt(nf.semana_inicio))) {
+                    nf.semana_fin = nf.semana_inicio;
+                }
+            } else if (name === 'semana_fin') {
+                if (nf.semana_inicio && nf.semana_fin && parseInt(nf.semana_fin) < parseInt(nf.semana_inicio)) {
+                    nf.semana_fin = nf.semana_inicio;
+                }
+            }
+
+            if (name === 'semana_inicio' || name === 'semana_fin') {
+                if (nf.semana_inicio && nf.semana_fin) {
+                    const w1 = validWeeks.find(w => w.orden === parseInt(nf.semana_inicio));
+                    const w2 = validWeeks.find(w => w.orden === parseInt(nf.semana_fin));
+                    if (w1 && w2 && parseInt(nf.semana_inicio) <= parseInt(nf.semana_fin)) {
+                        nf.fecha_inicio = w1.lunes;
+                        nf.fecha_fin = w2.domingo;
+                    }
+                }
+            }
+            return nf;
+        });
     };
 
     const handleCorteSubmit = async (e) => {
@@ -367,7 +447,36 @@ export default function Periodos() {
     };
 
     const handleLapsoFormChange = (e) => {
-        setLapsoForm(f => ({ ...f, [e.target.name]: e.target.value }));
+        const { name, value } = e.target;
+        setLapsoForm(f => {
+            const nf = { ...f, [name]: value };
+            
+            if (name === 'fecha_inicio') {
+                nf.fecha_fin = '';
+            }
+
+            if (name === 'semana_inicio') {
+                if (nf.semana_inicio && (!nf.semana_fin || parseInt(nf.semana_fin) < parseInt(nf.semana_inicio))) {
+                    nf.semana_fin = nf.semana_inicio;
+                }
+            } else if (name === 'semana_fin') {
+                if (nf.semana_inicio && nf.semana_fin && parseInt(nf.semana_fin) < parseInt(nf.semana_inicio)) {
+                    nf.semana_fin = nf.semana_inicio;
+                }
+            }
+
+            if (name === 'semana_inicio' || name === 'semana_fin') {
+                if (nf.semana_inicio && nf.semana_fin) {
+                    const w1 = validWeeks.find(w => w.orden === parseInt(nf.semana_inicio));
+                    const w2 = validWeeks.find(w => w.orden === parseInt(nf.semana_fin));
+                    if (w1 && w2 && parseInt(nf.semana_inicio) <= parseInt(nf.semana_fin)) {
+                        nf.fecha_inicio = w1.lunes;
+                        nf.fecha_fin = w2.domingo;
+                    }
+                }
+            }
+            return nf;
+        });
     };
 
     const handleLapsoSubmit = async (e) => {
@@ -719,7 +828,7 @@ export default function Periodos() {
             {/* ── Modal Agregar / Editar Corte ── */}
             {showCorteModal && (
                 <div className="modal-add-usuarios active">
-                    <div className="modal-content">
+                    <div className="modal-content" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
                         <span className="close-btn" onClick={() => setShowCorteModal(false)}>&times;</span>
                         <h2>{editingCorte ? 'Editar Corte' : 'Agregar Corte'}</h2>
                         <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
@@ -727,6 +836,89 @@ export default function Periodos() {
                             Rango válido: <strong>{formatDate(selectedPeriodo?.fecha_inicio)}</strong> → <strong>{formatDate(selectedPeriodo?.fecha_fin)}</strong>
                         </p>
                         <form onSubmit={handleCorteSubmit}>
+                            <div 
+                                onClick={() => setUseWeeksForCortes(!useWeeksForCortes)}
+                                style={{ 
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                                    background: useWeeksForCortes ? '#ebf5ff' : '#f8fafc',
+                                    border: `1px solid ${useWeeksForCortes ? '#bfdbfe' : '#e2e8f0'}`,
+                                    padding: '12px 16px', borderRadius: '8px', marginBottom: '15px',
+                                    cursor: 'pointer', transition: 'all 0.3s ease'
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{
+                                        width: '36px', height: '36px', borderRadius: '50%', 
+                                        background: useWeeksForCortes ? '#3b82f6' : '#cbd5e1',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: 'white', transition: 'all 0.3s'
+                                    }}>
+                                        <i className="fas fa-calendar-week"></i>
+                                    </div>
+                                    <div>
+                                        <span style={{ display: 'block', fontWeight: '600', color: useWeeksForCortes ? '#1e3a8a' : '#475569', fontSize: '14px' }}>
+                                            Selección por Semanas
+                                        </span>
+                                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                                            {useWeeksForCortes ? 'Fechas autocalculadas' : 'Usar rangos semanales'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div style={{
+                                    width: '44px', height: '24px', background: useWeeksForCortes ? '#3b82f6' : '#cbd5e1',
+                                    borderRadius: '12px', position: 'relative', transition: 'background 0.3s'
+                                }}>
+                                    <div style={{
+                                        width: '20px', height: '20px', background: 'white', borderRadius: '50%',
+                                        position: 'absolute', top: '2px', left: useWeeksForCortes ? '22px' : '2px',
+                                        transition: 'left 0.3s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                                    }} />
+                                </div>
+                            </div>
+                            
+                            {useWeeksForCortes && (
+                                <div style={{ 
+                                    display: 'flex', gap: '15px', marginBottom: '20px', 
+                                    background: '#f0f9ff', padding: '16px', borderRadius: '8px',
+                                    border: '1px dashed #7dd3fc', animation: 'fadeIn 0.3s ease-in-out'
+                                }}>
+                                    <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                                        <label style={{ color: '#0369a1', fontWeight: '600', fontSize: '13px' }}>Semana Inicial:</label>
+                                        <select 
+                                            name="semana_inicio" 
+                                            value={corteForm.semana_inicio || ''} 
+                                            onChange={handleCorteFormChange} 
+                                            required={useWeeksForCortes}
+                                            style={{ 
+                                                border: '1px solid #bae6fd', borderRadius: '6px', 
+                                                padding: '8px', width: '100%', outline: 'none',
+                                                color: '#0f172a', background: 'white'
+                                            }}
+                                        >
+                                            <option value="">-- Seleccionar --</option>
+                                            {validWeeks.map(w => <option key={w.orden} value={w.orden}>{w.label}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                                        <label style={{ color: '#0369a1', fontWeight: '600', fontSize: '13px' }}>Semana Final:</label>
+                                        <select 
+                                            name="semana_fin" 
+                                            value={corteForm.semana_fin || ''} 
+                                            onChange={handleCorteFormChange} 
+                                            required={useWeeksForCortes}
+                                            style={{ 
+                                                border: '1px solid #bae6fd', borderRadius: '6px', 
+                                                padding: '8px', width: '100%', outline: 'none',
+                                                color: '#0f172a', background: 'white'
+                                            }}
+                                        >
+                                            <option value="">-- Seleccionar --</option>
+                                            {validWeeks.map(w => <option key={w.orden} value={w.orden} disabled={corteForm.semana_inicio && w.orden < parseInt(corteForm.semana_inicio)}>{w.label}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="form-group">
                                 <label>Orden:</label>
                                 <input
@@ -751,6 +943,8 @@ export default function Periodos() {
                                     required
                                     min={selectedPeriodo?.fecha_inicio?.split('T')[0]}
                                     max={selectedPeriodo?.fecha_fin?.split('T')[0]}
+                                    disabled={useWeeksForCortes}
+                                    style={{ background: useWeeksForCortes ? '#f3f4f6' : undefined }}
                                 />
                             </div>
                             <div className="form-group">
@@ -761,8 +955,10 @@ export default function Periodos() {
                                     value={corteForm.fecha_fin}
                                     onChange={handleCorteFormChange}
                                     required
-                                    min={selectedPeriodo?.fecha_inicio?.split('T')[0]}
+                                    min={corteForm.fecha_inicio || selectedPeriodo?.fecha_inicio?.split('T')[0]}
                                     max={selectedPeriodo?.fecha_fin?.split('T')[0]}
+                                    disabled={useWeeksForCortes}
+                                    style={{ background: useWeeksForCortes ? '#f3f4f6' : undefined }}
                                 />
                             </div>
                             <div className="form-actions">
@@ -777,7 +973,7 @@ export default function Periodos() {
             {/* ── Modal Agregar / Editar Lapso ── */}
             {showLapsoModal && (
                 <div className="modal-add-usuarios active">
-                    <div className="modal-content">
+                    <div className="modal-content" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
                         <span className="close-btn" onClick={() => setShowLapsoModal(false)}>&times;</span>
                         <h2>{editingLapso ? 'Editar Lapso de Correcciones' : 'Agregar Lapso de Correcciones'}</h2>
                         <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
@@ -785,6 +981,89 @@ export default function Periodos() {
                             Rango válido: <strong>{formatDate(selectedPeriodo?.fecha_inicio)}</strong> → <strong>{formatDate(selectedPeriodo?.fecha_fin)}</strong>
                         </p>
                         <form onSubmit={handleLapsoSubmit}>
+                            <div 
+                                onClick={() => setUseWeeksForLapsos(!useWeeksForLapsos)}
+                                style={{ 
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                                    background: useWeeksForLapsos ? '#ebf5ff' : '#f8fafc',
+                                    border: `1px solid ${useWeeksForLapsos ? '#bfdbfe' : '#e2e8f0'}`,
+                                    padding: '12px 16px', borderRadius: '8px', marginBottom: '15px',
+                                    cursor: 'pointer', transition: 'all 0.3s ease'
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{
+                                        width: '36px', height: '36px', borderRadius: '50%', 
+                                        background: useWeeksForLapsos ? '#3b82f6' : '#cbd5e1',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: 'white', transition: 'all 0.3s'
+                                    }}>
+                                        <i className="fas fa-calendar-week"></i>
+                                    </div>
+                                    <div>
+                                        <span style={{ display: 'block', fontWeight: '600', color: useWeeksForLapsos ? '#1e3a8a' : '#475569', fontSize: '14px' }}>
+                                            Selección por Semanas
+                                        </span>
+                                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                                            {useWeeksForLapsos ? 'Fechas autocalculadas' : 'Usar rangos semanales'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div style={{
+                                    width: '44px', height: '24px', background: useWeeksForLapsos ? '#3b82f6' : '#cbd5e1',
+                                    borderRadius: '12px', position: 'relative', transition: 'background 0.3s'
+                                }}>
+                                    <div style={{
+                                        width: '20px', height: '20px', background: 'white', borderRadius: '50%',
+                                        position: 'absolute', top: '2px', left: useWeeksForLapsos ? '22px' : '2px',
+                                        transition: 'left 0.3s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                                    }} />
+                                </div>
+                            </div>
+                            
+                            {useWeeksForLapsos && (
+                                <div style={{ 
+                                    display: 'flex', gap: '15px', marginBottom: '20px', 
+                                    background: '#f0f9ff', padding: '16px', borderRadius: '8px',
+                                    border: '1px dashed #7dd3fc', animation: 'fadeIn 0.3s ease-in-out'
+                                }}>
+                                    <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                                        <label style={{ color: '#0369a1', fontWeight: '600', fontSize: '13px' }}>Semana Inicial:</label>
+                                        <select 
+                                            name="semana_inicio" 
+                                            value={lapsoForm.semana_inicio || ''} 
+                                            onChange={handleLapsoFormChange} 
+                                            required={useWeeksForLapsos}
+                                            style={{ 
+                                                border: '1px solid #bae6fd', borderRadius: '6px', 
+                                                padding: '8px', width: '100%', outline: 'none',
+                                                color: '#0f172a', background: 'white'
+                                            }}
+                                        >
+                                            <option value="">-- Seleccionar --</option>
+                                            {validWeeks.map(w => <option key={w.orden} value={w.orden}>{w.label}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                                        <label style={{ color: '#0369a1', fontWeight: '600', fontSize: '13px' }}>Semana Final:</label>
+                                        <select 
+                                            name="semana_fin" 
+                                            value={lapsoForm.semana_fin || ''} 
+                                            onChange={handleLapsoFormChange} 
+                                            required={useWeeksForLapsos}
+                                            style={{ 
+                                                border: '1px solid #bae6fd', borderRadius: '6px', 
+                                                padding: '8px', width: '100%', outline: 'none',
+                                                color: '#0f172a', background: 'white'
+                                            }}
+                                        >
+                                            <option value="">-- Seleccionar --</option>
+                                            {validWeeks.map(w => <option key={w.orden} value={w.orden} disabled={lapsoForm.semana_inicio && w.orden < parseInt(lapsoForm.semana_inicio)}>{w.label}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="form-group">
                                 <label>Fecha Inicio:</label>
                                 <input
@@ -795,6 +1074,8 @@ export default function Periodos() {
                                     required
                                     min={selectedPeriodo?.fecha_inicio?.split('T')[0]}
                                     max={selectedPeriodo?.fecha_fin?.split('T')[0]}
+                                    disabled={useWeeksForLapsos}
+                                    style={{ background: useWeeksForLapsos ? '#f3f4f6' : undefined }}
                                 />
                             </div>
                             <div className="form-group">
@@ -807,6 +1088,8 @@ export default function Periodos() {
                                     required
                                     min={lapsoForm.fecha_inicio || selectedPeriodo?.fecha_inicio?.split('T')[0]}
                                     max={selectedPeriodo?.fecha_fin?.split('T')[0]}
+                                    disabled={useWeeksForLapsos}
+                                    style={{ background: useWeeksForLapsos ? '#f3f4f6' : undefined }}
                                 />
                             </div>
                             <div className="form-actions">
@@ -821,7 +1104,7 @@ export default function Periodos() {
             {/* ── Modal Agregar Periodo ── */}
             {showPeriodoModal && (
                 <div className="modal-add-usuarios active">
-                    <div className="modal-content">
+                    <div className="modal-content" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
                         <span className="close-btn" onClick={() => setShowPeriodoModal(false)}>&times;</span>
                         <h2>Agregar Nuevo Periodo</h2>
                         <form onSubmit={handlePeriodoSubmit}>
