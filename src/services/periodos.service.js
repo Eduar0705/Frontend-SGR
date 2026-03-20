@@ -19,19 +19,6 @@ export const periodosService = {
         }
     },
 
-    getPeriodo: async (codigoPeriodo) => {
-        try {
-            const response = await axios.get(`${API_URL}/periodos/${codigoPeriodo}`, {
-                headers: getAuthHeaders()
-            });
-            console.log(codigoPeriodo, response.data)
-            return { success: true, data: response.data };
-        } catch (error) {
-            console.error('Error fetching periodo:', error);
-            return { success: false, data: null };
-        }
-    },
-
     getPensums: async () => {
         try {
             const response = await axios.get(`${API_URL}/periodos/pensums`, {
@@ -122,6 +109,55 @@ export const periodosService = {
         } catch (error) {
             console.error('Error deleting corte:', error);
             return { success: false, mensaje: error.response?.data?.mensaje || 'Error al eliminar corte' };
+        }
+    },
+
+    getLapsosByPeriodo: async (codigoPeriodo) => {
+        try {
+            const response = await axios.get(`${API_URL}/periodos/lapsos/`, {
+                params: { periodo: codigoPeriodo },
+                headers: getAuthHeaders()
+            });
+            return { success: true, data: response.data };
+        } catch (error) {
+            console.error('Error fetching lapsos:', error);
+            return { success: false, data: [] };
+        }
+    },
+
+    createLapso: async (data) => {
+        try {
+            const response = await axios.post(`${API_URL}/periodos/crearlapso`, data, {
+                headers: getAuthHeaders()
+            });
+            return { success: true, data: response.data };
+        } catch (error) {
+            console.error('Error creating lapso:', error);
+            return { success: false, mensaje: error.response?.data?.mensaje || 'Error al crear lapso' };
+        }
+    },
+
+    updateLapso: async (id, data) => {
+        try {
+            const response = await axios.put(`${API_URL}/periodos/updlapso/${id}`, data, {
+                headers: getAuthHeaders()
+            });
+            return { success: true, data: response.data };
+        } catch (error) {
+            console.error('Error updating lapso:', error);
+            return { success: false, mensaje: error.response?.data?.mensaje || 'Error al actualizar lapso' };
+        }
+    },
+
+    deleteLapso: async (id) => {
+        try {
+            const response = await axios.delete(`${API_URL}/periodos/deletelapso/${id}`, {
+                headers: getAuthHeaders()
+            });
+            return { success: true, data: response.data };
+        } catch (error) {
+            console.error('Error deleting lapso:', error);
+            return { success: false, mensaje: error.response?.data?.mensaje || 'Error al eliminar lapso' };
         }
     }
 };

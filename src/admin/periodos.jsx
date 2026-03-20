@@ -15,6 +15,12 @@ const EMPTY_CORTE = {
     fecha_fin: ''
 };
 
+const EMPTY_LAPSO = {
+    codigo_periodo: '',
+    fecha_inicio: '',
+    fecha_fin: ''
+};
+
 export default function Periodos() {
     const navigate = useNavigate();
     const [user] = useState(() => {
@@ -39,14 +45,21 @@ export default function Periodos() {
     const [editingCorte, setEditingCorte] = useState(null); // null = agregar, object = editar
     const [corteForm, setCorteForm] = useState(EMPTY_CORTE);
 
+    // Lapsos de Correcciones
+    const [lapsos, setLapsos] = useState([]);
+    const [loadingLapsos, setLoadingLapsos] = useState(false);
+    const [showLapsoModal, setShowLapsoModal] = useState(false);
+    const [editingLapso, setEditingLapso] = useState(null);
+    const [lapsoForm, setLapsoForm] = useState(EMPTY_LAPSO);
+    const [activeTab, setActiveTab] = useState('cortes'); // 'cortes' | 'lapsos'
+
     // Nuevo Periodo
     const [pensums, setPensums] = useState([]);
     const [showPeriodoModal, setShowPeriodoModal] = useState(false);
     const [periodoForm, setPeriodoForm] = useState({
         fecha_inicio: '',
         fecha_fin: '',
-        id_pensum: '',
-        dias: ''
+        id_pensum: ''
     });
 
     // Auth guard
@@ -102,9 +115,28 @@ export default function Periodos() {
         }
     };
 
+    const loadLapsos = async (codigoPeriodo) => {
+        setLoadingLapsos(true);
+        setLapsos([]);
+        try {
+            const result = await periodosService.getLapsosByPeriodo(codigoPeriodo);
+            if (result.success) {
+                const lista = result.data.lapsos || result.data || [];
+                const sorted = (Array.isArray(lista) ? lista : []).sort((a,b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio));
+                setLapsos(sorted);
+            }
+        } catch (err) {
+            console.error('Error cargando lapsos:', err);
+        } finally {
+            setLoadingLapsos(false);
+        }
+    };
+
     const handleSelectPeriodo = (periodo) => {
         setSelectedPeriodo(periodo);
         loadCortes(periodo.codigo);
+        loadLapsos(periodo.codigo);
+        setActiveTab('cortes');
     };
 
     // Filtrado y paginación de periodos
@@ -149,7 +181,7 @@ export default function Periodos() {
     };
 
     const openAddPeriodoModal = () => {
-        setPeriodoForm({ fecha_inicio: '', fecha_fin: '', id_pensum: '', dias: '' });
+        setPeriodoForm({ fecha_inicio: '', fecha_fin: '', id_pensum: '' });
         setShowPeriodoModal(true);
     };
 
@@ -182,8 +214,7 @@ export default function Periodos() {
             codigo: nuevoCodigo,
             fecha_inicio: periodoForm.fecha_inicio,
             fecha_fin: periodoForm.fecha_fin,
-            id_pensum: periodoForm.id_pensum, // id_pensum se manda tal cual, el backend decide formato (num/string)
-            dias: parseInt(periodoForm.dias) || 0
+            id_pensum: periodoForm.id_pensum // id_pensum se manda tal cual, el backend decide formato (num/string)
         };
 
         const result = await periodosService.createPeriodo(payload);
@@ -313,6 +344,84 @@ export default function Periodos() {
                     loadCortes(selectedPeriodo.codigo);
                 } else {
                     Swal.fire('Error', result.mensaje || 'No se pudo eliminar.', 'error');
+                }
+            }
+        });
+    };
+
+    // ────────── CRUD Lapsos ──────────
+    const openAddLapsoModal = () => {
+        setEditingLapso(null);
+        setLapsoForm({ ...EMPTY_LAPSO, codigo_periodo: selectedPeriodo.codigo });
+        setShowLapsoModal(true);
+    };
+
+    const openEditLapsoModal = (lapso) => {
+        setEditingLapso(lapso);
+        setLapsoForm({
+            codigo_periodo: selectedPeriodo.codigo,
+            fecha_inicio: lapso.fecha_inicio?.split('T')[0] || lapso.fecha_inicio,
+            fecha_fin: lapso.fecha_fin?.split('T')[0] || lapso.fecha_fin
+        });
+        setShowLapsoModal(true);
+    };
+
+    const handleLapsoFormChange = (e) => {
+        setLapsoForm(f => ({ ...f, [e.target.name]: e.target.value }));
+    };
+
+    const handleLapsoSubmit = async (e) => {
+        e.preventDefault();
+        const lInicio = new Date(lapsoForm.fecha_inicio);
+        const lFin = new Date(lapsoForm.fecha_fin);
+        const pInicio = new Date(selectedPeriodo.fecha_inicio);
+        const pFin = new Date(selectedPeriodo.fecha_fin);
+
+        if (lInicio < pInicio || lFin > pFin) {
+            Swal.fire('Error', 'Las fechas del lapso deben estar dentro del rango del periodo.', 'error');
+            return;
+        }
+        if (lInicio > lFin) {
+            Swal.fire('Error', 'La fecha de inicio no puede ser mayor a la de fin.', 'error');
+            return;
+        }
+
+        // Se envía codigo_periodo y fechas. El backend se encarga de guardarlo.
+        const payload = { ...lapsoForm };
+        let result;
+        if (editingLapso) {
+            result = await periodosService.updateLapso(editingLapso.id || editingLapso.id_lapso_correccion, payload);
+        } else {
+            result = await periodosService.createLapso(payload);
+        }
+
+        if (result.success) {
+            Swal.fire('Éxito', editingLapso ? 'Lapso actualizado correctamente.' : 'Lapso agregado correctamente.', 'success');
+            setShowLapsoModal(false);
+            loadLapsos(selectedPeriodo.codigo);
+        } else {
+            Swal.fire('Error', result.mensaje || 'No se pudo guardar el lapso.', 'error');
+        }
+    };
+
+    const handleDeleteLapso = (lapso) => {
+        Swal.fire({
+            title: '¿Eliminar lapso?',
+            text: `Se eliminará el lapso seleccionado de este periodo.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then(async (res) => {
+            if (res.isConfirmed) {
+                const result = await periodosService.deleteLapso(lapso.id || lapso.id_lapso_correccion);
+                if (result.success) {
+                    Swal.fire('Eliminado', 'El lapso ha sido eliminado.', 'success');
+                    loadLapsos(selectedPeriodo.codigo);
+                } else {
+                    Swal.fire('Error', result.mensaje || 'No se pudo eliminar el lapso.', 'error');
                 }
             }
         });
@@ -474,82 +583,130 @@ export default function Periodos() {
                             </div>
                         </div>
 
-                        {/* ── Panel Cortes ── */}
+                        {/* ── Panel Derecho (Cortes / Lapsos) ── */}
                         <div className="periodos-panel-right">
                             {!selectedPeriodo ? (
                                 <div className="card periodos-empty-state">
                                     <i className="fas fa-hand-pointer periodos-empty-icon"></i>
-                                    <p>Selecciona un periodo para ver y gestionar sus cortes.</p>
+                                    <p>Selecciona un periodo para ver y gestionar sus cortes y lapsos de correcciones.</p>
                                 </div>
                             ) : (
                                 <div className="card">
-                                    <div className="card-header">
-                                        <div>
-                                            <span className="card-title">
-                                                <i className="fas fa-cut" style={{ marginRight: '8px', color: 'var(--color-primary)' }}></i>
-                                                Cortes — {selectedPeriodo.codigo}
-                                            </span>
-                                            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
-                                                Rango: {formatDate(selectedPeriodo.fecha_inicio)} → {formatDate(selectedPeriodo.fecha_fin)}
+                                    <div className="card-header" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                            <div>
+                                                <span className="card-title">
+                                                    <i className="fas fa-calendar-check" style={{ marginRight: '8px', color: 'var(--color-primary)' }}></i>
+                                                    Gestión del Periodo — {selectedPeriodo.codigo}
+                                                </span>
+                                                <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                                                    Rango general: <strong>{formatDate(selectedPeriodo.fecha_inicio)}</strong> → <strong>{formatDate(selectedPeriodo.fecha_fin)}</strong>
+                                                </div>
                                             </div>
+                                            <button
+                                                className="btns btn-abrir-modal"
+                                                onClick={activeTab === 'cortes' ? openAddCorteModal : openAddLapsoModal}
+                                                style={{ background: '#3b82f6', color: '#fff', padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', fontSize: '13px' }}
+                                            >
+                                                <i className="fa fa-plus"></i>
+                                                {activeTab === 'cortes' ? 'Agregar Corte' : 'Agregar Lapso'}
+                                            </button>
                                         </div>
-                                        <button
-                                            className="btns btn-abrir-modal"
-                                            onClick={openAddCorteModal}
-                                            style={{ background: '#3b82f6', color: '#fff', padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', fontSize: '13px' }}
-                                        >
-                                            <i className="fa fa-plus"></i>
-                                            Agregar Corte
-                                        </button>
+
+                                        {/* Tabs Selector */}
+                                        <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', gap: '20px' }}>
+                                            <button 
+                                                onClick={() => setActiveTab('cortes')}
+                                                style={{ padding: '8px 12px', background: 'none', border: 'none', borderBottom: activeTab === 'cortes' ? '2px solid var(--color-primary)' : '2px solid transparent', color: activeTab === 'cortes' ? 'var(--color-primary)' : '#64748b', fontWeight: '600', cursor: 'pointer', fontSize: '14px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                            >
+                                                <i className="fas fa-cut"></i> Cortes
+                                            </button>
+                                            <button 
+                                                onClick={() => setActiveTab('lapsos')}
+                                                style={{ padding: '8px 12px', background: 'none', border: 'none', borderBottom: activeTab === 'lapsos' ? '2px solid var(--color-primary)' : '2px solid transparent', color: activeTab === 'lapsos' ? 'var(--color-primary)' : '#64748b', fontWeight: '600', cursor: 'pointer', fontSize: '14px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                            >
+                                                <i className="fas fa-user-edit"></i> Lapsos de Correcciones
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="card-content" style={{ padding: '16px' }}>
-                                        {loadingCortes ? (
-                                            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
-                                                <i className="fas fa-spinner fa-spin" style={{ fontSize: '24px', marginBottom: '10px' }}></i>
-                                                <p>Cargando cortes...</p>
-                                            </div>
-                                        ) : cortes.length === 0 ? (
-                                            <div className="periodos-empty-state" style={{ padding: '40px 20px' }}>
-                                                <i className="fas fa-inbox periodos-empty-icon" style={{ fontSize: '36px' }}></i>
-                                                <p>Este periodo no tiene cortes aún.</p>
-                                                <button
-                                                    onClick={openAddCorteModal}
-                                                    style={{ marginTop: '12px', background: 'var(--color-primary)', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
-                                                >
-                                                    <i className="fa fa-plus" style={{ marginRight: '6px' }}></i>
-                                                    Agregar primer corte
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="cortes-list">
-                                                {cortes.map((corte, idx) => (
-                                                    <div key={`${corte.codigo_periodo}-${corte.orden}`} className="corte-card">
-                                                        <div className="corte-orden">
-                                                            <span>{corte.orden}</span>
-                                                        </div>
-                                                        <div className="corte-info">
-                                                            <div className="corte-titulo">Corte #{corte.orden}</div>
-                                                            <div className="corte-fechas">
-                                                                <span><i className="fa fa-calendar-check" style={{ marginRight: '4px', color: 'var(--color-success)' }}></i>{formatDate(corte.fecha_inicio)}</span>
-                                                                <span className="corte-flecha">→</span>
-                                                                <span><i className="fa fa-calendar-times" style={{ marginRight: '4px', color: 'var(--color-danger)' }}></i>{formatDate(corte.fecha_fin)}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="corte-actions">
-                                                            <button className="btns btn-edit" title="Editar" onClick={() => openEditCorteModal(corte)}>
-                                                                <i className="fa fa-edit"></i>
-                                                            </button>
-                                                            {corte.modificable ? null :
-                                                                (
-                                                                    <button className="btns btn-delete" title="Eliminar" onClick={() => handleDeleteCorte(corte)}>
-                                                                        <i className="fa fa-trash"></i>
-                                                                    </button>
-                                                                )
-                                                            }
-                                                        </div>
+
+                                    <div className="card-content" style={{ padding: '20px' }}>
+                                        {/* VIEW CORTES */}
+                                        {activeTab === 'cortes' && (
+                                            <>
+                                                {loadingCortes ? (
+                                                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
+                                                        <i className="fas fa-spinner fa-spin" style={{ fontSize: '24px', marginBottom: '10px' }}></i>
+                                                        <p>Cargando cortes...</p>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                ) : cortes.length === 0 ? (
+                                                    <div className="periodos-empty-state" style={{ padding: '40px 20px', background: '#f8fafc', borderRadius: '12px' }}>
+                                                        <i className="fas fa-inbox periodos-empty-icon" style={{ fontSize: '36px', color: '#94a3b8' }}></i>
+                                                        <p style={{ color: '#64748b' }}>Este periodo no tiene cortes aún.</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="cortes-list">
+                                                        {cortes.map((corte, idx) => (
+                                                            <div key={`${corte.codigo_periodo}-${corte.orden}`} className="corte-card">
+                                                                <div className="corte-orden"><span>{corte.orden}</span></div>
+                                                                <div className="corte-info">
+                                                                    <div className="corte-titulo">Corte #{corte.orden}</div>
+                                                                    <div className="corte-fechas">
+                                                                        <span><i className="fa fa-calendar-check" style={{ marginRight: '4px', color: 'var(--color-success)' }}></i>{formatDate(corte.fecha_inicio)}</span>
+                                                                        <span className="corte-flecha">→</span>
+                                                                        <span><i className="fa fa-calendar-times" style={{ marginRight: '4px', color: 'var(--color-danger)' }}></i>{formatDate(corte.fecha_fin)}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="corte-actions">
+                                                                    <button className="btns btn-edit" title="Editar" onClick={() => openEditCorteModal(corte)}><i className="fa fa-edit"></i></button>
+                                                                    {!corte.modificable && (
+                                                                        <button className="btns btn-delete" title="Eliminar" onClick={() => handleDeleteCorte(corte)}><i className="fa fa-trash"></i></button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {/* VIEW LAPSOS */}
+                                        {activeTab === 'lapsos' && (
+                                            <>
+                                                {loadingLapsos ? (
+                                                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
+                                                        <i className="fas fa-spinner fa-spin" style={{ fontSize: '24px', marginBottom: '10px' }}></i>
+                                                        <p>Cargando lapsos...</p>
+                                                    </div>
+                                                ) : lapsos.length === 0 ? (
+                                                    <div className="periodos-empty-state" style={{ padding: '40px 20px', background: '#f8fafc', borderRadius: '12px' }}>
+                                                        <i className="fas fa-folder-open periodos-empty-icon" style={{ fontSize: '36px', color: '#94a3b8' }}></i>
+                                                        <p style={{ color: '#64748b' }}>No hay lapsos de correcciones registrados en este periodo.</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="cortes-list">
+                                                        {lapsos.map((lapso, idx) => (
+                                                            <div key={lapso.id || lapso.id_lapso_correccion || idx} className="corte-card" style={{ borderLeftColor: '#f59e0b' }}>
+                                                                <div className="corte-orden" style={{ background: '#fef3c7', color: '#d97706' }}>
+                                                                    <span><i className="fas fa-pen"></i></span>
+                                                                </div>
+                                                                <div className="corte-info">
+                                                                    <div className="corte-titulo" style={{ color: '#92400e' }}>Lapso de Corrección</div>
+                                                                    <div className="corte-fechas">
+                                                                        <span><i className="fa fa-calendar-check" style={{ marginRight: '4px', color: 'var(--color-success)' }}></i>{formatDate(lapso.fecha_inicio)}</span>
+                                                                        <span className="corte-flecha">→</span>
+                                                                        <span><i className="fa fa-calendar-times" style={{ marginRight: '4px', color: 'var(--color-danger)' }}></i>{formatDate(lapso.fecha_fin)}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="corte-actions">
+                                                                    <button className="btns btn-edit" title="Editar" onClick={() => openEditLapsoModal(lapso)}><i className="fa fa-edit"></i></button>
+                                                                    <button className="btns btn-delete" title="Eliminar" onClick={() => handleDeleteLapso(lapso)}><i className="fa fa-trash"></i></button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </div>
@@ -617,6 +774,50 @@ export default function Periodos() {
                 </div>
             )}
 
+            {/* ── Modal Agregar / Editar Lapso ── */}
+            {showLapsoModal && (
+                <div className="modal-add-usuarios active">
+                    <div className="modal-content">
+                        <span className="close-btn" onClick={() => setShowLapsoModal(false)}>&times;</span>
+                        <h2>{editingLapso ? 'Editar Lapso de Correcciones' : 'Agregar Lapso de Correcciones'}</h2>
+                        <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
+                            Periodo: <strong>{selectedPeriodo?.codigo}</strong> &nbsp;|&nbsp;
+                            Rango válido: <strong>{formatDate(selectedPeriodo?.fecha_inicio)}</strong> → <strong>{formatDate(selectedPeriodo?.fecha_fin)}</strong>
+                        </p>
+                        <form onSubmit={handleLapsoSubmit}>
+                            <div className="form-group">
+                                <label>Fecha Inicio:</label>
+                                <input
+                                    type="date"
+                                    name="fecha_inicio"
+                                    value={lapsoForm.fecha_inicio}
+                                    onChange={handleLapsoFormChange}
+                                    required
+                                    min={selectedPeriodo?.fecha_inicio?.split('T')[0]}
+                                    max={selectedPeriodo?.fecha_fin?.split('T')[0]}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Fecha Fin:</label>
+                                <input
+                                    type="date"
+                                    name="fecha_fin"
+                                    value={lapsoForm.fecha_fin}
+                                    onChange={handleLapsoFormChange}
+                                    required
+                                    min={lapsoForm.fecha_inicio || selectedPeriodo?.fecha_inicio?.split('T')[0]}
+                                    max={selectedPeriodo?.fecha_fin?.split('T')[0]}
+                                />
+                            </div>
+                            <div className="form-actions">
+                                <button type="button" className="btn-cancel" onClick={() => setShowLapsoModal(false)}>Cancelar</button>
+                                <button type="submit" className="btn-submit">{editingLapso ? 'Guardar Cambios' : 'Agregar'}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {/* ── Modal Agregar Periodo ── */}
             {showPeriodoModal && (
                 <div className="modal-add-usuarios active">
@@ -660,20 +861,6 @@ export default function Periodos() {
                                         </option>
                                     ))}
                                 </select>
-                            </div>
-                            <div className="form-group">
-                                <label>Días para pasar notas:</label>
-                                <input
-                                    type="number"
-                                    name="dias"
-                                    value={periodoForm.dias}
-                                    onChange={handlePeriodoFormChange}
-                                    required
-                                    min="1"
-                                />
-                                <small style={{ color: 'var(--color-text-muted)', fontSize: '11px', display: 'block', marginTop: '4px', lineHeight: '1.3' }}>
-                                    Cantidad de días antes del cierre del corte en el que se le permitirá a los profesores evaluar a sus estudiantes o pasar sus notas al sistema.
-                                </small>
                             </div>
                             <div className="form-actions">
                                 <button type="button" className="btn-cancel" onClick={() => setShowPeriodoModal(false)}>Cancelar</button>
