@@ -833,7 +833,7 @@ export default function Periodos() {
                         <h2>{editingCorte ? 'Editar Corte' : 'Agregar Corte'}</h2>
                         <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
                             Periodo: <strong>{selectedPeriodo?.codigo}</strong> &nbsp;|&nbsp;
-                            Rango válido: <strong>{formatDate(selectedPeriodo?.fecha_inicio)}</strong> → <strong>{formatDate(selectedPeriodo?.fecha_fin)}</strong>
+                            Inicio y Fin: <strong>{formatDate(selectedPeriodo?.fecha_inicio)}</strong> → <strong>{formatDate(selectedPeriodo?.fecha_fin)}</strong>
                         </p>
                         <form onSubmit={handleCorteSubmit}>
                             <div 
@@ -920,7 +920,7 @@ export default function Periodos() {
                             )}
 
                             <div className="form-group">
-                                <label>Orden:</label>
+                                <label>Número del Corte:</label>
                                 <input
                                     type="number"
                                     name="orden"
@@ -978,7 +978,7 @@ export default function Periodos() {
                         <h2>{editingLapso ? 'Editar Lapso de Correcciones' : 'Agregar Lapso de Correcciones'}</h2>
                         <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
                             Periodo: <strong>{selectedPeriodo?.codigo}</strong> &nbsp;|&nbsp;
-                            Rango válido: <strong>{formatDate(selectedPeriodo?.fecha_inicio)}</strong> → <strong>{formatDate(selectedPeriodo?.fecha_fin)}</strong>
+                            Inicio y Fin: <strong>{formatDate(selectedPeriodo?.fecha_inicio)}</strong> → <strong>{formatDate(selectedPeriodo?.fecha_fin)}</strong>
                         </p>
                         <form onSubmit={handleLapsoSubmit}>
                             <div 

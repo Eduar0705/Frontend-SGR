@@ -42,8 +42,7 @@ export default function Evaluaciones() {
     const [docenteFilter, setDocenteFilter] = useState('');
     const [estadoFilter, setEstadoFilter] = useState('');
 
-    const [entriesPerPage, setEntriesPerPage] = useState(6);
-    const [currentPage, setCurrentPage] = useState(1);
+
 
     // Estados del Modal
     const [showModal, setShowModal] = useState(false);
@@ -186,9 +185,40 @@ export default function Evaluaciones() {
         return Array.from(set).sort();
     }, [evaluaciones]);
 
-    // ── Paginación ─────────────────────────────────────────────────────────────
-    const totalPages = Math.ceil(filteredEvaluaciones.length / entriesPerPage);
-    const paginatedEvaluaciones = filteredEvaluaciones.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
+    // ── Agrupación (Niveles Jerárquicos) ───────────────────────────────────────
+    const evaluacionesAgrupadas = useMemo(() => {
+        const agrupadas = {};
+        filteredEvaluaciones.forEach(ev => {
+            const c  = ev.carrera_nombre || `Carrera ${ev.carrera_codigo || 'Desconocida'}`;
+            const s  = `Semestre ${ev.semestre || ev.materia_semestre || 'N/A'}`;
+            const m  = ev.materia_nombre || `Materia ${ev.materia_codigo || 'Desconocida'}`;
+            const sc = `Sección ${ev.seccion_codigo ? ev.seccion_codigo.slice(-1) : 'N/A'}`;
+
+            if (!agrupadas[c])              agrupadas[c] = {};
+            if (!agrupadas[c][s])           agrupadas[c][s] = {};
+            if (!agrupadas[c][s][m])        agrupadas[c][s][m] = {};
+            if (!agrupadas[c][s][m][sc])    agrupadas[c][s][m][sc] = [];
+            
+            agrupadas[c][s][m][sc].push(ev);
+        });
+        return agrupadas;
+    }, [filteredEvaluaciones]);
+
+    // Estados de expansión por cada nivel
+    const [expandedCarreras,  setExpandedCarreras]  = useState({});
+    const [expandedSemestres, setExpandedSemestres] = useState({});
+    const [expandedMaterias,  setExpandedMaterias]  = useState({});
+    const [expandedSecciones, setExpandedSecciones] = useState({});
+
+    const tog = (setter) => (key) => setter(prev => ({ ...prev, [key]: !prev[key] }));
+    const toggleCarrera  = tog(setExpandedCarreras);
+    const toggleSemestre = tog(setExpandedSemestres);
+    const toggleMateria  = tog(setExpandedMaterias);
+    const toggleSeccion  = tog(setExpandedSecciones);
+
+    const Chevron = ({ open }) => (
+        <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} style={{ color: '#64748b', fontSize: '0.82em', flexShrink: 0 }} />
+    );
 
     // ── CRUD ───────────────────────────────────────────────────────────────────
     const handleOpenCreate = () => {
@@ -324,71 +354,134 @@ export default function Evaluaciones() {
                         </div>
                     </div>
 
-                    {/* Grid de Evaluaciones */}
+                    {/* Acordeón de Evaluaciones */}
                     {loading ? (
                         <div className="loading-state-premium">
                             <div className="spinner"></div>
                             <p>Cargando evaluaciones...</p>
                         </div>
+                    ) : Object.keys(evaluacionesAgrupadas).length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: '12px' }}>
+                            <i className="fas fa-clipboard-list" style={{ fontSize: '3em', color: '#94a3b8', marginBottom: '15px' }} />
+                            <h3>No hay evaluaciones registradas</h3>
+                            <p style={{ color: '#64748b' }}>No se encontraron evaluaciones con los filtros actuales.</p>
+                        </div>
                     ) : (
-                        <>
-                            <div className="evaluaciones-premium-grid">
-                                {paginatedEvaluaciones.map(ev => (
-                                    <div key={ev.evaluacion_id} className={`eval-card-premium ${ev.estado.toLowerCase().replace(' ', '-')}`}>
-                                        <div className="card-badge">{ev.estado}</div>
-                                        <div className="card-header-premium">
-                                            <div className="materia-info">
-                                                <h3>{ev.materia_nombre}</h3>
-                                                <span>{ev.seccion_codigo}</span>
-                                            </div>
-                                            <div className="docente-info">
-                                                <i className="fas fa-user-tie"></i>
-                                                <span>{ev.docente_nombre} {ev.docente_apellido}</span>
-                                            </div>
-                                        </div>
-                                        <div className="card-body-premium">
-                                            <p className="eval-content">{ev.contenido_evaluacion}</p>
-                                            <div className="eval-stats">
-                                                <div className="stat-item">
-                                                    <label>Ponderación</label>
-                                                    <strong>{ev.valor}%</strong>
-                                                </div>
-                                                <div className="stat-item">
-                                                    <label>Progreso</label>
-                                                    <strong>{ev.completadas}/{ev.total_evaluaciones}</strong>
-                                                </div>
-                                            </div>
-                                            <div className="eval-footer-info">
-                                                <span><i className="fas fa-calendar-alt"></i> {ev.fecha_formateada}</span>
-                                                <span><i className="fas fa-clock"></i> {ev.tipo_horario}</span>
-                                            </div>
-                                        </div>
-                                        <div className="card-actions-premium">
-                                            <button onClick={() => handleOpenEdit(ev)} title="Editar">
-                                                <i className="fas fa-edit"></i>
-                                            </button>
-                                            <button onClick={() => handleOpenView(ev)} title="Ver Detalles">
-                                                <i className="fas fa-eye"></i>
-                                            </button>
-                                            <button onClick={() => navigate(`/admin/reportes`)} title="Ver Estadísticas">
-                                                <i className="fas fa-chart-bar"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                        <div className="hierarchy-container">
+                            {Object.keys(evaluacionesAgrupadas).sort().map(carrera => {
+                                const openC = expandedCarreras[carrera];
+                                return (
+                                    <div key={carrera} style={{ marginBottom: '20px', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                        {/* NIVEL 1: CARRERA */}
+                                        <h2 onClick={() => toggleCarrera(carrera)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', padding: '15px 20px', margin: 0, color: '#1e293b', fontSize: '1.2em' }}>
+                                            <span><i className="fas fa-graduation-cap" style={{ marginRight: '10px' }} />{carrera}</span>
+                                            <Chevron open={openC} />
+                                        </h2>
 
-                            {/* Paginación */}
-                            <div className="pagination-premium">
-                                <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
-                                    <i className="fas fa-chevron-left"></i>
-                                </button>
-                                <span>Página {currentPage} de {totalPages}</span>
-                                <button disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(p => p + 1)}>
-                                    <i className="fas fa-chevron-right"></i>
-                                </button>
-                            </div>
-                        </>
+                                        {openC && (
+                                            <div style={{ padding: '20px' }}>
+                                                {Object.keys(evaluacionesAgrupadas[carrera]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).map(semestre => {
+                                                    const sKey = `${carrera}|${semestre}`;
+                                                    const openS = expandedSemestres[sKey];
+                                                    return (
+                                                    <div key={semestre} style={{ marginBottom: '20px' }}>
+                                                        {/* NIVEL 2: SEMESTRE */}
+                                                        <h3 onClick={() => toggleSemestre(sKey)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#334155', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px' }}>
+                                                            <span><i className="fas fa-layer-group" style={{ marginRight: '8px', color: '#64748b' }} />{semestre}</span>
+                                                            <Chevron open={openS} />
+                                                        </h3>
+
+                                                        {openS && Object.keys(evaluacionesAgrupadas[carrera][semestre]).sort((a,b) => a.localeCompare(b)).map(materia => {
+                                                            const mKey  = `${sKey}|${materia}`;
+                                                            const openM = expandedMaterias[mKey];
+                                                            return (
+                                                                <div key={materia} style={{ marginLeft: '15px', marginBottom: '15px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                                                                    {/* NIVEL 3: MATERIA */}
+                                                                    <h4 onClick={() => toggleMateria(mKey)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0, padding: '12px 16px', color: '#1e3a8a', background: '#eef2ff', borderBottom: openM ? '1px solid #c7d2fe' : 'none' }}>
+                                                                        <span><i className="fas fa-book" style={{ marginRight: '8px', color: '#3b82f6' }} />{materia}</span>
+                                                                        <Chevron open={openM} />
+                                                                    </h4>
+
+                                                                    {openM && (
+                                                                        <div style={{ padding: '12px 15px', background: '#f8fafc' }}>
+                                                                            {Object.keys(evaluacionesAgrupadas[carrera][semestre][materia]).sort((a,b) => a.localeCompare(b)).map(seccion => {
+                                                                                const scKey = `${mKey}|${seccion}`;
+                                                                                const openSc = expandedSecciones[scKey];
+                                                                                return (
+                                                                                    <div key={seccion} style={{ marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                                                                                        {/* NIVEL 4: SECCIÓN */}
+                                                                                        <div onClick={() => toggleSeccion(scKey)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', background: '#fef9ee', borderBottom: openSc ? '1px solid #fde68a' : 'none', gap: '12px' }}>
+                                                                                            <span style={{ color: '#92400e', fontWeight: 'bold' }}>
+                                                                                                <i className="fas fa-layer-group" style={{ marginRight: '7px', color: '#f59e0b' }} />{seccion}
+                                                                                            </span>
+                                                                                            <Chevron open={openSc} />
+                                                                                        </div>
+
+                                                                                        {openSc && (
+                                                                                            <div style={{ padding: '20px', background: 'white' }}>
+                                                                                                <div className="evaluaciones-premium-grid">
+                                                                                                    {evaluacionesAgrupadas[carrera][semestre][materia][seccion].map(ev => (
+                                                                                                        <div key={ev.evaluacion_id} className={`eval-card-premium ${ev.estado.toLowerCase().replace(' ', '-')}`}>
+                                                                                                            <div className="card-badge">{ev.estado}</div>
+                                                                                                            <div className="card-header-premium">
+                                                                                                                <div className="materia-info">
+                                                                                                                    <h3>{ev.materia_nombre}</h3>
+                                                                                                                    <span>{ev.seccion_codigo}</span>
+                                                                                                                </div>
+                                                                                                                <div className="docente-info">
+                                                                                                                    <i className="fas fa-user-tie"></i>
+                                                                                                                    <span>{ev.docente_nombre} {ev.docente_apellido}</span>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                            <div className="card-body-premium">
+                                                                                                                <p className="eval-content">{ev.contenido_evaluacion}</p>
+                                                                                                                <div className="eval-stats">
+                                                                                                                    <div className="stat-item">
+                                                                                                                        <label>Ponderación</label>
+                                                                                                                        <strong>{ev.valor}%</strong>
+                                                                                                                    </div>
+                                                                                                                    <div className="stat-item">
+                                                                                                                        <label>Progreso</label>
+                                                                                                                        <strong>{ev.completadas}/{ev.total_evaluaciones}</strong>
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                                <div className="eval-footer-info">
+                                                                                                                    <span><i className="fas fa-calendar-alt"></i> {ev.fecha_formateada}</span>
+                                                                                                                    <span><i className="fas fa-clock"></i> {ev.tipo_horario}</span>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                            <div className="card-actions-premium">
+                                                                                                                <button onClick={() => handleOpenEdit(ev)} title="Editar">
+                                                                                                                    <i className="fas fa-edit"></i>
+                                                                                                                </button>
+                                                                                                                <button onClick={() => handleOpenView(ev)} title="Ver Detalles">
+                                                                                                                    <i className="fas fa-eye"></i>
+                                                                                                                </button>
+                                                                                                                <button onClick={() => navigate(`/admin/reportes`)} title="Ver Estadísticas">
+                                                                                                                    <i className="fas fa-chart-bar"></i>
+                                                                                                                </button>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )})}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     )}
                 </main>
 
