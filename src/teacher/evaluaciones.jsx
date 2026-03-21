@@ -75,7 +75,7 @@ export default function TeacherEvaluaciones() {
             const s  = `Semestre ${ev.materia_semestre}`;
             const m  = ev.materia_nombre;
             const sc = `Sección ${ev.seccion_codigo}`;
-            const r  = `${ev.contenido} (Rúbrica: ${ev.nombre_rubrica})`;
+            const r  = `${ev.contenido} (` + ev.rubrica_id ? `Rúbrica: ` : ''  + `${ev.nombre_rubrica})`;
 
             if (!agrupadas[c])              agrupadas[c] = {};
             if (!agrupadas[c][s])           agrupadas[c][s] = {};
