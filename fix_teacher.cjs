@@ -1,127 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '../components/header';
-import Menu from '../components/menu';
-import Swal from 'sweetalert2';
-import { evaluacionesService } from '../services/evaluaciones.service';
-import '../assets/css/evaluacion.css';
+const fs = require('fs');
 
-import ModalEvaluar from './components/ModalEvaluar';
-import ModalVerDetalles from './components/ModalVerDetalles';
-import ModalAddEvaluacion from './components/ModalAddEvaluacion';
+const path = "c:\\ServerDevelopment\\xampp\\htdocs\\SYSRUBR\\Frontend-SGR\\src\\teacher\\evaluaciones.jsx";
+let content = fs.readFileSync(path, 'utf8');
 
-import { useUI } from '../context/UIContext';
+const anchorStart = "    const renderContent = () => {";
+const anchorEnd = "    if (!user) return null;\n";
 
-export default function TeacherEvaluaciones() {
-    const navigate = useNavigate();
-    const { setLoading: setGlobalLoading } = useUI();
-    const [user] = useState(() => {
-        const storedUser = localStorage.getItem('user');
-        return storedUser ? JSON.parse(storedUser) : null;
-    });
+const idx1 = content.indexOf(anchorStart);
+const idx2 = content.indexOf(anchorEnd);
 
-    const [evaluacionesAgrupadas, setEvaluacionesAgrupadas] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-
-    // Un estado de expansión por nivel jerárquico
-    const [expandedCarreras,  setExpandedCarreras]  = useState({});
-    const [expandedSemestres, setExpandedSemestres] = useState({});
-    const [expandedMaterias,  setExpandedMaterias]  = useState({});
-    const [expandedSecciones, setExpandedSecciones] = useState({});
-    const [expandedRubricas,  setExpandedRubricas]  = useState({});
-
-    const [isActionLoading, setIsActionLoading] = useState(false);
-
-    const [showEvaluar,               setShowEvaluar]               = useState(false);
-    const [selectedEstudianteEvaluar, setSelectedEstudianteEvaluar] = useState(null);
-    const [showDetalles,              setShowDetalles]              = useState(false);
-    const [selectedEstudianteDetalles,setSelectedEstudianteDetalles]= useState(null);
-    const [showAddEvaluacion,         setShowAddEvaluacion]         = useState(false);
-
-    useEffect(() => {
-        if (!user) { navigate('/login'); return; }
-        fetchEvaluaciones();
-    }, [user, navigate]);
-
-    const formatearFecha = (fecha_formato_sql) => {
-    const fecha = new Date(fecha_formato_sql);
-    const fechaFormateada = fecha.toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    }).replace(/\//g, '-');
-    return fechaFormateada;
+if (idx1 === -1 || idx2 === -1) {
+    console.log("Anchors not found!");
+    process.exit(1);
 }
 
-    const fetchEvaluaciones = async () => {
-        setLoading(true);
-        try {
-            const evals = await evaluacionesService.getTeacherEvaluaciones();
-            agruparEvaluaciones(evals);
-        } catch (error) {
-            console.error('Error fetching evaluaciones:', error);
-            Swal.fire('Error', 'No se pudieron cargar las evaluaciones', 'error');
-        } finally {
-            setLoading(false);
-            setGlobalLoading(false);
-        }
-    };
+const head = content.substring(0, idx1);
+const tail = content.substring(idx2);
 
-    const agruparEvaluaciones = (lista) => {
-        const agrupadas = {};
-        lista.forEach(ev => {
-            const c  = ev.carrera_nombre;
-            const s  = `Semestre ${ev.materia_semestre}`;
-            const m  = ev.materia_nombre;
-            const sc = `Sección ${ev.seccion_codigo}`;
-            const r  = `${ev.contenido} (Rúbrica: ${ev.nombre_rubrica})`;
-
-            if (!agrupadas[c])              agrupadas[c] = {};
-            if (!agrupadas[c][s])           agrupadas[c][s] = {};
-            if (!agrupadas[c][s][m])        agrupadas[c][s][m] = {};
-            if (!agrupadas[c][s][m][sc])    agrupadas[c][s][m][sc] = { info: { horario: ev.seccion_horario, aula: ev.seccion_aula }, rubricas: {} };
-            if (!agrupadas[c][s][m][sc].rubricas[r]) agrupadas[c][s][m][sc].rubricas[r] = [];
-            agrupadas[c][s][m][sc].rubricas[r].push(ev);
-        });
-
-        setEvaluacionesAgrupadas(agrupadas);
-
-        // Expandir primer árbol completo por defecto
-        if (Object.keys(agrupadas).length > 0) {
-            const pc = Object.keys(agrupadas)[0];
-            setExpandedCarreras({ [pc]: true });
-
-            const newSem = {}, newM = {};
-            Object.keys(agrupadas[pc]).forEach(sem => {
-                const semKey = `${pc}|${sem}`;
-                newSem[semKey] = true;
-                Object.keys(agrupadas[pc][sem]).forEach(mat => {
-                    const mKey = `${pc}|${sem}|${mat}`;
-                    newM[mKey] = true;
-                });
-            });
-            setExpandedSemestres(newSem);
-            setExpandedMaterias(newM);
-            setExpandedSecciones({});
-            setExpandedRubricas({});
-        }
-    };
-
-    // Helper genérico para toggles
-    const tog = (setter) => (key) => setter(prev => ({ ...prev, [key]: !prev[key] }));
-    const toggleCarrera  = tog(setExpandedCarreras);
-    const toggleSemestre = tog(setExpandedSemestres);
-    const toggleMateria  = tog(setExpandedMaterias);
-    const toggleSeccion  = tog(setExpandedSecciones);
-    const toggleRubrica  = tog(setExpandedRubricas);
-
-    // Chevron reutilizable
-    const Chevron = ({ open }) => (
-        <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} style={{ color: '#64748b', fontSize: '0.82em', flexShrink: 0 }} />
-    );
-
-    /* ─────────── render ─────────── */
+const replacement = `    /* ─────────── render ─────────── */
     const renderContent = () => {
         if (loading) return (
             <div style={{ textAlign: 'center', padding: '50px' }}>
@@ -153,8 +49,8 @@ export default function TeacherEvaluaciones() {
 
                             {openC && (
                                 <div style={{ padding: '20px' }}>
-                                    {Object.keys(evaluacionesAgrupadas[carrera]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).map(semestre => {
-                                        const semKey = `${carrera}|${semestre}`;
+                                    {Object.keys(evaluacionesAgrupadas[carrera]).map(semestre => {
+                                        const semKey = \`\${carrera}|\${semestre}\`;
                                         const openSem = expandedSemestres[semKey];
                                         return (
                                         <div key={semestre} style={{ marginBottom: '20px' }}>
@@ -163,8 +59,8 @@ export default function TeacherEvaluaciones() {
                                                 <Chevron open={openSem} />
                                             </h3>
 
-                                            {openSem && Object.keys(evaluacionesAgrupadas[carrera][semestre]).sort((a,b) => a.localeCompare(b)).map(materia => {
-                                                const mKey  = `${carrera}|${semestre}|${materia}`;
+                                            {openSem && Object.keys(evaluacionesAgrupadas[carrera][semestre]).map(materia => {
+                                                const mKey  = \`\${semKey}|\${materia}\`;
                                                 const openM = expandedMaterias[mKey];
                                                 return (
                                                     <div key={materia} style={{ marginLeft: '15px', marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
@@ -177,9 +73,9 @@ export default function TeacherEvaluaciones() {
 
                                                         {openM && (
                                                             <div style={{ padding: '12px 15px', background: '#f8fafc' }}>
-                                                                {Object.keys(evaluacionesAgrupadas[carrera][semestre][materia]).sort((a,b) => a.localeCompare(b)).map(seccion => {
+                                                                {Object.keys(evaluacionesAgrupadas[carrera][semestre][materia]).map(seccion => {
                                                                     const secData = evaluacionesAgrupadas[carrera][semestre][materia][seccion];
-                                                                    const sKey    = `${mKey}|${seccion}`;
+                                                                    const sKey    = \`\${mKey}|\${seccion}\`;
                                                                     const openS   = expandedSecciones[sKey];
                                                                     return (
                                                                         <div key={seccion} style={{ marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
@@ -198,43 +94,28 @@ export default function TeacherEvaluaciones() {
 
                                                                             {openS && (
                                                                                 <div style={{ padding: '12px 15px', background: 'white' }}>
-                                                                                    {Object.keys(secData.rubricas)
-                                                                                         .sort((a, b) => {
-                                                                                             const dateA = new Date(secData.rubricas[a][0].fecha_fija);
-                                                                                             const dateB = new Date(secData.rubricas[b][0].fecha_fija);
-                                                                                             return dateB - dateA;
-                                                                                         })
-                                                                                         .map(rubrica => {
-                                                                                             const filtrados = secData.rubricas[rubrica].filter(ev => {
-                                                                                                 if (!searchTerm) return true;
-                                                                                                 const full = `${ev.estudiante_nombre} ${ev.estudiante_apellido}`.toLowerCase();
-                                                                                                 return full.includes(searchTerm) || ev.estudiante_cedula.includes(searchTerm);
-                                                                                             });
-                                                                                             if (filtrados.length === 0 && searchTerm) return null;
-                                                                                             
-                                                                                             const rKey  = `${sKey}|${rubrica}`;
-                                                                                             const openR = expandedRubricas[rKey];
-                                                                                             const fecha_fija = secData.rubricas[rubrica][0].fecha_fija;                                                                            
+                                                                                    {Object.keys(secData.rubricas).map(rubrica => {
+                                                                                        const rKey  = \`\${sKey}|\${rubrica}\`;
+                                                                                        const openR = expandedRubricas[rKey];
+                                                                                        const filtrados = secData.rubricas[rubrica].filter(ev => {
+                                                                                            if (!searchTerm) return true;
+                                                                                            const full = \`\${ev.estudiante_nombre} \${ev.estudiante_apellido}\`.toLowerCase();
+                                                                                            return full.includes(searchTerm) || ev.estudiante_cedula.includes(searchTerm);
+                                                                                        });
                                                                                         return (
                                                                                             <div key={rubrica} style={{ marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
 
                                                                                                 {/* ══ NIVEL 4: RÚBRICA ══ */}
                                                                                                 <h5 onClick={() => toggleRubrica(rKey)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0, padding: '10px 14px', color: '#065f46', fontSize: '0.95em', background: '#f0fdf4', borderBottom: openR ? '1px solid #a7f3d0' : 'none' }}>
-                                                                                                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                                         <i className="fas fa-clipboard-check" style={{ color: '#10b981' }} />
-                                                                                                         {rubrica}
-                                                                                                         <span style={{ background: '#d1fae5', color: '#065f46', borderRadius: '999px', padding: '2px 8px', fontSize: '0.78em', fontWeight: '600' }}>
-                                                                                                             {filtrados.length} estudiante{filtrados.length !== 1 ? 's' : ''}
-                                                                                                         </span>
-                                                                                                     </span>
-                                                                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                                                                         <span style={{ fontSize: '0.85em', color: '#065f46', opacity: 0.5, fontWeight: '500' }}>
-                                                                                                             <i className="fas fa-calendar-alt" style={{ marginRight: '5px' }} />
-                                                                                                             {formatearFecha(fecha_fija)}
-                                                                                                         </span>
-                                                                                                         <Chevron open={openR} />
-                                                                                                     </div>
-                                                                                                 </h5>
+                                                                                                    <span>
+                                                                                                        <i className="fas fa-clipboard-check" style={{ marginRight: '8px', color: '#10b981' }} />
+                                                                                                        {rubrica}
+                                                                                                        <span style={{ marginLeft: '10px', background: '#d1fae5', color: '#065f46', borderRadius: '999px', padding: '2px 8px', fontSize: '0.78em', fontWeight: '600' }}>
+                                                                                                            {filtrados.length} estudiante{filtrados.length !== 1 ? 's' : ''}
+                                                                                                        </span>
+                                                                                                    </span>
+                                                                                                    <Chevron open={openR} />
+                                                                                                </h5>
 
                                                                                                 {openR && (
                                                                                                     <div style={{ padding: '15px' }}>
@@ -319,54 +200,7 @@ export default function TeacherEvaluaciones() {
             </div>
         );
     };
+\n`;
 
-    if (!user) return null;
-
-    return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
-            <Menu user={user} />
-            <main className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <Header title="Mis Evaluaciones" user={user} onLogout={() => navigate('/login')} />
-
-                <div style={{ padding: '30px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                        <div style={{ position: 'relative', width: '300px' }}>
-                            <i className="fas fa-search" style={{ position: 'absolute', left: '12px', top: '10px', color: '#94a3b8' }} />
-                            <input type="text" placeholder="Buscar Alumno (Nombre o CI)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value.toLowerCase())} style={{ width: '100%', padding: '10px 10px 10px 35px', border: '1px solid #cbd5e1', borderRadius: '8px', outline: 'none' }} />
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <button onClick={fetchEvaluaciones} style={{ padding: '10px 15px', background: '#f1f5f9', color: '#334155', border: 'none', borderRadius: '8px', cursor: 'pointer' }} title="Actualizar"><i className="fas fa-sync-alt" /></button>
-                            <button onClick={() => setShowAddEvaluacion(true)} style={{ padding: '10px 15px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}><i className="fas fa-plus" /> Nueva Evaluación</button>
-                        </div>
-                    </div>
-
-                    {renderContent()}
-                </div>
-            </main>
-
-            {showEvaluar && selectedEstudianteEvaluar && (
-                <ModalEvaluar data={selectedEstudianteEvaluar} onClose={() => setShowEvaluar(false)} onSaved={() => { setShowEvaluar(false); fetchEvaluaciones(); }} />
-            )}
-            {showDetalles && selectedEstudianteDetalles && (
-                <ModalVerDetalles data={selectedEstudianteDetalles} onClose={() => setShowDetalles(false)} />
-            )}
-            {showAddEvaluacion && (
-                <ModalAddEvaluacion onClose={() => setShowAddEvaluacion(false)} onSaved={() => { setShowAddEvaluacion(false); fetchEvaluaciones(); }} />
-            )}
-
-            {isActionLoading && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2147483647 }}>
-                    <div style={{ background: 'white', padding: '40px 60px', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px', minWidth: '300px' }}>
-                        <div className="loader-container-uiverse">
-                            <div className="loader"><div className="justify-content-center jimu-primary-loading"></div></div>
-                        </div>
-                        <div>
-                            <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.4em', fontWeight: 'bold' }}>Procesando...</h3>
-                            <p style={{ margin: '8px 0 0 0', color: '#64748b', fontSize: '1em' }}>Espere un momento por favor</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
+fs.writeFileSync(path, head + replacement + tail);
+console.log("SUCCESS!");
