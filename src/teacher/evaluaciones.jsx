@@ -4,7 +4,6 @@ import Header from '../components/header';
 import Menu from '../components/menu';
 import Swal from 'sweetalert2';
 import { evaluacionesService } from '../services/evaluaciones.service';
-import {periodosService} from '../services/periodos.service';
 import '../assets/css/evaluacion.css';
 
 import ModalEvaluar from './components/ModalEvaluar';
@@ -39,55 +38,10 @@ export default function TeacherEvaluaciones() {
     const [selectedEstudianteDetalles,setSelectedEstudianteDetalles]= useState(null);
     const [showAddEvaluacion,         setShowAddEvaluacion]         = useState(false);
 
-    const [isEvaluationOpen, setIsEvaluationOpen] = useState(false);
-    const [checkingPeriod, setCheckingPeriod] = useState(true);
-
     useEffect(() => {
         if (!user) { navigate('/login'); return; }
         fetchEvaluaciones();
-        checkEvaluationPeriod();
     }, [user, navigate]);
-
-    const checkEvaluationPeriod = async () => {
-        setCheckingPeriod(true);
-        try {
-            const codigoPeriodo = user.periodo_usuario;
-            if (!codigoPeriodo) return;
-
-            // Fetch periodo to get N (dias_abierto)
-            const periodoRes = await periodosService.getPeriodo(codigoPeriodo);
-            const periodoData = periodoRes.data?.data || {};
-            const N = periodoData.dias_abierto || 0;
-
-            // Fetch Cortes for this periodo
-            const cortesData = await periodosService.getCortes();
-            const cortes = cortesData?.data || [];
-            console.log(periodoData, cortes)
-            const currentDate = new Date();
-            
-            // Validate if today is within N days before the end of ANY corte
-            const isOpen = Array.isArray(cortes) && cortes.some(corte => {
-                if (!corte.fecha_fin) return false;
-                const end = new Date(corte.fecha_fin);
-                // Calculate start window (N days before end)
-                const startWindow = new Date(end);
-                startWindow.setDate(end.getDate() - N);
-
-                // Set boundaries to cover full days
-                startWindow.setHours(0, 0, 0, 0);
-                end.setHours(23, 59, 59, 999);
-
-                return currentDate >= startWindow && currentDate <= end;
-            });
-
-            setIsEvaluationOpen(isOpen);
-        } catch (error) {
-            console.error("Error al validar periodo de evaluaciones:", error);
-            setIsEvaluationOpen(false);
-        } finally {
-            setCheckingPeriod(false);
-        }
-    };
 
     const fetchEvaluaciones = async () => {
         setLoading(true);
@@ -301,19 +255,7 @@ export default function TeacherEvaluaciones() {
                                                                                                                                     <button style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', opacity: 0.6 }} title="Estadísticas (Próximamente)"><i className="fas fa-chart-line" /></button>
                                                                                                                                 </>
                                                                                                                             ) : (
-                                                                                                                                <button 
-                                                                                                                                    onClick={(e) => { 
-                                                                                                                                        e.stopPropagation(); 
-                                                                                                                                        if (!isEvaluationOpen) {
-                                                                                                                                            Swal.fire('Periodo Cerrado', 'No puedes evaluar estudiantes fuera del periodo permitido.', 'warning');
-                                                                                                                                            return;
-                                                                                                                                        }
-                                                                                                                                        setIsActionLoading(true); 
-                                                                                                                                        setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); 
-                                                                                                                                        setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); 
-                                                                                                                                    }} 
-                                                                                                                                    style={{ width: '100%', padding: '10px', background: isEvaluationOpen ? '#3b82f6' : '#94a3b8', color: 'white', border: 'none', borderRadius: '8px', cursor: isEvaluationOpen ? 'pointer' : 'not-allowed', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                                                                                                                                >
+                                                                                                                                <button onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} style={{ width: '100%', padding: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                                                                                                                                     <i className="fas fa-clipboard-check" /> Evaluar Estudiante
                                                                                                                                 </button>
                                                                                                                             )}
@@ -364,29 +306,9 @@ export default function TeacherEvaluaciones() {
                         </div>
                         <div style={{ display: 'flex', gap: '10px' }}>
                             <button onClick={fetchEvaluaciones} style={{ padding: '10px 15px', background: '#f1f5f9', color: '#334155', border: 'none', borderRadius: '8px', cursor: 'pointer' }} title="Actualizar"><i className="fas fa-sync-alt" /></button>
-                            <button 
-                                onClick={() => {
-                                    
-                                    setShowAddEvaluacion(true);
-                                }} 
-                                style={{ padding: '10px 15px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
-                            >
-                                <i className="fas fa-plus" /> Nueva Evaluación
-                            </button>
+                            <button onClick={() => setShowAddEvaluacion(true)} style={{ padding: '10px 15px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}><i className="fas fa-plus" /> Nueva Evaluación</button>
                         </div>
                     </div>
-
-                    {!checkingPeriod && !isEvaluationOpen && (
-                        <div style={{ padding: '15px 20px', background: '#fffbeb', borderLeft: '4px solid #f59e0b', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                            <i className="fas fa-exclamation-triangle" style={{ color: '#f59e0b', fontSize: '1.5em' }}></i>
-                            <div>
-                                <h4 style={{ margin: '0 0 5px 0', color: '#92400e' }}>Periodo de Evaluaciones Cerrado</h4>
-                                <p style={{ margin: 0, color: '#b45309', fontSize: '0.9em' }}>
-                                    No te encuentras dentro del rango de días permitidos para evaluar estudiantes en el corte actual. Las funciones para evaluar y añadir evaluaciones están deshabilitadas temporálmente.
-                                </p>
-                            </div>
-                        </div>
-                    )}
 
                     {renderContent()}
                 </div>
