@@ -13,6 +13,26 @@ export const evaluacionesService = {
         if (data.success) return data.evaluaciones;
         throw new Error(data.message || 'Error al cargar evaluaciones');
     },
+    async getAllSecciones() {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_URL}/evaluaciones/secciones`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = response.data;
+        if (data.success) return data.secciones;
+        throw new Error(data.message || 'Error al cargar las secciones');
+    },
+    async getEvaluacionesBySeccion(id_seccion) {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_URL}/evaluaciones/${id_seccion}`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = response.data;
+        if (data.success) return data.evaluaciones;
+        throw new Error(data.message || 'Error al cargar evaluaciones');
+    },
 
     async getTeacherEvaluaciones() {
         const token = localStorage.getItem('token');
@@ -156,7 +176,7 @@ export const evaluacionesService = {
 
     async getEvaluacionById(id) {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/evaluaciones/${id}`, {
+        const response = await axios.get(`${API_URL}/evaluaciones/detalle/${id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.data;
@@ -194,7 +214,7 @@ export const evaluacionesService = {
 
         if (id) {
             // Edición del registro de la evaluación
-            url = `${API_URL}/evaluaciones/${id}`;
+            url = `${API_URL}/update/evaluaciones/${id}`;
             method = 'PUT';
         } else {
             // Creación de NUEVA evaluación

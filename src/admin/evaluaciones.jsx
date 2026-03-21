@@ -36,7 +36,9 @@ export default function Evaluaciones() {
     });
 
     // Estados Principal
-    const [evaluaciones, setEvaluaciones] = useState([]);
+    const [seccionesData, setSeccionesData] = useState([]);
+    const [evaluacionesPorSeccion, setEvaluacionesPorSeccion] = useState({}); // { id_seccion: evaluaciones[] }
+    const [loadingSeccionesDetalle, setLoadingSeccionesDetalle] = useState({}); // { id_seccion: boolean }
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [docenteFilter, setDocenteFilter] = useState('');
@@ -82,20 +84,38 @@ export default function Evaluaciones() {
         instrumentos: ''
     });
 
-    // ── Cargar Evaluaciones ────────────────────────────────────────────────────
+    // ── Cargar Secciones Iniciales ─────────────────────────────────────────────
     const loadEvaluaciones = useCallback(async () => {
         try {
             setLoading(true);
-            const data = await evaluacionesService.getEvaluaciones();
-            setEvaluaciones(data);
+            const data = await evaluacionesService.getAllSecciones();
+            setSeccionesData(data);
         } catch (error) {
             console.error(error);
-            Swal.fire('Error', 'No se pudieron cargar las evaluaciones', 'error');
+            Swal.fire('Error', 'No se pudieron cargar las secciones', 'error');
         } finally {
             setLoading(false);
             setGlobalLoading(false);
         }
     }, [setGlobalLoading]);
+
+    // ── Cargar Evaluaciones de una Sección bajo demanda ────────────────────────
+    const fetchEvaluacionesDeSeccion = async (idSeccion, force = false) => {
+        if (!force && (evaluacionesPorSeccion[idSeccion] || loadingSeccionesDetalle[idSeccion])) return;
+
+        try {
+            setLoadingSeccionesDetalle(prev => ({ ...prev, [idSeccion]: true }));
+            const data = await evaluacionesService.getEvaluacionesBySeccion(idSeccion);
+            setEvaluacionesPorSeccion(prev => ({ ...prev, [idSeccion]: data }));
+            return data;
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'No se pudieron cargar las evaluaciones de esta sección', 'error');
+            return [];
+        } finally {
+            setLoadingSeccionesDetalle(prev => ({ ...prev, [idSeccion]: false }));
+        }
+    };
 
     useEffect(() => {
         if (!user) navigate('/login');
@@ -132,8 +152,11 @@ export default function Evaluaciones() {
     const handleSeccionChange = async (id) => {
         setFormData(prev => ({ ...prev, id_seccion: id, id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
         if (id) {
-            // Cargar fechas disponibles excluyendo las ya ocupadas de esta sección
-            await cargarFechas(id, evaluaciones);
+            let evaluationsForSection = evaluacionesPorSeccion[id];
+            if (!evaluationsForSection) {
+                evaluationsForSection = await fetchEvaluacionesDeSeccion(id);
+            }
+            await cargarFechas(id, evaluationsForSection || []);
         } else {
             resetFechas();
         }
@@ -169,42 +192,39 @@ export default function Evaluaciones() {
         }));
     };
 
-    // ── Filtrado ───────────────────────────────────────────────────────────────
-    const filteredEvaluaciones = useMemo(() => {
-        return evaluaciones.filter(ev => {
+    // ── Filtrado de Secciones ────────────────────────────────────────────────
+    const filteredSecciones = useMemo(() => {
+        return seccionesData.filter(sec => {
             const matchesSearch = !searchTerm ||
-                `${ev.contenido_evaluacion} ${ev.materia_nombre} ${ev.docente_nombre}`.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesDocente = !docenteFilter || `${ev.docente_nombre} ${ev.docente_apellido}` === docenteFilter;
-            const matchesEstado = !estadoFilter || ev.estado === estadoFilter;
+                `${sec.materia_nombre} ${sec.docente_nombre} ${sec.docente_apellido}`.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesDocente = !docenteFilter || `${sec.docente_nombre} ${sec.docente_apellido}` === docenteFilter;
+            const matchesEstado = !estadoFilter || true; // El estado total de la sección no se tiene fácilmente sin evaluaciones
             return matchesSearch && matchesDocente && matchesEstado;
         });
-    }, [evaluaciones, searchTerm, docenteFilter, estadoFilter]);
+    }, [seccionesData, searchTerm, docenteFilter, estadoFilter]);
 
     const docentesUnicos = useMemo(() => {
-        const set = new Set(evaluaciones.map(ev => `${ev.docente_nombre} ${ev.docente_apellido}`));
+        const set = new Set(seccionesData.map(sec => `${sec.docente_nombre} ${sec.docente_apellido}`));
         return Array.from(set).sort();
-    }, [evaluaciones]);
+    }, [seccionesData]);
 
-    // ── Agrupación (Niveles Jerárquicos) ───────────────────────────────────────
-    const evaluacionesAgrupadas = useMemo(() => {
+    // ── Agrupación de Secciones (Niveles Jerárquicos) ──────────────────────────
+    const seccionesAgrupadas = useMemo(() => {
         const agrupadas = {};
-        filteredEvaluaciones.forEach(ev => {
-            const c  = ev.carrera_nombre || `Carrera ${ev.carrera_codigo || 'Desconocida'}`;
-            const s  = `Semestre ${ev.semestre || ev.materia_semestre || 'N/A'}`;
-            const m  = ev.materia_nombre || `Materia ${ev.materia_codigo || 'Desconocida'}`;
-            const sc = `Sección ${ev.seccion_codigo ? ev.seccion_codigo.slice(-1) : 'N/A'}`;
+        filteredSecciones.forEach(sec => {
+            const c  = sec.carrera_nombre || `Carrera ${sec.carrera_codigo || 'Desconocida'}`;
+            const s  = `Semestre ${sec.semestre || 'N/A'}`;
+            const m  = sec.materia_nombre || `Materia ${sec.materia_codigo || 'Desconocida'}`;
+            const sc = `Sección ${sec.seccion_codigo ? sec.seccion_codigo.slice(-1) : 'N/A'}`;
 
             if (!agrupadas[c])              agrupadas[c] = {};
             if (!agrupadas[c][s])           agrupadas[c][s] = {};
             if (!agrupadas[c][s][m])        agrupadas[c][s][m] = {};
-            if (!agrupadas[c][s][m][sc])    agrupadas[c][s][m][sc] = { rubricas: {} };
-            
-            const r = `${ev.contenido_evaluacion} (${ev.rubrica_id ? "Rúbrica: " : ''}${ev.nombre_rubrica})`;
-            if (!agrupadas[c][s][m][sc].rubricas[r]) agrupadas[c][s][m][sc].rubricas[r] = [];
-            agrupadas[c][s][m][sc].rubricas[r].push(ev);
+            // Guardamos el id_seccion para poder pedir sus evaluaciones luego
+            agrupadas[c][s][m][sc] = { id: sec.id_seccion, ...sec };
         });
         return agrupadas;
-    }, [filteredEvaluaciones]);
+    }, [filteredSecciones]);
 
     // Estados de expansión por cada nivel
     const [expandedCarreras,  setExpandedCarreras]  = useState({});
@@ -217,20 +237,26 @@ export default function Evaluaciones() {
     const toggleCarrera  = tog(setExpandedCarreras);
     const toggleSemestre = tog(setExpandedSemestres);
     const toggleMateria  = tog(setExpandedMaterias);
-    const toggleSeccion  = tog(setExpandedSecciones);
+    const toggleSeccion  = (key, idSeccion) => {
+        setExpandedSecciones(prev => {
+            const newState = !prev[key];
+            if (newState && idSeccion) fetchEvaluacionesDeSeccion(idSeccion);
+            return { ...prev, [key]: newState };
+        });
+    };
     const toggleRubrica  = tog(setExpandedRubricas);
 
     // Expandir primer árbol completo por defecto al cargar
     useEffect(() => {
-        if (Object.keys(evaluacionesAgrupadas).length > 0 && Object.keys(expandedCarreras).length === 0) {
-            const firstC = Object.keys(evaluacionesAgrupadas).sort()[0];
+        if (Object.keys(seccionesAgrupadas).length > 0 && Object.keys(expandedCarreras).length === 0) {
+            const firstC = Object.keys(seccionesAgrupadas).sort()[0];
             setExpandedCarreras({ [firstC]: true });
 
             const newSem = {}, newMat = {};
-            Object.keys(evaluacionesAgrupadas[firstC]).forEach(sem => {
+            Object.keys(seccionesAgrupadas[firstC]).forEach(sem => {
                 const sKey = `${firstC}|${sem}`;
                 newSem[sKey] = true;
-                Object.keys(evaluacionesAgrupadas[firstC][sem]).forEach(mat => {
+                Object.keys(seccionesAgrupadas[firstC][sem]).forEach(mat => {
                     const mKey = `${sKey}|${mat}`;
                     newMat[mKey] = true;
                 });
@@ -238,7 +264,7 @@ export default function Evaluaciones() {
             setExpandedSemestres(newSem);
             setExpandedMaterias(newMat);
         }
-    }, [evaluacionesAgrupadas]); // Solo reacciona cuando cambian las agrupadas (carga inicial o filtro)
+    }, [seccionesAgrupadas]); 
 
     const Chevron = ({ open }) => (
         <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} style={{ color: '#64748b', fontSize: '0.82em', flexShrink: 0 }} />
@@ -273,7 +299,8 @@ export default function Evaluaciones() {
 
                 // Cargar fechas disponibles para esta sección
                 // (la evaluación que se está editando NO debe bloquearse a sí misma)
-                const evaluacionesSinEstaEdit = evaluaciones.filter(e => e.evaluacion_id !== ev.evaluacion_id);
+                const evaluationsForSection = evaluacionesPorSeccion[data.id_seccion] || [];
+                const evaluacionesSinEstaEdit = evaluationsForSection.filter(e => e.evaluacion_id !== ev.evaluacion_id);
                 await cargarFechas(data.id_seccion, evaluacionesSinEstaEdit);
 
                 const fechaStr = data.fecha_evaluacion ? data.fecha_evaluacion.split('T')[0] : '';
@@ -330,6 +357,9 @@ export default function Evaluaciones() {
                 Swal.fire('Éxito', res.message, 'success');
                 setShowModal(false);
                 loadEvaluaciones();
+                if (formData.id_seccion) {
+                    fetchEvaluacionesDeSeccion(formData.id_seccion, true);
+                }
             } else {
                 Swal.fire('Error', res.message, 'error');
             }
@@ -339,8 +369,7 @@ export default function Evaluaciones() {
             setSubmitting(false);
         }
     };
-    const esDiagnostico = estrategias
-        .filter(est => formData.estrategias_eval.includes(est.id))
+    const esDiagnostico = estrategias.filter(est => formData.estrategias_eval.includes(est.id))
         .some(est => est.ponderable === 0);
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
@@ -384,7 +413,7 @@ export default function Evaluaciones() {
                             <div className="spinner"></div>
                             <p>Cargando evaluaciones...</p>
                         </div>
-                    ) : Object.keys(evaluacionesAgrupadas).length === 0 ? (
+                    ) : Object.keys(seccionesAgrupadas).length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: '12px' }}>
                             <i className="fas fa-clipboard-list" style={{ fontSize: '3em', color: '#94a3b8', marginBottom: '15px' }} />
                             <h3>No hay evaluaciones registradas</h3>
@@ -392,7 +421,7 @@ export default function Evaluaciones() {
                         </div>
                     ) : (
                         <div className="hierarchy-container">
-                            {Object.keys(evaluacionesAgrupadas).sort().map(carrera => {
+                            {Object.keys(seccionesAgrupadas).sort().map(carrera => {
                                 const openC = expandedCarreras[carrera];
                                 return (
                                     <div key={carrera} style={{ marginBottom: '20px', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
@@ -404,7 +433,7 @@ export default function Evaluaciones() {
 
                                         {openC && (
                                             <div style={{ padding: '20px' }}>
-                                                {Object.keys(evaluacionesAgrupadas[carrera]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).map(semestre => {
+                                                {Object.keys(seccionesAgrupadas[carrera]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).map(semestre => {
                                                     const sKey = `${carrera}|${semestre}`;
                                                     const openS = expandedSemestres[sKey];
                                                     return (
@@ -415,7 +444,7 @@ export default function Evaluaciones() {
                                                                 <Chevron open={openS} />
                                                             </h3>
 
-                                                            {openS && Object.keys(evaluacionesAgrupadas[carrera][semestre]).sort((a,b) => a.localeCompare(b)).map(materia => {
+                                                            {openS && Object.keys(seccionesAgrupadas[carrera][semestre]).sort((a,b) => a.localeCompare(b)).map(materia => {
                                                                 const mKey  = `${sKey}|${materia}`;
                                                                 const openM = expandedMaterias[mKey];
                                                                 return (
@@ -428,31 +457,56 @@ export default function Evaluaciones() {
 
                                                                         {openM && (
                                                                             <div style={{ padding: '12px 15px', background: '#f8fafc' }}>
-                                                                                {Object.keys(evaluacionesAgrupadas[carrera][semestre][materia]).sort((a,b) => a.localeCompare(b)).map(seccion => {
+                                                                                {Object.keys(seccionesAgrupadas[carrera][semestre][materia]).sort((a,b) => a.localeCompare(b)).map(seccion => {
+                                                                                    const secInfo = seccionesAgrupadas[carrera][semestre][materia][seccion];
                                                                                     const scKey = `${mKey}|${seccion}`;
                                                                                     const openSc = expandedSecciones[scKey];
+                                                                                    const isLoadingSec = loadingSeccionesDetalle[secInfo.id];
+                                                                                    const evaluations = evaluacionesPorSeccion[secInfo.id] || [];
+
                                                                                     return (
                                                                                         <div key={seccion} style={{ marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                                                                                             {/* NIVEL 4: SECCIÓN */}
-                                                                                            <div onClick={() => toggleSeccion(scKey)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', background: '#fef9ee', borderBottom: openSc ? '1px solid #fde68a' : 'none', gap: '12px' }}>
-                                                                                                <span style={{ color: '#92400e', fontWeight: 'bold' }}>
-                                                                                                    <i className="fas fa-layer-group" style={{ marginRight: '7px', color: '#f59e0b' }} />{seccion}
-                                                                                                </span>
+                                                                                            <div onClick={() => toggleSeccion(scKey, secInfo.id)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', background: '#fef9ee', borderBottom: openSc ? '1px solid #fde68a' : 'none', gap: '12px' }}>
+                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                                                    <span style={{ color: '#92400e', fontWeight: 'bold' }}>
+                                                                                                        <i className="fas fa-layer-group" style={{ marginRight: '7px', color: '#f59e0b' }} />{seccion}
+                                                                                                    </span>
+                                                                                                    <span style={{ fontSize: '0.85em', color: '#b45309' }}>
+                                                                                                        <i className="fas fa-user-tie" style={{ marginRight: '5px' }} />{secInfo.docente_nombre} {secInfo.docente_apellido}
+                                                                                                    </span>
+                                                                                                </div>
                                                                                                 <Chevron open={openSc} />
                                                                                             </div>
 
                                                                                             {openSc && (
                                                                                                 <div style={{ padding: '12px 15px', background: 'white' }}>
-                                                                                                    {Object.keys(evaluacionesAgrupadas[carrera][semestre][materia][seccion].rubricas)
-                                                                                                        .sort((a, b) => {
-                                                                                                            const rA = evaluacionesAgrupadas[carrera][semestre][materia][seccion].rubricas[a][0];
-                                                                                                            const rB = evaluacionesAgrupadas[carrera][semestre][materia][seccion].rubricas[b][0];
+                                                                                                    {isLoadingSec ? (
+                                                                                                        <div style={{ textAlign: 'center', padding: '20px' }}>
+                                                                                                            <i className="fas fa-spinner fa-spin" style={{ color: '#f59e0b' }} />
+                                                                                                            <p style={{ fontSize: '0.9em', color: '#92400e', marginTop: '8px' }}>Cargando detalles...</p>
+                                                                                                        </div>
+                                                                                                    ) : evaluations.length === 0 ? (
+                                                                                                        <div style={{ textAlign: 'center', padding: '15px', color: '#64748b' }}>
+                                                                                                            No hay evaluaciones para esta sección.
+                                                                                                        </div>
+                                                                                                    ) : (() => {
+                                                                                                        // Agrupar evaluaciones de la sección por rúbrica
+                                                                                                        const rubricasObj = {};
+                                                                                                        evaluations.forEach(ev => {
+                                                                                                            const rName = `${ev.contenido_evaluacion} (${ev.rubrica_id ? 'Rúbrica: ' : ''}${ev.nombre_rubrica})`;
+                                                                                                            if (!rubricasObj[rName]) rubricasObj[rName] = [];
+                                                                                                            rubricasObj[rName].push(ev);
+                                                                                                        });
+
+                                                                                                        return Object.keys(rubricasObj).sort((a, b) => {
+                                                                                                            const rA = rubricasObj[a][0];
+                                                                                                            const rB = rubricasObj[b][0];
                                                                                                             const dateA = new Date(rA.fecha_fija || rA.fecha_evaluacion);
                                                                                                             const dateB = new Date(rB.fecha_fija || rB.fecha_evaluacion);
                                                                                                             return dateB - dateA;
-                                                                                                        })
-                                                                                                        .map(rubrica => {
-                                                                                                            const evs = evaluacionesAgrupadas[carrera][semestre][materia][seccion].rubricas[rubrica];
+                                                                                                        }).map(rubrica => {
+                                                                                                            const evs = rubricasObj[rubrica];
                                                                                                             const rKey = `${scKey}|${rubrica}`;
                                                                                                             const openR = expandedRubricas[rKey];
                                                                                                             const fecha_mostrar = evs[0].fecha_fija || evs[0].fecha_evaluacion;
@@ -503,7 +557,7 @@ export default function Evaluaciones() {
                                                                                                                                                 </div>
                                                                                                                                             </div>
                                                                                                                                             <div className="eval-footer-info">
-                                                                                                                                                <span><i className="fas fa-calendar-alt"></i> {ev.fecha_formateada}</span>
+                                                                                                                                                <span><i className="fas fa-calendar-alt"></i> {formatearFecha(ev.fecha_evaluacion)}</span>
                                                                                                                                                 <span><i className="fas fa-clock"></i> {ev.tipo_horario}</span>
                                                                                                                                             </div>
                                                                                                                                         </div>
@@ -525,7 +579,8 @@ export default function Evaluaciones() {
                                                                                                                     )}
                                                                                                                 </div>
                                                                                                             );
-                                                                                                        })}
+                                                                                                        });
+                                                                                                    })()}
                                                                                                 </div>
                                                                                             )}
                                                                                         </div>
