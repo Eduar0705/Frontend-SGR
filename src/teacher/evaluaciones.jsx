@@ -21,6 +21,8 @@ export default function TeacherEvaluaciones() {
     });
 
     const [evaluacionesAgrupadas, setEvaluacionesAgrupadas] = useState({});
+    const [estudiantesPorEvaluacion, setEstudiantesPorEvaluacion] = useState({}); // { id_evaluacion: estudiantes[] }
+    const [loadingEvaluados, setLoadingEvaluados] = useState({}); // { id_evaluacion: boolean }
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -58,6 +60,8 @@ export default function TeacherEvaluaciones() {
         setLoading(true);
         try {
             const evals = await evaluacionesService.getTeacherEvaluaciones();
+            setEstudiantesPorEvaluacion({});
+            setLoadingEvaluados({});
             agruparEvaluaciones(evals);
         } catch (error) {
             console.error('Error fetching evaluaciones:', error);
@@ -65,6 +69,23 @@ export default function TeacherEvaluaciones() {
         } finally {
             setLoading(false);
             setGlobalLoading(false);
+        }
+    };
+
+    const fetchEstudiantesDeEvaluacion = async (idEval, force = false) => {
+        if (!force && (estudiantesPorEvaluacion[idEval] || loadingEvaluados[idEval])) return;
+
+        setLoadingEvaluados(prev => ({ ...prev, [idEval]: true }));
+        try {
+            const data = await evaluacionesService.getEvaluadasByEval(idEval);
+            setEstudiantesPorEvaluacion(prev => ({ ...prev, [idEval]: data }));
+            return data;
+        } catch (error) {
+            console.error('Error fetching estudiantes:', error);
+            Swal.fire('Error', 'No se pudieron cargar los estudiantes de esta evaluación', 'error');
+            return [];
+        } finally {
+            setLoadingEvaluados(prev => ({ ...prev, [idEval]: false }));
         }
     };
 
@@ -81,8 +102,9 @@ export default function TeacherEvaluaciones() {
             if (!agrupadas[c][s])           agrupadas[c][s] = {};
             if (!agrupadas[c][s][m])        agrupadas[c][s][m] = {};
             if (!agrupadas[c][s][m][sc])    agrupadas[c][s][m][sc] = { info: { horario: ev.seccion_horario, aula: ev.seccion_aula }, rubricas: {} };
-            if (!agrupadas[c][s][m][sc].rubricas[r]) agrupadas[c][s][m][sc].rubricas[r] = [];
-            agrupadas[c][s][m][sc].rubricas[r].push(ev);
+            
+            // Cada evaluación es una entidad única
+            agrupadas[c][s][m][sc].rubricas[r] = ev;
         });
 
         setEvaluacionesAgrupadas(agrupadas);
@@ -114,7 +136,13 @@ export default function TeacherEvaluaciones() {
     const toggleSemestre = tog(setExpandedSemestres);
     const toggleMateria  = tog(setExpandedMaterias);
     const toggleSeccion  = tog(setExpandedSecciones);
-    const toggleRubrica  = tog(setExpandedRubricas);
+    const toggleRubrica  = (key, idEval) => {
+        setExpandedRubricas(prev => {
+            const newState = !prev[key];
+            if (newState && idEval) fetchEstudiantesDeEvaluacion(idEval);
+            return { ...prev, [key]: newState };
+        });
+    };
 
     // Chevron reutilizable
     const Chevron = ({ open }) => (
@@ -200,32 +228,39 @@ export default function TeacherEvaluaciones() {
                                                                                 <div style={{ padding: '12px 15px', background: 'white' }}>
                                                                                     {Object.keys(secData.rubricas)
                                                                                          .sort((a, b) => {
-                                                                                             const dateA = new Date(secData.rubricas[a][0].fecha_fija);
-                                                                                             const dateB = new Date(secData.rubricas[b][0].fecha_fija);
+                                                                                             const dateA = new Date(secData.rubricas[a].fecha_fija);
+                                                                                             const dateB = new Date(secData.rubricas[b].fecha_fija);
                                                                                              return dateB - dateA;
                                                                                          })
                                                                                          .map(rubrica => {
-                                                                                             const filtrados = secData.rubricas[rubrica].filter(ev => {
+                                                                                             const evalInfo = secData.rubricas[rubrica];
+                                                                                             const rKey     = `${sKey}|${rubrica}`;
+                                                                                             const openR    = expandedRubricas[rKey];
+                                                                                             const students = estudiantesPorEvaluacion[evalInfo.id_evaluacion] || [];
+                                                                                             const loadingS = loadingEvaluados[evalInfo.id_evaluacion];
+                                                                                             
+                                                                                             const filtrados = students.filter(ev => {
                                                                                                  if (!searchTerm) return true;
                                                                                                  const full = `${ev.estudiante_nombre} ${ev.estudiante_apellido}`.toLowerCase();
                                                                                                  return full.includes(searchTerm) || ev.estudiante_cedula.includes(searchTerm);
                                                                                              });
-                                                                                             if (filtrados.length === 0 && searchTerm) return null;
+
+                                                                                             if (searchTerm && filtrados.length === 0 && !loadingS) return null;
                                                                                              
-                                                                                             const rKey  = `${sKey}|${rubrica}`;
-                                                                                             const openR = expandedRubricas[rKey];
-                                                                                             const fecha_fija = secData.rubricas[rubrica][0].fecha_fija;                                                                            
+                                                                                             const fecha_fija = evalInfo.fecha_fija;                                                                            
                                                                                         return (
                                                                                             <div key={rubrica} style={{ marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
 
                                                                                                 {/* ══ NIVEL 4: RÚBRICA ══ */}
-                                                                                                <h5 onClick={() => toggleRubrica(rKey)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0, padding: '10px 14px', color: '#065f46', fontSize: '0.95em', background: '#f0fdf4', borderBottom: openR ? '1px solid #a7f3d0' : 'none' }}>
+                                                                                                <h5 onClick={() => toggleRubrica(rKey, evalInfo.id_evaluacion)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0, padding: '10px 14px', color: '#065f46', fontSize: '0.95em', background: '#f0fdf4', borderBottom: openR ? '1px solid #a7f3d0' : 'none' }}>
                                                                                                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                                                                          <i className="fas fa-clipboard-check" style={{ color: '#10b981' }} />
                                                                                                          {rubrica}
-                                                                                                         <span style={{ background: '#d1fae5', color: '#065f46', borderRadius: '999px', padding: '2px 8px', fontSize: '0.78em', fontWeight: '600' }}>
-                                                                                                             {filtrados.length} estudiante{filtrados.length !== 1 ? 's' : ''}
-                                                                                                         </span>
+                                                                                                         {openR && !loadingS && (
+                                                                                                            <span style={{ background: '#d1fae5', color: '#065f46', borderRadius: '999px', padding: '2px 8px', fontSize: '0.78em', fontWeight: '600' }}>
+                                                                                                                {filtrados.length} estudiante{filtrados.length !== 1 ? 's' : ''}
+                                                                                                            </span>
+                                                                                                         )}
                                                                                                      </span>
                                                                                                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                                                                          <span style={{ fontSize: '0.85em', color: '#065f46', opacity: 0.5, fontWeight: '500' }}>
@@ -238,61 +273,70 @@ export default function TeacherEvaluaciones() {
 
                                                                                                 {openR && (
                                                                                                     <div style={{ padding: '15px' }}>
-                                                                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px' }}>
-                                                                                                            {filtrados.map(ev => (
-                                                                                                                <div key={ev.estudiante_cedula + ev.id} className="evaluacion-card" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                                                                                                    {/* Ribbon */}
-                                                                                                                    <div style={{ position: 'absolute', top: '12px', right: '-35px', background: ev.estado === 'Completada' ? '#10b981' : '#f59e0b', color: 'white', padding: '5px 40px', fontSize: '0.75em', fontWeight: 'bold', transform: 'rotate(45deg)', zIndex: 1 }}>
-                                                                                                                        {ev.estado}
-                                                                                                                    </div>
+                                                                                                        {loadingS ? (
+                                                                                                            <div style={{ textAlign: 'center', padding: '20px' }}>
+                                                                                                                <i className="fas fa-spinner fa-spin" style={{ color: '#10b981' }} />
+                                                                                                                <p style={{ color: '#065f46', fontSize: '0.9em', marginTop: '10px' }}>Cargando estudiantes...</p>
+                                                                                                            </div>
+                                                                                                        ) : filtrados.length === 0 ? (
+                                                                                                            <p style={{ textAlign: 'center', color: '#64748b' }}>No hay estudiantes para mostrar.</p>
+                                                                                                        ) : (
+                                                                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px' }}>
+                                                                                                                {filtrados.map(ev => (
+                                                                                                                    <div key={ev.estudiante_cedula + ev.id} className="evaluacion-card" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                                                                                                        {/* Ribbon */}
+                                                                                                                        <div style={{ position: 'absolute', top: '12px', right: '-35px', background: ev.estado === 'Completada' ? '#10b981' : '#f59e0b', color: 'white', padding: '5px 40px', fontSize: '0.75em', fontWeight: 'bold', transform: 'rotate(45deg)', zIndex: 1 }}>
+                                                                                                                            {ev.estado}
+                                                                                                                        </div>
 
-                                                                                                                    <div>
-                                                                                                                        <h4 style={{ margin: '0 0 5px 0', fontSize: '1.2em', color: '#1e293b', fontWeight: 'bold', textTransform: 'uppercase' }}>{ev.materia_nombre}</h4>
-                                                                                                                        <div style={{ color: '#3b82f6', fontSize: '0.9em', fontWeight: '500' }}>{ev.materia_codigo} {ev.seccion_codigo}</div>
-                                                                                                                    </div>
-
-                                                                                                                    <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                                                                                        <i className="fas fa-user" style={{ color: '#64748b' }} />
-                                                                                                                        <div style={{ color: '#2563eb', fontWeight: '500' }}>{ev.estudiante_nombre} {ev.estudiante_apellido}</div>
-                                                                                                                    </div>
-
-                                                                                                                    <div style={{ color: '#64748b', fontSize: '0.95em', minHeight: '1.4em' }}>
-                                                                                                                        {ev.observaciones || 'Sin observaciones adicionales'}
-                                                                                                                    </div>
-
-                                                                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', padding: '15px', borderRadius: '12px' }}>
                                                                                                                         <div>
-                                                                                                                            <span style={{ fontSize: '0.75em', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Ponderación</span>
-                                                                                                                            <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1em' }}>{ev.porcentaje_evaluacion || 10}%</div>
+                                                                                                                            <h4 style={{ margin: '0 0 5px 0', fontSize: '1.2em', color: '#1e293b', fontWeight: 'bold', textTransform: 'uppercase' }}>{evalInfo.materia_nombre}</h4>
+                                                                                                                            <div style={{ color: '#3b82f6', fontSize: '0.9em', fontWeight: '500' }}>{evalInfo.materia_codigo} {evalInfo.seccion_codigo}</div>
                                                                                                                         </div>
-                                                                                                                        <div style={{ textAlign: 'right' }}>
-                                                                                                                            <span style={{ fontSize: '0.75em', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Progreso</span>
-                                                                                                                            <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1em' }}>{ev.estado === 'Completada' ? '1/1' : '0/1'}</div>
-                                                                                                                        </div>
-                                                                                                                    </div>
 
-                                                                                                                    <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                                                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: '0.85em' }}>
-                                                                                                                            <span><i className="fas fa-calendar-alt" /> {ev.fecha_formateada}</span>
-                                                                                                                            <span><i className="fas fa-clock" /> Sección</span>
+                                                                                                                        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                                                                            <i className="fas fa-user" style={{ color: '#64748b' }} />
+                                                                                                                            <div style={{ color: '#2563eb', fontWeight: '500' }}>{ev.estudiante_nombre} {ev.estudiante_apellido}</div>
                                                                                                                         </div>
-                                                                                                                        <div style={{ display: 'flex', gap: '10px' }}>
-                                                                                                                            {ev.estado === 'Completada' ? (
-                                                                                                                                <>
-                                                                                                                                    <button onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }} className="btn-card-action" title="Editar Evaluación"><i className="fas fa-edit" /></button>
-                                                                                                                                    <button onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteDetalles({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowDetalles(true); }, 800); }} style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }} className="btn-card-action" title="Ver Detalles"><i className="fas fa-eye" /></button>
-                                                                                                                                    <button style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', opacity: 0.6 }} title="Estadísticas (Próximamente)"><i className="fas fa-chart-line" /></button>
-                                                                                                                                </>
-                                                                                                                            ) : (
-                                                                                                                                <button onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} style={{ width: '100%', padding: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                                                                                                                    <i className="fas fa-clipboard-check" /> Evaluar Estudiante
-                                                                                                                                </button>
-                                                                                                                            )}
+
+                                                                                                                        <div style={{ color: '#64748b', fontSize: '0.95em', minHeight: '1.4em' }}>
+                                                                                                                            {ev.observaciones || 'Sin observaciones adicionales'}
+                                                                                                                        </div>
+
+                                                                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', padding: '15px', borderRadius: '12px' }}>
+                                                                                                                            <div>
+                                                                                                                                <span style={{ fontSize: '0.75em', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Ponderación</span>
+                                                                                                                                <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1em' }}>{ev.porcentaje_evaluacion || 10}%</div>
+                                                                                                                            </div>
+                                                                                                                            <div style={{ textAlign: 'right' }}>
+                                                                                                                                <span style={{ fontSize: '0.75em', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Progreso</span>
+                                                                                                                                <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1em' }}>{ev.estado === 'Completada' ? '1/1' : '0/1'}</div>
+                                                                                                                            </div>
+                                                                                                                        </div>
+
+                                                                                                                        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                                                                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: '0.85em' }}>
+                                                                                                                                <span><i className="fas fa-calendar-alt" /> {formatearFecha(ev.fecha_evaluacion || ev.fecha_fija)}</span>
+                                                                                                                                <span><i className="fas fa-clock" /> Sección</span>
+                                                                                                                            </div>
+                                                                                                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                                                                                                {ev.estado === 'Completada' ? (
+                                                                                                                                    <>
+                                                                                                                                        <button onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }} className="btn-card-action" title="Editar Evaluación"><i className="fas fa-edit" /></button>
+                                                                                                                                        <button onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteDetalles({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowDetalles(true); }, 800); }} style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }} className="btn-card-action" title="Ver Detalles"><i className="fas fa-eye" /></button>
+                                                                                                                                        <button style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', opacity: 0.6 }} title="Estadísticas (Próximamente)"><i className="fas fa-chart-line" /></button>
+                                                                                                                                    </>
+                                                                                                                                ) : (
+                                                                                                                                    <button onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} style={{ width: '100%', padding: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                                                                                                                        <i className="fas fa-clipboard-check" /> Evaluar Estudiante
+                                                                                                                                    </button>
+                                                                                                                                )}
+                                                                                                                            </div>
                                                                                                                         </div>
                                                                                                                     </div>
-                                                                                                                </div>
-                                                                                                            ))}
-                                                                                                        </div>
+                                                                                                                ))}
+                                                                                                            </div>
+                                                                                                        )}
                                                                                                     </div>
                                                                                                 )}
                                                                                             </div>
@@ -345,7 +389,17 @@ export default function TeacherEvaluaciones() {
             </main>
 
             {showEvaluar && selectedEstudianteEvaluar && (
-                <ModalEvaluar data={selectedEstudianteEvaluar} onClose={() => setShowEvaluar(false)} onSaved={() => { setShowEvaluar(false); fetchEvaluaciones(); }} />
+                <ModalEvaluar 
+                    data={selectedEstudianteEvaluar} 
+                    onClose={() => setShowEvaluar(false)} 
+                    onSaved={() => { 
+                        setShowEvaluar(false); 
+                        fetchEvaluaciones(); 
+                        if (selectedEstudianteEvaluar?.idEvaluacion) {
+                            fetchEstudiantesDeEvaluacion(selectedEstudianteEvaluar.idEvaluacion, true);
+                        }
+                    }} 
+                />
             )}
             {showDetalles && selectedEstudianteDetalles && (
                 <ModalVerDetalles data={selectedEstudianteDetalles} onClose={() => setShowDetalles(false)} />

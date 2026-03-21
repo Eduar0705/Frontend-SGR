@@ -34,10 +34,29 @@ export const evaluacionesService = {
         throw new Error(data.message || 'Error al cargar evaluaciones');
     },
 
+    /*async getTeacherEvaluaciones() {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_URL}/teacher/evaluaciones`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.data;
+        if (data.success) return data.evaluaciones;
+        throw new Error(data.message || 'Error al cargar evaluaciones del docente');
+    },*/
     async getTeacherEvaluaciones() {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/teacher/evaluaciones`, {
             params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.data;
+        if (data.success) return data.evaluaciones;
+        throw new Error(data.message || 'Error al cargar evaluaciones del docente');
+    },
+    async getEvaluadasByEval(id_eval) {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_URL}/teacher/evaluaciones/evaluadas/${id_eval}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.data;
