@@ -1,12 +1,14 @@
+import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/api';
 
 export const permisosService = {
     async getPermisosByDocente(cedula) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/permisos/docente/${cedula}`, {
+        const response = await axios.get(`${API_URL}/permisos/docente/${cedula}`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        return await response.json();
+        return await response.data;
     },
 
     async createPermiso(docente_cedula, seccion_id) {
@@ -42,27 +44,28 @@ export const permisosService = {
 
     async getSemestres(carreraCodigo) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/admin/semestres/${carreraCodigo}`, {
+        const response = await axios.get(`${API_URL}/admin/semestres/${carreraCodigo}`, {
             params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        return await response.json();
+        return await response.data;
     },
 
     async getMaterias(carreraCodigo, semestreId) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/admin/materias/${carreraCodigo}/${semestreId}`, {
+        const response = await axios.get(`${API_URL}/admin/materias/${carreraCodigo}/${semestreId}`, {
+            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        return await response.json();
+        return await response.data;
     },
 
     async getSecciones(materiaCodigo, carreraCodigo) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/admin/secciones/${materiaCodigo}/${carreraCodigo}`, {
+        const response = await axios.get(`${API_URL}/admin/secciones/${materiaCodigo}/${carreraCodigo}`, {
             params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        return await response.json();
+        return await response.data;
     }
 };

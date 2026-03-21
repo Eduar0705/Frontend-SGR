@@ -11,6 +11,7 @@ import { useUI } from '../context/UIContext';
 
 export default function PermisosDocente() {
     const { cedula } = useParams();
+    const {periodoActual} = useUI();
     const navigate = useNavigate();
     const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
@@ -98,7 +99,7 @@ export default function PermisosDocente() {
             cargarDatosDocente();
             cargarCarreras();
         }
-    }, [user, navigate, cargarDatosDocente, cargarCarreras]);
+    }, [periodoActual, user, navigate, cargarDatosDocente, cargarCarreras]);
 
     // Handlers de Cascada
     const handleCarreraSelect = async (carrera) => {
