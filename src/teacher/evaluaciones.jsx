@@ -66,9 +66,10 @@ export default function TeacherEvaluaciones() {
     const fetchEvaluaciones = async () => {
         setLoading(true);
         try {
-            const [evals, resCortes] = await Promise.all([
+            const [evals, resCortes, resLapsos] = await Promise.all([
                 evaluacionesService.getTeacherEvaluaciones(),
-                periodosService.getCortesByPeriodo(user.periodo_usuario)
+                periodosService.getCortesByPeriodo(user.periodo_usuario), //FECHA PERSONALIZADA
+                periodosService.getLapsosByPeriodo(user.periodo_usuario) //FECHA PERSONALIZADA
             ]);
 
             if (resCortes.success) {
@@ -78,7 +79,11 @@ export default function TeacherEvaluaciones() {
 
             setEstudiantesPorEvaluacion({});
             setLoadingEvaluados({});
-            agruparEvaluaciones(evals, resCortes.success ? resCortes.data.cortes : []);
+            agruparEvaluaciones(
+                evals, 
+                resCortes.success ? resCortes.data.cortes : [],
+                resLapsos.success ? resLapsos.data : []
+            );
         } catch (error) {
             console.error('Error fetching data:', error);
             Swal.fire('Error', 'No se pudieron cargar los datos', 'error');
@@ -105,9 +110,9 @@ export default function TeacherEvaluaciones() {
         }
     };
 
-    const agruparEvaluaciones = (lista, cortes = []) => {
+    const agruparEvaluaciones = (lista, cortes = [], lapsos = []) => {
         const agrupadas = {};
-        const now = new Date();
+        const now = new Date(); //FECHA PERSONALIZADA
 
         lista.forEach(ev => {
             const c  = ev.carrera_nombre;
@@ -116,20 +121,41 @@ export default function TeacherEvaluaciones() {
             const sc = `Sección ${ev.seccion_codigo}`;
             const r  = `${ev.contenido} (${ev.nombre_rubrica})`;
 
+            // Pre-calcular canModify (entidad evaluacion)
             let canModify = false;
+            let canEvaluate = false;
+
             if (cortes && cortes.length > 0) {
                 const matchingCorte = cortes.find(ct => ct.orden === ev.corte);
                 if (matchingCorte) {
                     const start = new Date(matchingCorte.fecha_inicio);
                     const end = new Date(matchingCorte.fecha_fin);
+                    
+                    // Lógica para canModify
                     if (now < start) {
                         canModify = true;
                     } else if (now >= start && now <= end) {
                         canModify = ev.existe_evaluado === 0;
                     }
+
+                    // Lógica para canEvaluate (Condicion 1: dentro del corte)
+                    if (now >= start && now <= end) {
+                        canEvaluate = true;
+                    }
                 }
             }
+
+            // Lógica para canEvaluate (Condicion 2: dentro de cualquier lapso de correciones)
+            if (!canEvaluate && lapsos && lapsos.length > 0) {
+                canEvaluate = lapsos.some(lp => {
+                    const lStart = new Date(lp.fecha_inicio);
+                    const lEnd   = new Date(lp.fecha_fin);
+                    return now >= lStart && now <= lEnd;
+                });
+            }
+
             ev.canModify = canModify;
+            ev.canEvaluate = canEvaluate;
 
             if (!agrupadas[c])              agrupadas[c] = {};
             if (!agrupadas[c][s])           agrupadas[c][s] = {};
@@ -450,12 +476,24 @@ export default function TeacherEvaluaciones() {
                                                                                                                             <div style={{ display: 'flex', gap: '10px' }}>
                                                                                                                                 {ev.estado === 'Completada' ? (
                                                                                                                                     <>
-                                                                                                                                        <button onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }} className="btn-card-action" title="Editar Evaluación"><i className="fas fa-edit" /></button>
+                                                                                                                                        <button 
+                                                                                                                                            onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} 
+                                                                                                                                            disabled={!evalInfo.canEvaluate}
+                                                                                                                                            style={{ flex: 1, padding: '10px', background: 'white', color: !evalInfo.canEvaluate ? '#94a3b8' : '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: !evalInfo.canEvaluate ? 'not-allowed' : 'pointer', opacity: !evalInfo.canEvaluate ? 0.6 : 1 }} 
+                                                                                                                                            className="btn-card-action" 
+                                                                                                                                            title="Editar Evaluación"
+                                                                                                                                        >
+                                                                                                                                            <i className="fas fa-edit" />
+                                                                                                                                        </button>
                                                                                                                                         <button onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteDetalles({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowDetalles(true); }, 800); }} style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }} className="btn-card-action" title="Ver Detalles"><i className="fas fa-eye" /></button>
                                                                                                                                         <button style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', opacity: 0.6 }} title="Estadísticas (Próximamente)"><i className="fas fa-chart-line" /></button>
                                                                                                                                     </>
                                                                                                                                 ) : (
-                                                                                                                                    <button onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} style={{ width: '100%', padding: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                                                                                                                    <button 
+                                                                                                                                        onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} 
+                                                                                                                                        disabled={!evalInfo.canEvaluate}
+                                                                                                                                        style={{ width: '100%', padding: '10px', background: !evalInfo.canEvaluate ? '#cbd5e1' : '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: !evalInfo.canEvaluate ? 'not-allowed' : 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: !evalInfo.canEvaluate ? 0.7 : 1 }}
+                                                                                                                                    >
                                                                                                                                         <i className="fas fa-clipboard-check" /> Evaluar Estudiante
                                                                                                                                     </button>
                                                                                                                                 )}
