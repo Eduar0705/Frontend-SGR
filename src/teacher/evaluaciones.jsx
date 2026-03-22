@@ -66,10 +66,9 @@ export default function TeacherEvaluaciones() {
     const fetchEvaluaciones = async () => {
         setLoading(true);
         try {
-            console.log('fffaef', user.periodo_usuario)
             const [evals, resCortes] = await Promise.all([
                 evaluacionesService.getTeacherEvaluaciones(),
-                periodosService.getCortesByPeriodo('2025-1')
+                periodosService.getCortesByPeriodo(user.periodo_usuario)
             ]);
 
             if (resCortes.success) {
@@ -79,7 +78,7 @@ export default function TeacherEvaluaciones() {
 
             setEstudiantesPorEvaluacion({});
             setLoadingEvaluados({});
-            agruparEvaluaciones(evals);
+            agruparEvaluaciones(evals, resCortes.success ? resCortes.data.cortes : []);
         } catch (error) {
             console.error('Error fetching data:', error);
             Swal.fire('Error', 'No se pudieron cargar los datos', 'error');
@@ -106,8 +105,10 @@ export default function TeacherEvaluaciones() {
         }
     };
 
-    const agruparEvaluaciones = (lista) => {
+    const agruparEvaluaciones = (lista, cortes = []) => {
         const agrupadas = {};
+        const now = new Date();
+
         lista.forEach(ev => {
             const c  = ev.carrera_nombre;
             const s  = `Semestre ${ev.materia_semestre}`;
@@ -115,12 +116,26 @@ export default function TeacherEvaluaciones() {
             const sc = `Sección ${ev.seccion_codigo}`;
             const r  = `${ev.contenido} (${ev.nombre_rubrica})`;
 
+            let canModify = false;
+            if (cortes && cortes.length > 0) {
+                const matchingCorte = cortes.find(ct => ct.orden === ev.corte);
+                if (matchingCorte) {
+                    const start = new Date(matchingCorte.fecha_inicio);
+                    const end = new Date(matchingCorte.fecha_fin);
+                    if (now < start) {
+                        canModify = true;
+                    } else if (now >= start && now <= end) {
+                        canModify = ev.existe_evaluado === 0;
+                    }
+                }
+            }
+            ev.canModify = canModify;
+
             if (!agrupadas[c])              agrupadas[c] = {};
             if (!agrupadas[c][s])           agrupadas[c][s] = {};
             if (!agrupadas[c][s][m])        agrupadas[c][s][m] = {};
             if (!agrupadas[c][s][m][sc])    agrupadas[c][s][m][sc] = { info: { horario: ev.seccion_horario, aula: ev.seccion_aula }, rubricas: {} };
             
-            // Cada evaluación es una entidad única
             agrupadas[c][s][m][sc].rubricas[r] = ev;
         });
 
@@ -203,22 +218,6 @@ export default function TeacherEvaluaciones() {
             if (newState && idEval && hasRubrica) fetchEstudiantesDeEvaluacion(idEval);
             return { ...prev, [key]: newState };
         });
-    };
-
-    const canModifyEvaluation = (evalInfo) => {
-
-        if (!cortesPeriodo || cortesPeriodo.length === 0) return false;
-        const matchingCorte = cortesPeriodo.find(c => c.orden === evalInfo.corte);
-        if (!matchingCorte) return false;
-
-        const now = new Date('2025-10-15');
-        const start = new Date(matchingCorte.fecha_inicio);
-        const end = new Date(matchingCorte.fecha_fin);
-        if (now < start) return true;
-        if (now >= start && now <= end) {
-            return evalInfo.existe_evaluado === 0;
-        }
-        return false;
     };
 
     // Chevron reutilizable
@@ -335,32 +334,29 @@ export default function TeacherEvaluaciones() {
                                                                                                          <span style={{ fontWeight: '600' }}>{rubrica}</span>
                                                                                                          
                                                                                                          {/* Action Buttons for Evaluation */}
-                                                                                                         <div className="evaluacion-actions" style={{ display: 'flex', gap: '8px', marginLeft: '15px' }}>
+                                                                                                         <div className="evaluacion-actions">
                                                                                                             <button 
                                                                                                                 className="action-btn-mini view" 
                                                                                                                 title="Ver Detalles"
                                                                                                                 onClick={(e) => handleOpenView(e, evalInfo.id_evaluacion)}
-                                                                                                                style={{ background: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '4px', width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                                                                                             >
-                                                                                                                <i className="fas fa-eye" style={{ fontSize: '11px' }}></i>
+                                                                                                                <i className="fas fa-eye"></i>
                                                                                                             </button>
                                                                                                              <button 
                                                                                                                  className="action-btn-mini edit" 
                                                                                                                  title="Editar"
                                                                                                                  onClick={(e) => handleOpenEdit(e, evalInfo.id_evaluacion)}
-                                                                                                                 disabled={!canModifyEvaluation(evalInfo)}
-                                                                                                                 style={{ background: !canModifyEvaluation(evalInfo) ? '#f1f5f9' : '#eff6ff', color: !canModifyEvaluation(evalInfo) ? '#94a3b8' : '#3b82f6', border: 'none', borderRadius: '4px', width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: !canModifyEvaluation(evalInfo) ? 'not-allowed' : 'pointer', opacity: !canModifyEvaluation(evalInfo) ? 0.6 : 1 }}
+                                                                                                                 disabled={!evalInfo.canModify}
                                                                                                              >
-                                                                                                                 <i className="fas fa-edit" style={{ fontSize: '11px' }}></i>
+                                                                                                                 <i className="fas fa-edit"></i>
                                                                                                              </button>
                                                                                                              <button 
                                                                                                                  className="action-btn-mini delete" 
                                                                                                                  title="Eliminar"
                                                                                                                  onClick={(e) => handleDelete(e, evalInfo.id_evaluacion)}
-                                                                                                                 disabled={!canModifyEvaluation(evalInfo)}
-                                                                                                                 style={{ background: !canModifyEvaluation(evalInfo) ? '#f1f5f9' : '#fef2f2', color: !canModifyEvaluation(evalInfo) ? '#94a3b8' : '#ef4444', border: 'none', borderRadius: '4px', width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: !canModifyEvaluation(evalInfo) ? 'not-allowed' : 'pointer', opacity: !canModifyEvaluation(evalInfo) ? 0.6 : 1 }}
+                                                                                                                 disabled={!evalInfo.canModify}
                                                                                                              >
-                                                                                                                 <i className="fas fa-trash-alt" style={{ fontSize: '11px' }}></i>
+                                                                                                                 <i className="fas fa-trash-alt"></i>
                                                                                                              </button>
                                                                                                          </div>
 
@@ -388,16 +384,18 @@ export default function TeacherEvaluaciones() {
                                                                                                                 <p style={{ color: '#b45309', fontSize: '0.9em', marginBottom: '20px' }}>Esta evaluación no tiene una rúbrica asociada. Por favor, crea una nueva o reutiliza una existente.</p>
                                                                                                                  <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
                                                                                                                      <button 
+                                                                                                                        className="action-btn-rubrica create"
                                                                                                                         onClick={() => navigate('/teacher/crear-rubricas')} 
-                                                                                                                        disabled={!canModifyEvaluation(evalInfo)}
-                                                                                                                        style={{ padding: '10px 20px', background: !canModifyEvaluation(evalInfo) ? '#cbd5e1' : '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', cursor: !canModifyEvaluation(evalInfo) ? 'not-allowed' : 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', opacity: !canModifyEvaluation(evalInfo) ? 0.7 : 1 }}
+                                                                                                                        disabled={!evalInfo.canModify}
+                                                                                                                        style={{ padding: '10px 20px', background: !evalInfo.canModify ? '#cbd5e1' : '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', cursor: !evalInfo.canModify ? 'not-allowed' : 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', opacity: !evalInfo.canModify ? 0.7 : 1 }}
                                                                                                                      >
                                                                                                                          <i className="fas fa-plus" /> Crear Rúbrica
                                                                                                                      </button>
                                                                                                                      <button 
+                                                                                                                        className="action-btn-rubrica reuse"
                                                                                                                         onClick={() => navigate('/teacher/rubricas')} 
-                                                                                                                        disabled={!canModifyEvaluation(evalInfo)}
-                                                                                                                        style={{ padding: '10px 20px', background: 'white', color: !canModifyEvaluation(evalInfo) ? '#94a3b8' : '#f59e0b', border: !canModifyEvaluation(evalInfo) ? '1px solid #cbd5e1' : '1px solid #f59e0b', borderRadius: '8px', cursor: !canModifyEvaluation(evalInfo) ? 'not-allowed' : 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', opacity: !canModifyEvaluation(evalInfo) ? 0.7 : 1 }}
+                                                                                                                        disabled={!evalInfo.canModify}
+                                                                                                                        style={{ padding: '10px 20px', background: 'white', color: !evalInfo.canModify ? '#94a3b8' : '#f59e0b', border: !evalInfo.canModify ? '1px solid #cbd5e1' : '1px solid #f59e0b', borderRadius: '8px', cursor: !evalInfo.canModify ? 'not-allowed' : 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', opacity: !evalInfo.canModify ? 0.7 : 1 }}
                                                                                                                      >
                                                                                                                          <i className="fas fa-sync" /> Reutilizar Rúbrica
                                                                                                                      </button>

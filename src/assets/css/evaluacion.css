@@ -4224,3 +4224,47 @@ body {
         padding: 20px;
     }
 }
+/* Action Buttons for Evaluations */
+.evaluacion-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 15px;
+}
+
+.action-btn-mini {
+    border: none;
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn-mini:hover:not(:disabled) {
+    transform: scale(1.1);
+}
+
+.action-btn-mini.view {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.action-btn-mini.edit {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.action-btn-mini.delete {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.action-btn-mini:disabled {
+    background: #f1f5f9 !important;
+    color: #94a3b8 !important;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
