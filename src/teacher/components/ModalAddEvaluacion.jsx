@@ -4,7 +4,7 @@ import { periodosService } from '../../services/periodos.service';
 import Swal from 'sweetalert2';
 import { useFechasDisponibles, agruparFechasPorMes } from '../../utils/useFechasDisponibles';
 
-export default function ModalAddEvaluacion({ onClose, onSaved }) {
+export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', currentEvalId = null }) {
     const [submitting, setSubmitting] = useState(false);
 
     // Catalogos
@@ -40,6 +40,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
+                // Primero cargar catálogos básicos
                 const [resCarreras, resEstrategias, resCortes] = await Promise.all([
                     evaluacionesService.getTeacherCarreras(),
                     evaluacionesService.getEstrategias(),
@@ -49,12 +50,59 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                 if (resCarreras.success) setCarreras(resCarreras.carreras);
                 if (resEstrategias.success) setEstrategias(resEstrategias.estrategias_eval);
                 if (resCortes.success) setCortes(resCortes.cortes);
+
+                // Si es edición o visualización, cargar los datos de la evaluación
+                if ((mode === 'edit' || mode === 'view') && currentEvalId) {
+                    const resEval = await evaluacionesService.getEvaluacionById(currentEvalId);
+                    if (resEval.success) {
+                        const data = resEval.evaluacion;
+                        
+                        // Cargar cascada secuencialmente para que los selects se llenen
+                        // 1. Materias de la carrera
+                        const resMat = await evaluacionesService.getTeacherMateriasByCarrera(data.carrera_codigo);
+                        if (resMat.success) setMaterias(resMat.materias);
+
+                        // 2. Secciones de la materia
+                        const resSec = await evaluacionesService.getTeacherSecciones(data.materia_codigo);
+                        if (resSec.success) setSecciones(resSec.secciones);
+
+                        // 3. Fechas de la sección
+                        await cargarFechas(data.id_seccion, []);
+
+                        const fechaStr = data.fecha_evaluacion ? data.fecha_evaluacion.split('T')[0] : '';
+
+                        // Reconstruir JSON de fecha_horario
+                        let fecha_horario_json = '';
+                        if (data.tipo_horario === 'Sección' && data.id_horario) {
+                            fecha_horario_json = JSON.stringify({
+                                fecha: fechaStr,
+                                horarioId: data.id_horario,
+                                diaNumero: data.dia_num,
+                                horaInicio: data.hora_inicio,
+                                horaCierre: data.hora_cierre,
+                            });
+                        }
+
+                        setFormData({
+                            ...data,
+                            corte: data.corte || '',
+                            cant_personas: data.cantidad_personas || 1,
+                            contenido: data.contenido || '',
+                            estrategias_eval: data.estrategias || [],
+                            fecha_evaluacion: fechaStr,
+                            fecha_horario_json,
+                            hora_inicio: data.hora_inicio || '',
+                            hora_fin: data.hora_cierre || '',
+                        });
+                    }
+                }
             } catch (error) {
                 console.error('Error loading initial data:', error);
+                Swal.fire('Error', 'No se pudieron cargar los datos iniciales', 'error');
             }
         };
         loadInitialData();
-    }, []);
+    }, [mode, currentEvalId]);
     const formatearFecha = (fecha_formato_sql) => {
         const fecha = new Date(fecha_formato_sql);
         const fechaFormateada = fecha.toLocaleDateString('es-ES', {
@@ -144,11 +192,11 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
 
         setSubmitting(true);
         try {
-            const res = await evaluacionesService.saveEvaluacion(formData);
+            const res = await evaluacionesService.saveEvaluacion(formData, currentEvalId);
             if (res.success) {
-                Swal.fire('Éxito', res.message || 'Evaluación creada correctamente', 'success').then(() => onSaved());
+                Swal.fire('Éxito', res.message || (mode === 'edit' ? 'Evaluación actualizada' : 'Evaluación creada'), 'success').then(() => onSaved());
             } else {
-                Swal.fire('Error', res.message || 'No se pudo crear la evaluación', 'error');
+                Swal.fire('Error', res.message || 'No se pudo procesar la solicitud', 'error');
             }
         } catch (error) {
             console.error('Error in handleSubmit:', error);
@@ -162,7 +210,10 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
         <div className="modal-premium-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div className="modal-premium-content" style={{ maxWidth: '900px', width: '95%', maxHeight: '90vh', overflowY: 'auto' }}>
                 <div className="modal-premium-header">
-                    <h2><i className="fas fa-plus-circle"></i> Nueva Evaluación</h2>
+                    <h2>
+                        <i className={mode === 'create' ? "fas fa-plus-circle" : mode === 'edit' ? "fas fa-edit" : "fas fa-eye"}></i>
+                        {mode === 'create' ? ' Nueva Evaluación' : mode === 'edit' ? ' Editar Evaluación' : ' Ver Detalles de Evaluación'}
+                    </h2>
                     <button className="close-btn" onClick={onClose}>&times;</button>
                 </div>
 
@@ -178,6 +229,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                     value={formData.carrera_codigo}
                                     onChange={(e) => handleCarreraChange(e.target.value)}
                                     required
+                                    disabled={mode === 'view'}
                                 >
                                     <option value="">Seleccione carrera...</option>
                                     {carreras.map(c => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
@@ -188,7 +240,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                 <select
                                     value={formData.materia_codigo}
                                     onChange={(e) => handleMateriaChange(e.target.value)}
-                                    disabled={!formData.carrera_codigo}
+                                    disabled={!formData.carrera_codigo || mode === 'view'}
                                     required
                                 >
                                     <option value="">Seleccione materia...</option>
@@ -204,7 +256,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                 <select
                                     value={formData.id_seccion}
                                     onChange={(e) => handleSeccionChange(e.target.value)}
-                                    disabled={!formData.materia_codigo}
+                                    disabled={!formData.materia_codigo || mode === 'view'}
                                     required
                                 >
                                     <option value="">Seleccione sección...</option>
@@ -217,7 +269,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                 <label>Corte</label>
                                 <select
                                     value = {formData.corte}
-                                    disabled={!formData.id_seccion}
+                                    disabled={!formData.id_seccion || mode === 'view'}
                                     onChange={(e) => setFormData({ ...formData, corte: e.target.value })}
                                     required
                                 >
@@ -241,6 +293,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                 onChange={(e) => setFormData({ ...formData, contenido: e.target.value })}
                                 required
                                 placeholder="Ej: Primer Parcial de Programación"
+                                disabled={mode === 'view'}
                             />
                         </div>
                         <div className="form-grid-premium">
@@ -251,6 +304,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                     value={formData.porcentaje}
                                     onChange={(e) => setFormData({ ...formData, porcentaje: e.target.value })}
                                     required
+                                    disabled={mode === 'view'}
                                 />
                             </div>
                             <div className="form-field">
@@ -260,6 +314,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                     min = "1" max = "50"
                                     value={formData.cant_personas}
                                     onChange={(e) => setFormData({ ...formData, cant_personas: e.target.value })}
+                                    disabled={mode === 'view'}
                                 >
                                 </input>
                             </div>
@@ -275,7 +330,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                 <select
                                     value={formData.tipo_horario}
                                     onChange={(e) => handleTipoHorarioChange(e.target.value)}
-                                    disabled={!formData.id_seccion}
+                                    disabled={!formData.id_seccion || mode === 'view'}
                                 >
                                     <option value="Sección">Dentro de Horario de Sección</option>
                                     <option value="Otro">Fuera de Horario</option>
@@ -294,7 +349,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                         <select
                                             value={formData.fecha_horario_json}
                                             onChange={(e) => handleFechaHorarioChange(e.target.value)}
-                                            disabled={!formData.id_seccion || loadingFechas}
+                                            disabled={!formData.id_seccion || loadingFechas || mode === 'view'}
                                             required
                                         >
                                             <option value="">
@@ -340,6 +395,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                             max={configuracionFechas?.fechaFin?.slice(0, 10)}
                                             onChange={(e) => setFormData({ ...formData, fecha_evaluacion: e.target.value })}
                                             required
+                                            disabled={mode === 'view'}
                                         />
                                     </div>
                                     <div className="form-field">
@@ -349,6 +405,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                             value={formData.hora_inicio}
                                             onChange={(e) => setFormData({ ...formData, hora_inicio: e.target.value })}
                                             required
+                                            disabled={mode === 'view'}
                                         />
                                     </div>
                                     <div className="form-field">
@@ -358,6 +415,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                             value={formData.hora_fin}
                                             onChange={(e) => setFormData({ ...formData, hora_fin: e.target.value })}
                                             required
+                                            disabled={mode === 'view'}
                                         />
                                     </div>
                                 </>
@@ -377,6 +435,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                             type="checkbox"
                                             value={est.id}
                                             checked={formData.estrategias_eval.includes(est.id)}
+                                            disabled={mode === 'view'}
                                             onChange={(e) => {
                                                 const id = parseInt(e.target.value);
                                                 const newEst = e.target.checked
@@ -398,6 +457,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                     value={formData.competencias}
                                     onChange={(e) => setFormData({ ...formData, competencias: e.target.value })}
                                     placeholder="Describa las competencias..."
+                                    disabled={mode === 'view'}
                                 />
                             </div>
                             <div className="form-field">
@@ -407,16 +467,19 @@ export default function ModalAddEvaluacion({ onClose, onSaved }) {
                                     value={formData.instrumentos}
                                     onChange={(e) => setFormData({ ...formData, instrumentos: e.target.value })}
                                     placeholder="Describa los instrumentos..."
+                                    disabled={mode === 'view'}
                                 />
                             </div>
                         </div>
                     </div>
 
                     <div className="modal-premium-footer">
-                        <button type="button" className="btn-cancel" onClick={onClose}>Cancelar</button>
-                        <button type="submit" className="btn-save" disabled={submitting}>
-                            {submitting ? 'Guardando...' : 'Crear Evaluación'}
-                        </button>
+                        <button type="button" className="btn-cancel" onClick={onClose}>{mode === 'view' ? 'Cerrar' : 'Cancelar'}</button>
+                        {mode !== 'view' && (
+                            <button type="submit" className="btn-save" disabled={submitting}>
+                                {submitting ? 'Guardando...' : (mode === 'edit' ? 'Guardar Cambios' : 'Crear Evaluación')}
+                            </button>
+                        )}
                     </div>
                 </form>
             </div>

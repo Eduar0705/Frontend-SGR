@@ -163,7 +163,7 @@ export const evaluacionesService = {
         return await response.data;
     },
 
-    async createEvaluaciones(rubrica_id, estudiantes, observaciones) { //DISTINTO
+    async createEvaluaciones(rubrica_id, estudiantes, observaciones) {
         const token = localStorage.getItem('token');
         const periodo = (JSON.parse(localStorage.getItem('user'))).periodo_usuario
         const response = await fetch(`${API_URL}/teacher/evaluaciones/crear`, {
@@ -233,7 +233,7 @@ export const evaluacionesService = {
 
         if (id) {
             // Edición del registro de la evaluación
-            url = `${API_URL}/update/evaluaciones/${id}`;
+            url = `${API_URL}/evaluaciones/update/${id}`;
             method = 'PUT';
         } else {
             // Creación de NUEVA evaluación
