@@ -141,7 +141,7 @@ export default function ModalVerDetalles({ data, onClose }) {
                     <div className="calificacion-final-detalles" style={{ background: '#1e293b', color: 'white', padding: '20px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ fontSize: '1.1em', fontWeight: '500' }}>Calificación Final</div>
                         <div style={{ fontSize: '2em', fontWeight: 'bold' }}>
-                            {parseFloat(evaluacion.puntaje_total).toFixed(2)}<span style={{ fontSize: '0.5em', color: '#94a3b8' }}>/100</span>
+                            {((parseFloat(evaluacion.puntaje_total) / parseFloat(evaluacion.porcentaje_evaluacion)) * 100).toFixed(2)}<span style={{ fontSize: '0.5em', color: '#94a3b8' }}>/100  </span>
                         </div>
                     </div>
                 </div>
