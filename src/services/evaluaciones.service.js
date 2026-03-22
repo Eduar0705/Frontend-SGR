@@ -251,5 +251,17 @@ export const evaluacionesService = {
         });
 
         return await response.json();
+    },
+
+    async deleteEvaluacion(id) {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/evaluaciones/delete/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        return await response.json();
     }
 };

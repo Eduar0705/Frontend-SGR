@@ -4,6 +4,7 @@ import Header from '../components/header';
 import Menu from '../components/menu';
 import Swal from 'sweetalert2';
 import { evaluacionesService } from '../services/evaluaciones.service';
+import { periodosService } from '../services/periodos.service';
 import '../assets/css/evaluacion.css';
 
 import ModalEvaluar from './components/ModalEvaluar';
@@ -44,6 +45,7 @@ export default function TeacherEvaluaciones() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
     const [selectedEvalId, setSelectedEvalId] = useState(null);
+    const [cortesPeriodo, setCortesPeriodo] = useState([]);
 
     useEffect(() => {
         if (!user) { navigate('/login'); return; }
@@ -64,13 +66,23 @@ export default function TeacherEvaluaciones() {
     const fetchEvaluaciones = async () => {
         setLoading(true);
         try {
-            const evals = await evaluacionesService.getTeacherEvaluaciones();
+            console.log('fffaef', user.periodo_usuario)
+            const [evals, resCortes] = await Promise.all([
+                evaluacionesService.getTeacherEvaluaciones(),
+                periodosService.getCortesByPeriodo('2025-1')
+            ]);
+
+            if (resCortes.success) {
+                console.log(resCortes.data)
+                setCortesPeriodo(resCortes.data.cortes);
+            }
+
             setEstudiantesPorEvaluacion({});
             setLoadingEvaluados({});
             agruparEvaluaciones(evals);
         } catch (error) {
-            console.error('Error fetching evaluaciones:', error);
-            Swal.fire('Error', 'No se pudieron cargar las evaluaciones', 'error');
+            console.error('Error fetching data:', error);
+            Swal.fire('Error', 'No se pudieron cargar los datos', 'error');
         } finally {
             setLoading(false);
             setGlobalLoading(false);
@@ -191,6 +203,22 @@ export default function TeacherEvaluaciones() {
             if (newState && idEval && hasRubrica) fetchEstudiantesDeEvaluacion(idEval);
             return { ...prev, [key]: newState };
         });
+    };
+
+    const canModifyEvaluation = (evalInfo) => {
+
+        if (!cortesPeriodo || cortesPeriodo.length === 0) return false;
+        const matchingCorte = cortesPeriodo.find(c => c.orden === evalInfo.corte);
+        if (!matchingCorte) return false;
+
+        const now = new Date('2025-10-15');
+        const start = new Date(matchingCorte.fecha_inicio);
+        const end = new Date(matchingCorte.fecha_fin);
+        if (now < start) return true;
+        if (now >= start && now <= end) {
+            return evalInfo.existe_evaluado === 0;
+        }
+        return false;
     };
 
     // Chevron reutilizable
@@ -316,22 +344,24 @@ export default function TeacherEvaluaciones() {
                                                                                                             >
                                                                                                                 <i className="fas fa-eye" style={{ fontSize: '11px' }}></i>
                                                                                                             </button>
-                                                                                                            <button 
-                                                                                                                className="action-btn-mini edit" 
-                                                                                                                title="Editar"
-                                                                                                                onClick={(e) => handleOpenEdit(e, evalInfo.id_evaluacion)}
-                                                                                                                style={{ background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                                                                                                            >
-                                                                                                                <i className="fas fa-edit" style={{ fontSize: '11px' }}></i>
-                                                                                                            </button>
-                                                                                                            <button 
-                                                                                                                className="action-btn-mini delete" 
-                                                                                                                title="Eliminar"
-                                                                                                                onClick={(e) => handleDelete(e, evalInfo.id_evaluacion)}
-                                                                                                                style={{ background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: '4px', width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                                                                                                            >
-                                                                                                                <i className="fas fa-trash-alt" style={{ fontSize: '11px' }}></i>
-                                                                                                            </button>
+                                                                                                             <button 
+                                                                                                                 className="action-btn-mini edit" 
+                                                                                                                 title="Editar"
+                                                                                                                 onClick={(e) => handleOpenEdit(e, evalInfo.id_evaluacion)}
+                                                                                                                 disabled={!canModifyEvaluation(evalInfo)}
+                                                                                                                 style={{ background: !canModifyEvaluation(evalInfo) ? '#f1f5f9' : '#eff6ff', color: !canModifyEvaluation(evalInfo) ? '#94a3b8' : '#3b82f6', border: 'none', borderRadius: '4px', width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: !canModifyEvaluation(evalInfo) ? 'not-allowed' : 'pointer', opacity: !canModifyEvaluation(evalInfo) ? 0.6 : 1 }}
+                                                                                                             >
+                                                                                                                 <i className="fas fa-edit" style={{ fontSize: '11px' }}></i>
+                                                                                                             </button>
+                                                                                                             <button 
+                                                                                                                 className="action-btn-mini delete" 
+                                                                                                                 title="Eliminar"
+                                                                                                                 onClick={(e) => handleDelete(e, evalInfo.id_evaluacion)}
+                                                                                                                 disabled={!canModifyEvaluation(evalInfo)}
+                                                                                                                 style={{ background: !canModifyEvaluation(evalInfo) ? '#f1f5f9' : '#fef2f2', color: !canModifyEvaluation(evalInfo) ? '#94a3b8' : '#ef4444', border: 'none', borderRadius: '4px', width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: !canModifyEvaluation(evalInfo) ? 'not-allowed' : 'pointer', opacity: !canModifyEvaluation(evalInfo) ? 0.6 : 1 }}
+                                                                                                             >
+                                                                                                                 <i className="fas fa-trash-alt" style={{ fontSize: '11px' }}></i>
+                                                                                                             </button>
                                                                                                          </div>
 
                                                                                                          {openR && evalInfo.rubrica_id && !loadingS && (
@@ -356,14 +386,22 @@ export default function TeacherEvaluaciones() {
                                                                                                                 <i className="fas fa-info-circle" style={{ fontSize: '2em', color: '#f59e0b', marginBottom: '15px', display: 'block' }} />
                                                                                                                 <h4 style={{ margin: '0 0 10px 0', color: '#92400e' }}>Se debe usar una rubrica para poder evaluar</h4>
                                                                                                                 <p style={{ color: '#b45309', fontSize: '0.9em', marginBottom: '20px' }}>Esta evaluación no tiene una rúbrica asociada. Por favor, crea una nueva o reutiliza una existente.</p>
-                                                                                                                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
-                                                                                                                    <button onClick={() => navigate('/teacher/crear-rubricas')} style={{ padding: '10px 20px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                                                        <i className="fas fa-plus" /> Crear Rúbrica
-                                                                                                                    </button>
-                                                                                                                    <button onClick={() => navigate('/teacher/rubricas')} style={{ padding: '10px 20px', background: 'white', color: '#f59e0b', border: '1px solid #f59e0b', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                                                        <i className="fas fa-sync" /> Reutilizar Rúbrica
-                                                                                                                    </button>
-                                                                                                                </div>
+                                                                                                                 <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+                                                                                                                     <button 
+                                                                                                                        onClick={() => navigate('/teacher/crear-rubricas')} 
+                                                                                                                        disabled={!canModifyEvaluation(evalInfo)}
+                                                                                                                        style={{ padding: '10px 20px', background: !canModifyEvaluation(evalInfo) ? '#cbd5e1' : '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', cursor: !canModifyEvaluation(evalInfo) ? 'not-allowed' : 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', opacity: !canModifyEvaluation(evalInfo) ? 0.7 : 1 }}
+                                                                                                                     >
+                                                                                                                         <i className="fas fa-plus" /> Crear Rúbrica
+                                                                                                                     </button>
+                                                                                                                     <button 
+                                                                                                                        onClick={() => navigate('/teacher/rubricas')} 
+                                                                                                                        disabled={!canModifyEvaluation(evalInfo)}
+                                                                                                                        style={{ padding: '10px 20px', background: 'white', color: !canModifyEvaluation(evalInfo) ? '#94a3b8' : '#f59e0b', border: !canModifyEvaluation(evalInfo) ? '1px solid #cbd5e1' : '1px solid #f59e0b', borderRadius: '8px', cursor: !canModifyEvaluation(evalInfo) ? 'not-allowed' : 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', opacity: !canModifyEvaluation(evalInfo) ? 0.7 : 1 }}
+                                                                                                                     >
+                                                                                                                         <i className="fas fa-sync" /> Reutilizar Rúbrica
+                                                                                                                     </button>
+                                                                                                                 </div>
                                                                                                             </div>
                                                                                                         ) : loadingS ? (
                                                                                                             <div style={{ textAlign: 'center', padding: '20px' }}>
