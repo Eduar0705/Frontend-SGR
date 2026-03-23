@@ -182,7 +182,7 @@ export const academicoService = {
 
     async deleteRubrica(id) {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/admin/deleteRubrica/${id}`, {
+        const response = await fetch(`${API_URL}/admin/rubricas/delete/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });

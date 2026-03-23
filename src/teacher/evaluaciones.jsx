@@ -551,8 +551,8 @@ export default function TeacherEvaluaciones() {
                                                                                                                                             </span>
                                                                                                                                         </div>
                                                                                                                                         <div className="row-score-section">
-                                                                                                                                            <span className="score-main">{ev.nota_total || '0.00'}</span>
-                                                                                                                                            <span className="score-label">Nota / 20</span>
+                                                                                                                                            <span className="score-main">{ev.puntaje_obtenido || '0.00'}</span>
+                                                                                                                                            <span className="score-label">Nota / 100</span>
                                                                                                                                         </div>
                                                                                                                                         <div className="row-actions">
                                                                                                                                             {ev.estado === 'Completada' ? (

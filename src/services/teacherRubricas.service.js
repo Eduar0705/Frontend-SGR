@@ -90,7 +90,7 @@ export const teacherRubricasService = {
 
     async deleteRubrica(id) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/teacher/rubricas/${id}`, {
+        const res = await fetch(`${API_URL}/teacher/rubricas/delete/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
