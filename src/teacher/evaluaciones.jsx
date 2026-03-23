@@ -528,65 +528,52 @@ export default function TeacherEvaluaciones() {
                                                                                                                     </div>
                                                                                                                 ) : filtrados.length === 0 ? (
                                                                                                                     <p style={{ textAlign: 'center', color: '#64748b' }}>No hay estudiantes para mostrar.</p>
-                                                                                                                ) : (
-                                                                                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px' }}>
-                                                                                                                        {filtrados.map(ev => (
-                                                                                                                            <div key={ev.estudiante_cedula + ev.id} className="evaluacion-card" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                                                                                                                {/* Ribbon */}
-                                                                                                                                <div style={{ position: 'absolute', top: '12px', right: '-35px', background: ev.estado === 'Completada' ? '#10b981' : '#f59e0b', color: 'white', padding: '5px 40px', fontSize: '0.75em', fontWeight: 'bold', transform: 'rotate(45deg)', zIndex: 1 }}>
-                                                                                                                                    {ev.estado}
-                                                                                                                                </div>
-
-                                                                                                                                <div>
-                                                                                                                                    <h4 style={{ margin: '0 0 5px 0', fontSize: '1.2em', color: '#1e293b', fontWeight: 'bold', textTransform: 'uppercase' }}>{evalInfo.materia_nombre}</h4>
-                                                                                                                                    <div style={{ color: '#3b82f6', fontSize: '0.9em', fontWeight: '500' }}>{evalInfo.materia_codigo} {evalInfo.seccion_codigo}</div>
-                                                                                                                                </div>
-
-                                                                                                                                <div>
-                                                                                                                                    <div style={{ color: '#64748b', fontSize: '0.85em', fontWeight: '500', marginBottom: '2px' }}>Estudiante</div>
-                                                                                                                                    <div style={{ color: '#1e293b', fontWeight: 'bold', fontSize: '1.1em' }}>{ev.estudiante_nombre} {ev.estudiante_apellido}</div>
-                                                                                                                                    <div style={{ color: '#64748b', fontSize: '0.85em' }}>{ev.estudiante_cedula}</div>
-                                                                                                                                </div>
-
-                                                                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '5px', padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-                                                                                                                                    <div>
-                                                                                                                                        <div style={{ color: '#64748b', fontSize: '0.75em', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nota Total</div>
-                                                                                                                                        <div style={{ color: '#1e293b', fontWeight: '800', fontSize: '1.4em' }}>{ev.nota_total || '0.00'}<span style={{ fontSize: '0.6em', color: '#94a3b8', marginLeft: '2px' }}>/20</span></div>
+                                                                                                                    ) : (
+                                                                                                                        <div className="evaluados-list-premium">
+                                                                                                                            {filtrados.map(ev => {
+                                                                                                                                const initials = `${ev.estudiante_nombre?.charAt(0) || ''}${ev.estudiante_apellido?.charAt(0) || ''}`.toUpperCase();
+                                                                                                                                return (
+                                                                                                                                    <div key={ev.estudiante_cedula + ev.id} className="evaluacion-row-premium">
+                                                                                                                                        <div className="row-student-info">
+                                                                                                                                            <div className="row-student-avatar">{initials}</div>
+                                                                                                                                            <div className="row-student-details">
+                                                                                                                                                <span className="row-student-name">{ev.estudiante_nombre} {ev.estudiante_apellido}</span>
+                                                                                                                                                <span className="row-student-id">CI: {ev.estudiante_cedula}</span>
+                                                                                                                                            </div>
+                                                                                                                                        </div>
+                                                                                                                                        <div className="row-eval-meta">
+                                                                                                                                            <span className="meta-tag type">{evalInfo.tipo_evaluacion || evalInfo.nombre_rubrica}</span>
+                                                                                                                                            <span className="meta-tag pct">{evalInfo.porcentaje_evaluacion || evalInfo.valor}%</span>
+                                                                                                                                        </div>
+                                                                                                                                        <div className="row-status-center">
+                                                                                                                                            <span className={`status-badge-premium ${ev.estado === 'Completada' ? 'completada' : 'pendiente'}`}>
+                                                                                                                                                {ev.estado}
+                                                                                                                                            </span>
+                                                                                                                                        </div>
+                                                                                                                                        <div className="row-score-section">
+                                                                                                                                            <span className="score-main">{ev.nota_total || '0.00'}</span>
+                                                                                                                                            <span className="score-label">Nota / 20</span>
+                                                                                                                                        </div>
+                                                                                                                                        <div className="row-actions">
+                                                                                                                                            {ev.estado === 'Completada' ? (
+                                                                                                                                                <>
+                                                                                                                                                    <button className="btn-row-action eval" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} disabled={!evalInfo.canEvaluate} title="Editar Evaluacion">
+                                                                                                                                                        <i className="fas fa-edit"></i> Editar
+                                                                                                                                                    </button>
+                                                                                                                                                    <button className="btn-row-action view" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteDetalles({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowDetalles(true); }, 800); }} title="Ver Detalles">
+                                                                                                                                                        <i className="fas fa-eye"></i> Ver
+                                                                                                                                                    </button>
+                                                                                                                                                </>
+                                                                                                                                            ) : (
+                                                                                                                                                <button className="btn-row-action eval" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} disabled={!evalInfo.canEvaluate}>
+                                                                                                                                                    <i className="fas fa-clipboard-check"></i> Evaluar
+                                                                                                                                                </button>
+                                                                                                                                            )}
+                                                                                                                                        </div>
                                                                                                                                     </div>
-                                                                                                                                    <div style={{ textAlign: 'right' }}>
-                                                                                                                                        <div style={{ color: '#64748b', fontSize: '0.75em', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Semestre</div>
-                                                                                                                                        <div style={{ color: '#3b82f6', fontWeight: 'bold' }}>{ev.semestre}</div>
-                                                                                                                                    </div>
-                                                                                                                                </div>
-
-                                                                                                                                <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
-                                                                                                                                    {ev.estado === 'Completada' ? (
-                                                                                                                                        <>
-                                                                                                                                            <button 
-                                                                                                                                                onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} 
-                                                                                                                                                disabled={!evalInfo.canEvaluate}
-                                                                                                                                                style={{ flex: 1.5, padding: '12px', background: !evalInfo.canEvaluate ? '#cbd5e1' : '#10b981', color: 'white', border: 'none', borderRadius: '10px', cursor: !evalInfo.canEvaluate ? 'not-allowed' : 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.2s', opacity: !evalInfo.canEvaluate ? 0.7 : 1 }}
-                                                                                                                                                className="btn-card-action"
-                                                                                                                                                title="Editar Evaluación"
-                                                                                                                                            >
-                                                                                                                                                <i className="fas fa-edit" />
-                                                                                                                                            </button>
-                                                                                                                                            <button onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteDetalles({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowDetalles(true); }, 800); }} style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }} className="btn-card-action" title="Ver Detalles"><i className="fas fa-eye" /></button>
-                                                                                                                                            <button style={{ flex: 1, padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', opacity: 0.6 }} title="Estadísticas (Próximamente)"><i className="fas fa-chart-line" /></button>
-                                                                                                                                        </>
-                                                                                                                                    ) : (
-                                                                                                                                        <button 
-                                                                                                                                            onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} 
-                                                                                                                                            disabled={!evalInfo.canEvaluate}
-                                                                                                                                            style={{ width: '100%', padding: '10px', background: !evalInfo.canEvaluate ? '#cbd5e1' : '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: !evalInfo.canEvaluate ? 'not-allowed' : 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: !evalInfo.canEvaluate ? 0.7 : 1 }}
-                                                                                                                                        >
-                                                                                                                                            <i className="fas fa-clipboard-check" /> Evaluar Estudiante
-                                                                                                                                        </button>
-                                                                                                                                    )}
-                                                                                                                                </div>
-                                                                                                                            </div>
-                                                                                                                        ))}
-                                                                                                                    </div>
+                                                                                                                                );
+                                                                                                                            })}
+                                                                                                                        </div>
                                                                                                                 )}
                                                                                                             </div>
                                                                                                         )}

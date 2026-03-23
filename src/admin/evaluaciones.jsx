@@ -9,6 +9,8 @@ import { useUI } from '../context/UIContext';
 import { useFechasDisponibles, agruparFechasPorMes } from '../utils/useFechasDisponibles';
 import '../assets/css/home.css';
 import '../assets/css/evaluacion.css';
+import ModalEvaluar from '../teacher/components/ModalEvaluar';
+import ModalVerDetalles from '../teacher/components/ModalVerDetalles';
 
 const transformDateJSON = (formData) => {
     const fecha_data = JSON.parse(formData.fecha_horario_json)
@@ -49,6 +51,8 @@ export default function Evaluaciones() {
     const [loadingEvaluados, setLoadingEvaluados] = useState({});
     const [showDetalles, setShowDetalles] = useState(false);
     const [selectedEstudianteDetalles, setSelectedEstudianteDetalles] = useState(null);
+    const [showEvaluar, setShowEvaluar] = useState(false);
+    const [selectedEstudianteEvaluar, setSelectedEstudianteEvaluar] = useState(null);
     const [isActionLoading, setIsActionLoading] = useState(false);
 
 
@@ -710,28 +714,49 @@ export default function Evaluaciones() {
                                                                                                                                     <i className="fas fa-users-slash" style={{ fontSize: '2em', marginBottom: '10px', display: 'block' }}></i>
                                                                                                                                     No hay estudiantes para mostrar.
                                                                                                                                 </div>
-                                                                                                                            ) : (
-                                                                                                                                <div style={{ padding: '15px' }}>
-                                                                                                                                    <div className="evaluados-list-premium">
-                                                                                                                                        {evalRecords.map(record => (
-                                                                                                                                            <div key={record.estudiante_cedula} className="estudiante-record-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 15px', borderBottom: '1px solid #f1f5f9' }}>
-                                                                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                                                                                                                                    <div className={`status-dot ${record.estado === 'Completada' ? 'done' : 'pending'}`} style={{ width: '10px', height: '10px', borderRadius: '50%', background: record.estado === 'Completada' ? '#10b981' : '#f59e0b' }}></div>
-                                                                                                                                                    <div>
-                                                                                                                                                        <div style={{ fontWeight: '600', color: '#1e293b' }}>{record.estudiante_nombre} {record.estudiante_apellido}</div>
-                                                                                                                                                        <div style={{ fontSize: '0.8em', color: '#64748b' }}>{record.estudiante_cedula} • {record.estado}</div>
-                                                                                                                                                    </div>
-                                                                                                                                                </div>
-                                                                                                                                                {record.estado === 'Completada' && (
-                                                                                                                                                    <div style={{ textAlign: 'right' }}>
-                                                                                                                                                        <div style={{ fontWeight: 'bold', color: '#065f46' }}>{record.nota_total}/20</div>
-                                                                                                                                                    </div>
-                                                                                                                                                )}
-                                                                                                                                            </div>
-                                                                                                                                        ))}
-                                                                                                                                    </div>
-                                                                                                                                </div>
-                                                                                                                            )}
+                                                                                                                             ) : (
+                                                                                                                                 <div className="evaluados-list-premium">
+                                                                                                                                     {evalRecords.map(record => {
+                                                                                                                                         const initials = `${record.estudiante_nombre?.charAt(0) || ''}${record.estudiante_apellido?.charAt(0) || ''}`.toUpperCase();
+                                                                                                                                         return (
+                                                                                                                                             <div key={record.estudiante_cedula} className="evaluacion-row-premium">
+                                                                                                                                                 <div className="row-student-info">
+                                                                                                                                                     <div className="row-student-avatar">{initials}</div>
+                                                                                                                                                     <div className="row-student-details">
+                                                                                                                                                         <span className="row-student-name">{record.estudiante_nombre} {record.estudiante_apellido}</span>
+                                                                                                                                                         <span className="row-student-id">CI: {record.estudiante_cedula}</span>
+                                                                                                                                                     </div>
+                                                                                                                                                 </div>
+                                                                                                                                                 <div className="row-status-center">
+                                                                                                                                                     <span className={`status-badge-premium ${record.estado === 'Completada' ? 'completada' : 'pendiente'}`}>
+                                                                                                                                                         {record.estado}
+                                                                                                                                                     </span>
+                                                                                                                                                 </div>
+                                                                                                                                                 <div className="row-score-section">
+                                                                                                                                                     <span className="score-main">{record.nota_total || '0.00'}</span>
+                                                                                                                                                     <span className="score-label">Nota / 20</span>
+                                                                                                                                                 </div>
+                                                                                                                                                 <div className="row-actions">
+                                                                                                                                                     {record.estado === 'Completada' ? (
+                                                                                                                                                         <>
+                                                                                                                                                             <button className="btn-row-action eval" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.evaluacion_id, cedula: record.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} title="Editar Evaluacion">
+                                                                                                                                                                 <i className="fas fa-edit"></i> Editar
+                                                                                                                                                             </button>
+                                                                                                                                                             <button className="btn-row-action view" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteDetalles({ idEvaluacion: ev.evaluacion_id, cedula: record.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowDetalles(true); }, 800); }} title="Ver Detalles">
+                                                                                                                                                                 <i className="fas fa-eye"></i> Ver
+                                                                                                                                                             </button>
+                                                                                                                                                         </>
+                                                                                                                                                     ) : (
+                                                                                                                                                         <button className="btn-row-action eval" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.evaluacion_id, cedula: record.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }}>
+                                                                                                                                                             <i className="fas fa-clipboard-check"></i> Evaluar
+                                                                                                                                                         </button>
+                                                                                                                                                     )}
+                                                                                                                                                 </div>
+                                                                                                                                             </div>
+                                                                                                                                         );
+                                                                                                                                     })}
+                                                                                                                                 </div>
+                                                                                                                             )}
                                                                                                                         </div>
                                                                                                                     )}
                                                                                                                 </div>
@@ -1068,6 +1093,40 @@ export default function Evaluaciones() {
                                     )}
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                )}
+
+                {showEvaluar && selectedEstudianteEvaluar && (
+                    <ModalEvaluar
+                        data={selectedEstudianteEvaluar}
+                        onClose={() => setShowEvaluar(false)}
+                        onSaved={() => {
+                            setShowEvaluar(false);
+                            if (selectedEstudianteEvaluar?.idEvaluacion) {
+                                fetchEstudiantesDeEvaluacion(selectedEstudianteEvaluar.idEvaluacion);
+                            }
+                        }}
+                    />
+                )}
+
+                {showDetalles && selectedEstudianteDetalles && (
+                    <ModalVerDetalles
+                        data={selectedEstudianteDetalles}
+                        onClose={() => setShowDetalles(false)}
+                    />
+                )}
+
+                {isActionLoading && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2147483647 }}>
+                        <div style={{ background: 'white', padding: '40px 60px', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px', minWidth: '300px' }}>
+                            <div className="loader-container-uiverse">
+                                <div className="loader"><div className="justify-content-center jimu-primary-loading"></div></div>
+                            </div>
+                            <div>
+                                <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.4em', fontWeight: 'bold' }}>Procesando...</h3>
+                                <p style={{ margin: '8px 0 0 0', color: '#64748b', fontSize: '1em' }}>Espere un momento por favor</p>
+                            </div>
                         </div>
                     </div>
                 )}

@@ -4297,3 +4297,225 @@ body {
     cursor: not-allowed;
     opacity: 0.6;
 }
+
+/* Premium Row Layout for Student Evaluations */
+.evaluados-list-premium {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 10px;
+}
+
+.evaluacion-row-premium {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 20px;
+    transition: all 0.2s ease;
+    gap: 20px;
+}
+
+.evaluacion-row-premium:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e1;
+    transform: translateX(4px);
+}
+
+.row-student-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 2;
+    min-width: 250px;
+}
+
+.row-student-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #5e83d1;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.row-student-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.row-student-name {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 1.05em;
+}
+
+.row-student-id {
+    font-size: 0.85em;
+    color: #64748b;
+}
+
+.row-status-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+}
+
+.status-badge-premium {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge-premium.completada {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-badge-premium.pendiente {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.row-score-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 100px;
+}
+
+.score-main {
+    font-size: 1.2em;
+    font-weight: 800;
+    color: #1e293b;
+}
+
+.score-label {
+    font-size: 0.7em;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+
+.row-actions {
+    flex: 1.5;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 180px;
+}
+
+.btn-row-action {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1em;
+}
+
+.btn-row-action:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    transform: translateY(-2px);
+}
+
+.btn-row-action.eval {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    width: auto;
+    padding: 0 15px;
+    font-weight: 600;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.btn-row-action.eval:hover {
+    background: #2563eb;
+    color: white;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.btn-row-action.view:hover {
+    color: #10b981;
+    border-color: #10b981;
+}
+
+.btn-row-action.edit:hover {
+    color: #f59e0b;
+    border-color: #f59e0b;
+}
+
+.btn-row-action:disabled {
+    background: #f1f5f9;
+    color: #cbd5e1;
+    cursor: not-allowed;
+    border-color: #e2e8f0;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Metadata tags for evaluation info in Teacher rows */
+.row-eval-meta {
+    flex: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 160px;
+    flex-wrap: wrap;
+}
+
+.meta-tag {
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75em;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.meta-tag.type {
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+.meta-tag.pct {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+/* Responsive: stack rows vertically on small screens */
+@media (max-width: 768px) {
+    .evaluacion-row-premium {
+        flex-wrap: wrap;
+        padding: 15px;
+        gap: 12px;
+    }
+    .row-student-info {
+        min-width: 100%;
+    }
+    .row-eval-meta {
+        min-width: unset;
+    }
+    .row-actions {
+        min-width: 100%;
+        justify-content: flex-start;
+    }
+}
