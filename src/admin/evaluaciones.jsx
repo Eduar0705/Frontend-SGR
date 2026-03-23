@@ -57,6 +57,7 @@ export default function Evaluaciones() {
     const [showModal, setShowModal] = useState(false);
     const [modalMode, setModalMode] = useState('create');
     const [currentEvalId, setCurrentEvalId] = useState(null);
+    const [preloadedData, setPreloadedData] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const { setLoading: setGlobalLoading } = useUI();
 
@@ -281,17 +282,52 @@ export default function Evaluaciones() {
     );
 
     // ── CRUD ───────────────────────────────────────────────────────────────────
-    const handleOpenCreate = () => {
+    const handleOpenCreate = async (preDataArg = null) => {
+        // Ignorar eventos de click si se pasa como primer argumento
+        const isEvent = preDataArg && (preDataArg.nativeEvent || preDataArg.target);
+        const preData = isEvent ? null : preDataArg;
+
         setModalMode('create');
         setCurrentEvalId(null);
-        setFormData({
-            contenido: '', corte: '', estrategias_eval: [], porcentaje: 5, cant_personas: 1,
-            carrera_codigo: '', materia_codigo: '', id_seccion: '', tipo_horario: 'Sección',
-            fecha_horario_json: '', fecha_evaluacion: '', id_horario: '', hora_inicio: '', hora_fin: '',
-            competencias: '', instrumentos: ''
-        });
-        resetFechas();
-        setShowModal(true);
+        setPreloadedData(preData);
+
+        if (preData) {
+            setGlobalLoading(true);
+            try {
+                // Pre-cargar catálogos necesarios para los selects bloqueados
+                await handleCarreraChange(preData.carrera_codigo);
+                await handleMateriaChange(preData.materia_codigo, preData.carrera_codigo);
+                
+                setFormData({
+                    contenido: '', corte: '', estrategias_eval: [], porcentaje: 5, cant_personas: 1,
+                    carrera_codigo: preData.carrera_codigo,
+                    materia_codigo: preData.materia_codigo,
+                    id_seccion:     preData.id_seccion,
+                    tipo_horario: 'Sección',
+                    fecha_horario_json: '', fecha_evaluacion: '', id_horario: '', hora_inicio: '', hora_fin: '',
+                    competencias: '', instrumentos: ''
+                });
+
+                // Cargar fechas disponibles inmediatamente para la sección precargada
+                await handleSeccionChange(preData.id_seccion);
+                
+                setShowModal(true);
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'No se pudieron precargar los datos', 'error');
+            } finally {
+                setGlobalLoading(false);
+            }
+        } else {
+            setFormData({
+                contenido: '', corte: '', estrategias_eval: [], porcentaje: 5, cant_personas: 1,
+                carrera_codigo: '', materia_codigo: '', id_seccion: '', tipo_horario: 'Sección',
+                fecha_horario_json: '', fecha_evaluacion: '', id_horario: '', hora_inicio: '', hora_fin: '',
+                competencias: '', instrumentos: ''
+            });
+            resetFechas();
+            setShowModal(true);
+        }
     };
 
     const handleOpenEdit = async (ev) => {
@@ -443,7 +479,7 @@ export default function Evaluaciones() {
                                 <option value="En Progreso">En Progreso</option>
                                 <option value="Completada">Completada</option>
                             </select>
-                            <button className="btn-add-premium" onClick={handleOpenCreate}>
+                            <button className="btn-add-premium" onClick={() => handleOpenCreate()}>
                                 <i className="fas fa-plus"></i> Nueva Evaluación
                             </button>
                         </div>
@@ -510,7 +546,7 @@ export default function Evaluaciones() {
                                                                                         <div key={seccion} style={{ marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                                                                                             {/* NIVEL 4: SECCIÓN */}
                                                                                             <div onClick={() => toggleSeccion(scKey, secInfo.id)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', background: '#fef9ee', borderBottom: openSc ? '1px solid #fde68a' : 'none', gap: '12px' }}>
-                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
                                                                                                     <span style={{ color: '#92400e', fontWeight: 'bold' }}>
                                                                                                         <i className="fas fa-layer-group" style={{ marginRight: '7px', color: '#f59e0b' }} />{seccion}
                                                                                                     </span>
@@ -518,7 +554,35 @@ export default function Evaluaciones() {
                                                                                                         <i className="fas fa-user-tie" style={{ marginRight: '5px' }} />{secInfo.docente_nombre} {secInfo.docente_apellido}
                                                                                                     </span>
                                                                                                 </div>
-                                                                                                <Chevron open={openSc} />
+                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                                                    <button
+                                                                                                        onClick={(e) => {
+                                                                                                            e.stopPropagation();
+                                                                                                            handleOpenCreate({
+                                                                                                                carrera_codigo: secInfo.carrera_codigo,
+                                                                                                                materia_codigo: secInfo.materia_codigo,
+                                                                                                                id_seccion:     secInfo.id_seccion
+                                                                                                            });
+                                                                                                        }}
+                                                                                                        style={{
+                                                                                                            padding: '5px 12px',
+                                                                                                            fontSize: '0.8em',
+                                                                                                            background: '#10b981',
+                                                                                                            color: 'white',
+                                                                                                            border: 'none',
+                                                                                                            borderRadius: '6px',
+                                                                                                            cursor: 'pointer',
+                                                                                                            display: 'flex',
+                                                                                                            alignItems: 'center',
+                                                                                                            gap: '5px',
+                                                                                                            fontWeight: '600'
+                                                                                                        }}
+                                                                                                        title="Agregar evaluación a esta sección"
+                                                                                                    >
+                                                                                                        <i className="fas fa-plus" /> Nueva
+                                                                                                    </button>
+                                                                                                    <Chevron open={openSc} />
+                                                                                                </div>
                                                                                             </div>
 
                                                                                             {openSc && (
@@ -546,20 +610,31 @@ export default function Evaluaciones() {
 
                                                                                                             return (
                                                                                                                 <div key={ev.evaluacion_id} style={{ marginBottom: '15px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                                                                                                                    {/* NIVEL 5: RÚBRICA / EVALUACIÓN */}
-                                                                                                                    <div onClick={() => toggleRubrica(rKey, ev.evaluacion_id)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', background: '#f0fdf4', borderBottom: openR ? '1px solid #a7f3d0' : 'none' }}>
+                                                                                                                    {/* NIVEL 5: RÚBRICA / EVALUACIÓN (Admin View) */}
+                                                                                                                    <div 
+                                                                                                                        onClick={() => toggleRubrica(rKey, ev.evaluacion_id)} 
+                                                                                                                        style={{ 
+                                                                                                                            cursor: 'pointer', 
+                                                                                                                            display: 'flex', 
+                                                                                                                            justifyContent: 'space-between', 
+                                                                                                                            alignItems: 'center', 
+                                                                                                                            padding: '12px 18px', 
+                                                                                                                            background: ev.rubrica_id ? '#f0fdf4' : '#fffbeb', 
+                                                                                                                            borderBottom: openR ? (ev.rubrica_id ? '1px solid #a7f3d0' : '1px solid #fde68a') : 'none' 
+                                                                                                                        }}
+                                                                                                                    >
                                                                                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                                                                                                            <div style={{ background: '#dcfce7', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                                                                                                <i className="fas fa-clipboard-check" style={{ color: '#10b981' }} />
+                                                                                                                            <div style={{ background: ev.rubrica_id ? '#dcfce7' : '#fff3bf', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                                                                                <i className={ev.rubrica_id ? "fas fa-clipboard-check" : "fas fa-exclamation-triangle"} style={{ color: ev.rubrica_id ? '#10b981' : '#f59e0b' }} />
                                                                                                                             </div>
                                                                                                                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                                                                                                <span style={{ fontWeight: '600', color: '#065f46', fontSize: '1.05em' }}>{ev.contenido_evaluacion}</span>
-                                                                                                                                <span style={{ fontSize: '0.82em', color: '#059669' }}>{ev.nombre_rubrica} • {ev.valor}%</span>
+                                                                                                                                <span style={{ fontWeight: '600', color: ev.rubrica_id ? '#065f46' : '#92400e', fontSize: '1.05em' }}>{ev.contenido_evaluacion}</span>
+                                                                                                                                <span style={{ fontSize: '0.82em', color: ev.rubrica_id ? '#059669' : '#b45309' }}>{ev.rubrica_id ? ev.nombre_rubrica : 'Sin Rúbrica Asociada'} • {ev.valor}%</span>
                                                                                                                             </div>
                                                                                                                         </div>
                                                                                                                         
                                                                                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                                                                                                            <span style={{ fontSize: '0.85em', color: '#059669', background: 'rgba(5, 150, 105, 0.08)', padding: '4px 10px', borderRadius: '6px', fontWeight: '500' }}>
+                                                                                                                            <span style={{ fontSize: '0.85em', color: ev.rubrica_id ? '#059669' : '#b45309', background: ev.rubrica_id ? 'rgba(5, 150, 105, 0.08)' : 'rgba(180, 83, 9, 0.08)', padding: '4px 10px', borderRadius: '6px', fontWeight: '500' }}>
                                                                                                                                 <i className="fas fa-calendar-alt" style={{ marginRight: '6px' }} />
                                                                                                                                 {formatearFecha(fecha_mostrar)}
                                                                                                                             </span>
@@ -581,7 +656,27 @@ export default function Evaluaciones() {
 
                                                                                                                     {openR && (
                                                                                                                         <div style={{ padding: '0px', background: 'white' }}>
-                                                                                                                            {isLoadingEval ? (
+                                                                                                                            {!ev.rubrica_id ? (
+                                                                                                                                <div style={{ textAlign: 'center', padding: '30px 20px', background: '#fff9db', borderRadius: '0 0 12px 12px', border: '1px dashed #fcc419', margin: '15px' }}>
+                                                                                                                                    <i className="fas fa-info-circle" style={{ fontSize: '2em', color: '#f59e0b', marginBottom: '15px', display: 'block' }} />
+                                                                                                                                    <h4 style={{ margin: '0 0 10px 0', color: '#92400e' }}>Se debe asociar una rúbrica a esta evaluación</h4>
+                                                                                                                                    <p style={{ color: '#b45309', fontSize: '0.9em', marginBottom: '20px' }}>No hay una rúbrica asociada para calificar esta evaluación. Por favor, crea una nueva o elige una existente.</p>
+                                                                                                                                    <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+                                                                                                                                        <button 
+                                                                                                                                            onClick={() => navigate('/admin/crear-rubricas')} 
+                                                                                                                                            style={{ padding: '10px 20px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                                                                                                                        >
+                                                                                                                                            <i className="fas fa-plus" /> Crear Rúbrica
+                                                                                                                                        </button>
+                                                                                                                                        <button 
+                                                                                                                                            onClick={() => navigate('/admin/rubricas')} 
+                                                                                                                                            style={{ padding: '10px 20px', background: 'white', color: '#f59e0b', border: '1px solid #f59e0b', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                                                                                                                        >
+                                                                                                                                            <i className="fas fa-sync" /> Seleccionar Existente
+                                                                                                                                        </button>
+                                                                                                                                    </div>
+                                                                                                                                </div>
+                                                                                                                            ) : isLoadingEval ? (
                                                                                                                                 <div style={{ padding: '30px', textAlign: 'center' }}>
                                                                                                                                     <div className="spinner-mini" style={{ margin: '0 auto 10px' }}></div>
                                                                                                                                     <p style={{ fontSize: '0.9em', color: '#64748b' }}>Cargando estudiantes...</p>
@@ -665,7 +760,7 @@ export default function Evaluaciones() {
                                                 value={formData.carrera_codigo}
                                                 onChange={(e) => handleCarreraChange(e.target.value)}
                                                 required
-                                                disabled={modalMode === 'view'}
+                                                disabled={modalMode === 'view' || !!preloadedData}
                                             >
                                                 <option value="">Seleccione...</option>
                                                 {carreras.map(c => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
@@ -676,7 +771,7 @@ export default function Evaluaciones() {
                                             <select
                                                 value={formData.materia_codigo}
                                                 onChange={(e) => handleMateriaChange(e.target.value)}
-                                                disabled={!formData.carrera_codigo || modalMode === 'view'}
+                                                disabled={!formData.carrera_codigo || modalMode === 'view' || !!preloadedData}
                                                 required
                                             >
                                                 <option value="">Seleccione...</option>
@@ -692,7 +787,7 @@ export default function Evaluaciones() {
                                             <select
                                                 value={formData.id_seccion}
                                                 onChange={(e) => handleSeccionChange(e.target.value)}
-                                                disabled={!formData.materia_codigo || modalMode === 'view'}
+                                                disabled={!formData.materia_codigo || modalMode === 'view' || !!preloadedData}
                                                 required
                                             >
                                                 <option value="">Seleccione...</option>

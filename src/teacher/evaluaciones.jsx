@@ -45,7 +45,14 @@ export default function TeacherEvaluaciones() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
     const [selectedEvalId, setSelectedEvalId] = useState(null);
+    const [preloadedData, setPreloadedData] = useState(null);
     const [cortesPeriodo, setCortesPeriodo] = useState([]);
+
+    const hasAvailableCortes = React.useMemo(() => {
+        const now = new Date('2025-10-10'); // FECHA PERSONALIZADA
+        now.setHours(0, 0, 0, 0);
+        return cortesPeriodo.some(c => new Date(c.fecha_fin) >= now);
+    }, [cortesPeriodo]);
 
     useEffect(() => {
         if (!user) { navigate('/login'); return; }
@@ -54,7 +61,7 @@ export default function TeacherEvaluaciones() {
 
     const formatearFecha = (fecha_formato_sql) => {
         if (!fecha_formato_sql) return 'N/A';
-        const fecha = new Date(fecha_formato_sql);
+        const fecha = new Date(fecha_formato_sql); // FECHA PERSONALIZADA
         const fechaFormateada = fecha.toLocaleDateString('es-ES', {
             day: '2-digit',
             month: '2-digit',
@@ -68,8 +75,8 @@ export default function TeacherEvaluaciones() {
         try {
             const [evals, resCortes, resLapsos] = await Promise.all([
                 evaluacionesService.getTeacherEvaluaciones(),
-                periodosService.getCortesByPeriodo('2025-1'), //FECHA PERSONALIZADA
-                periodosService.getLapsosByPeriodo('2025-1') //FECHA PERSONALIZADA
+                periodosService.getCortesByPeriodo(user.periodo_usuario), //FECHA PERSONALIZADA
+                periodosService.getLapsosByPeriodo(user.periodo_usuario) //FECHA PERSONALIZADA
             ]);
 
             if (resCortes.success) {
@@ -112,7 +119,7 @@ export default function TeacherEvaluaciones() {
 
     const agruparEvaluaciones = (lista, cortes = [], lapsos = []) => {
         const agrupadas = {};
-        const now = new Date('2025-08-15'); //FECHA PERSONALIZADA
+        const now = new Date(); //FECHA PERSONALIZADA
 
         lista.forEach(ev => {
             const c  = ev.carrera_nombre;
@@ -160,7 +167,16 @@ export default function TeacherEvaluaciones() {
             if (!agrupadas[c])              agrupadas[c] = {};
             if (!agrupadas[c][s])           agrupadas[c][s] = {};
             if (!agrupadas[c][s][m])        agrupadas[c][s][m] = {};
-            if (!agrupadas[c][s][m][sc])    agrupadas[c][s][m][sc] = { info: { horario: ev.seccion_horario, aula: ev.seccion_aula }, rubricas: {} };
+            if (!agrupadas[c][s][m][sc])    agrupadas[c][s][m][sc] = { 
+                info: { 
+                    horario: ev.seccion_horario, 
+                    aula: ev.seccion_aula,
+                    carrera_codigo: ev.carrera_codigo,
+                    materia_codigo: ev.materia_codigo,
+                    id_seccion: ev.id_seccion 
+                }, 
+                rubricas: {} 
+            };
             
             if (ev.id_evaluacion) {
                 agrupadas[c][s][m][sc].rubricas[r] = ev;
@@ -169,25 +185,28 @@ export default function TeacherEvaluaciones() {
 
         setEvaluacionesAgrupadas(agrupadas);
 
-        // Expandir primer árbol completo por defecto
-        if (Object.keys(agrupadas).length > 0) {
-            const pc = Object.keys(agrupadas)[0];
-            setExpandedCarreras({ [pc]: true });
+        // Expandir todos los árboles hasta la capa de secciones
+        const newCarreras = {};
+        const newSem = {};
+        const newM = {};
 
-            const newSem = {}, newM = {};
-            Object.keys(agrupadas[pc]).forEach(sem => {
-                const semKey = `${pc}|${sem}`;
+        Object.keys(agrupadas).forEach(carrera => {
+            newCarreras[carrera] = true;
+            Object.keys(agrupadas[carrera]).forEach(sem => {
+                const semKey = `${carrera}|${sem}`;
                 newSem[semKey] = true;
-                Object.keys(agrupadas[pc][sem]).forEach(mat => {
-                    const mKey = `${pc}|${sem}|${mat}`;
+                Object.keys(agrupadas[carrera][sem]).forEach(mat => {
+                    const mKey = `${carrera}|${sem}|${mat}`;
                     newM[mKey] = true;
                 });
             });
-            setExpandedSemestres(newSem);
-            setExpandedMaterias(newM);
-            setExpandedSecciones({});
-            setExpandedRubricas({});
-        }
+        });
+
+        setExpandedCarreras(newCarreras);
+        setExpandedSemestres(newSem);
+        setExpandedMaterias(newM);
+        setExpandedSecciones({});
+        setExpandedRubricas({});
     };
 
     // Handlers para el modal de evaluación
@@ -318,14 +337,48 @@ export default function TeacherEvaluaciones() {
 
                                                                             {/* ══ NIVEL 3: SECCIÓN ══ */}
                                                                             <div onClick={() => toggleSeccion(sKey)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', background: '#fef9ee', borderBottom: openS ? '1px solid #fde68a' : 'none', gap: '12px' }}>
-                                                                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', fontSize: '0.9em', flexWrap: 'wrap' }}>
+                                                                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', fontSize: '0.9em', flexWrap: 'wrap', flex: 1 }}>
                                                                                     <strong style={{ color: '#92400e' }}>
                                                                                         <i className="fas fa-layer-group" style={{ marginRight: '7px', color: '#f59e0b' }} />{seccion}
                                                                                     </strong>
                                                                                     <span style={{ color: '#64748b' }}><i className="fas fa-clock" style={{ marginRight: '5px' }} />{secData.info.horario}</span>
                                                                                     <span style={{ color: '#64748b' }}><i className="fas fa-map-marker-alt" style={{ marginRight: '5px' }} />{secData.info.aula}</span>
                                                                                 </div>
-                                                                                <Chevron open={openS} />
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                                    <button
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            setModalMode('create');
+                                                                                            setSelectedEvalId(null);
+                                                                                            console.log(secData.info.carrera_codigo, secData.info.materia_codigo)
+                                                                                            setPreloadedData({
+                                                                                                carrera_codigo: secData.info.carrera_codigo,
+                                                                                                materia_codigo: secData.info.materia_codigo,
+                                                                                                id_seccion:     secData.info.id_seccion
+                                                                                            });
+                                                                                            setShowAddModal(true);
+                                                                                        }}
+                                                                                        disabled={!hasAvailableCortes}
+                                                                                        style={{
+                                                                                            padding: '5px 12px',
+                                                                                            fontSize: '0.8em',
+                                                                                            background: !hasAvailableCortes ? '#cbd5e1' : '#10b981',
+                                                                                            color: 'white',
+                                                                                            border: 'none',
+                                                                                            borderRadius: '6px',
+                                                                                            cursor: !hasAvailableCortes ? 'not-allowed' : 'pointer',
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            gap: '5px',
+                                                                                            fontWeight: '600',
+                                                                                            opacity: !hasAvailableCortes ? 0.7 : 1
+                                                                                        }}
+                                                                                        title={!hasAvailableCortes ? "No hay cortes disponibles" : "Agregar evaluación a esta sección"}
+                                                                                    >
+                                                                                        <i className="fas fa-plus" /> Nueva
+                                                                                    </button>
+                                                                                    <Chevron open={openS} />
+                                                                                </div>
                                                                             </div>
 
                                                                             {openS && (
@@ -336,8 +389,10 @@ export default function TeacherEvaluaciones() {
                                                                                             <h4 style={{ color: '#64748b', margin: '0 0 15px 0' }}>No hay evaluaciones registradas en esta sección</h4>
                                                                                             <button 
                                                                                                 className="btn-add-premium" 
-                                                                                                style={{ margin: '0 auto' }}
-                                                                                                onClick={() => { setModalMode('create'); setSelectedEvalId(null); setShowAddModal(true); }}
+                                                                                                style={{ margin: '0 auto', opacity: !hasAvailableCortes ? 0.6 : 1, cursor: !hasAvailableCortes ? 'not-allowed' : 'pointer' }}
+                                                                                                onClick={() => { if(hasAvailableCortes) { setModalMode('create'); setSelectedEvalId(null); setShowAddModal(true); } }}
+                                                                                                disabled={!hasAvailableCortes}
+                                                                                                title={!hasAvailableCortes ? "No hay cortes disponibles para crear evaluaciones" : ""}
                                                                                             >
                                                                                                 <i className="fas fa-plus"></i> Nueva Evaluación
                                                                                             </button>
@@ -552,7 +607,26 @@ export default function TeacherEvaluaciones() {
                         </div>
                         <div style={{ display: 'flex', gap: '10px' }}>
                             <button onClick={fetchEvaluaciones} style={{ padding: '10px 15px', background: '#f1f5f9', color: '#334155', border: 'none', borderRadius: '8px', cursor: 'pointer' }} title="Actualizar"><i className="fas fa-sync-alt" /></button>
-                            <button onClick={() => { setModalMode('create'); setSelectedEvalId(null); setShowAddModal(true); }} style={{ padding: '10px 15px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}><i className="fas fa-plus" /> Nueva Evaluación</button>
+                            <button 
+                                onClick={() => { setModalMode('create'); setSelectedEvalId(null); setShowAddModal(true); }} 
+                                disabled={!hasAvailableCortes}
+                                style={{ 
+                                    padding: '10px 15px', 
+                                    background: !hasAvailableCortes ? '#94a3b8' : '#10b981', 
+                                    color: 'white', 
+                                    border: 'none', 
+                                    borderRadius: '8px', 
+                                    cursor: !hasAvailableCortes ? 'not-allowed' : 'pointer', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '8px', 
+                                    fontWeight: '500',
+                                    opacity: !hasAvailableCortes ? 0.7 : 1
+                                }}
+                                title={!hasAvailableCortes ? "No hay cortes disponibles para crear evaluaciones" : ""}
+                            >
+                                <i className="fas fa-plus" /> Nueva Evaluación
+                            </button>
                         </div>
                     </div>
 
@@ -578,13 +652,15 @@ export default function TeacherEvaluaciones() {
             )}
             {showAddModal && (
                 <ModalAddEvaluacion 
-                    onClose={() => setShowAddModal(false)} 
+                    onClose={() => { setShowAddModal(false); setPreloadedData(null); }} 
                     onSaved={() => { 
                         setShowAddModal(false); 
+                        setPreloadedData(null);
                         fetchEvaluaciones(); 
                     }} 
                     mode={modalMode}
                     currentEvalId={selectedEvalId}
+                    preloadedData={preloadedData}
                 />
             )}
 

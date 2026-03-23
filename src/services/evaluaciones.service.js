@@ -26,7 +26,6 @@ export const evaluacionesService = {
     async getEvaluacionesBySeccion(id_seccion) {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/evaluaciones/${id_seccion}`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = response.data;

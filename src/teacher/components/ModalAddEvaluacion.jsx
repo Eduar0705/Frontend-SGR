@@ -4,7 +4,7 @@ import { periodosService } from '../../services/periodos.service';
 import Swal from 'sweetalert2';
 import { useFechasDisponibles, agruparFechasPorMes } from '../../utils/useFechasDisponibles';
 
-export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', currentEvalId = null }) {
+export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', currentEvalId = null, preloadedData = null }) {
     const [submitting, setSubmitting] = useState(false);
 
     // Catalogos
@@ -49,7 +49,36 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
 
                 if (resCarreras.success) setCarreras(resCarreras.carreras);
                 if (resEstrategias.success) setEstrategias(resEstrategias.estrategias_eval);
-                if (resCortes.success) setCortes(resCortes.cortes);
+                if (resCortes.success) {
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    const filtered = resCortes.cortes.filter(c => new Date(c.fecha_fin) >= now);
+                    setCortes(filtered);
+                }
+                
+                // --- MANEJO DE DATOS PRECARGADOS (NUEVA EVALUACIÓN DESDE SECCIÓN) ---
+                if (mode === 'create' && preloadedData) {
+                    const { carrera_codigo, materia_codigo, id_seccion } = preloadedData;
+                    
+                    // 1. Cargar Materias
+                    const resMat = await evaluacionesService.getTeacherMateriasByCarrera(carrera_codigo);
+                    if (resMat.success) setMaterias(resMat.materias);
+
+                    // 2. Cargar Secciones
+                    const resSec = await evaluacionesService.getTeacherSecciones(materia_codigo);
+                    if (resSec.success) setSecciones(resSec.secciones);
+
+                    // 3. Cargar Fechas
+                    await cargarFechas(id_seccion, []);
+
+                    // 4. Actualizar formData
+                    setFormData(prev => ({
+                        ...prev,
+                        carrera_codigo,
+                        materia_codigo,
+                        id_seccion
+                    }));
+                }
 
                 // Si es edición o visualización, cargar los datos de la evaluación
                 if ((mode === 'edit' || mode === 'view') && currentEvalId) {
@@ -229,7 +258,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
                                     value={formData.carrera_codigo}
                                     onChange={(e) => handleCarreraChange(e.target.value)}
                                     required
-                                    disabled={mode === 'view'}
+                                    disabled={mode === 'view' || !!preloadedData}
                                 >
                                     <option value="">Seleccione carrera...</option>
                                     {carreras.map(c => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
@@ -240,7 +269,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
                                 <select
                                     value={formData.materia_codigo}
                                     onChange={(e) => handleMateriaChange(e.target.value)}
-                                    disabled={!formData.carrera_codigo || mode === 'view'}
+                                    disabled={!formData.carrera_codigo || mode === 'view' || !!preloadedData}
                                     required
                                 >
                                     <option value="">Seleccione materia...</option>
@@ -256,7 +285,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
                                 <select
                                     value={formData.id_seccion}
                                     onChange={(e) => handleSeccionChange(e.target.value)}
-                                    disabled={!formData.materia_codigo || mode === 'view'}
+                                    disabled={!formData.materia_codigo || mode === 'view' || !!preloadedData}
                                     required
                                 >
                                     <option value="">Seleccione sección...</option>
@@ -273,7 +302,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
                                     onChange={(e) => setFormData({ ...formData, corte: e.target.value })}
                                     required
                                 >
-                                    <option value="">Seleccione el corte...</option>
+                                    <option value="">{cortes.length === 0 ? 'No hay cortes disponibles (todos han finalizado)' : 'Seleccione el corte...'}</option>
                                     {cortes.map(c => (
                                         <option key={c.orden} value={c.orden}>Corte {c.orden} ({formatearFecha(c.fecha_inicio)} - {formatearFecha(c.fecha_fin)})</option>
                                     ))}
