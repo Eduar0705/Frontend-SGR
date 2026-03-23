@@ -11,8 +11,8 @@ export const teacherRubricasService = {
 
     async getSemestres(carrera) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/teacher/rubricas/semestres/${carrera}`, { 
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+        const user = JSON.parse(localStorage.getItem('user'));
+        const res = await fetch(`${API_URL}/teacher/rubricas/semestres/${carrera}?periodo=${user.periodo_usuario}`, { 
             headers: { 'Authorization': `Bearer ${token}` } 
         });
         const data = await res.json();
@@ -38,7 +38,7 @@ export const teacherRubricasService = {
         const res = await fetch(`${API_URL}/teacher/rubricas/evaluaciones/${seccionId}`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (!res.ok) return [];
         const data = await res.json();
-        return data.data || [];
+        return data.evaluaciones || [];
     },
 
     async crearRubrica(rubricaData) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import Swal from 'sweetalert2';
@@ -11,6 +11,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 export default function TeacherCrearRubricas() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
@@ -63,21 +64,68 @@ export default function TeacherCrearRubricas() {
 
     const loadInitialData = async () => {
         try {
-            setGlobalLoading(false); // Apagar el overlay del menú
+            setGlobalLoading(true); // Encender el overlay
             
             // Cargar tipos de rúbrica y otros datos del formulario usando el servicio
             const dataForm = await teacherRubricasService.getFormData();
             setTiposRubrica(dataForm.tipos || []);
             setCarreras(dataForm.carreras || []);
 
+            // Si hay datos pre-cargados en el estado de navegación, ejecutarlos secuencialmente
+            if (location.state?.preloaded) {
+                await handlePreloading(location.state.preloaded, dataForm.carreras || []);
+            }
+
         } catch (error) {
-            console.error(error);
+            console.error("Error al cargar datos iniciales:", error);
             Swal.fire('Error', 'Error al cargar datos iniciales', 'error');
-            const data = await teacherRubricasService.getFormData();
-            setCarreras(data.carreras || []);
-            setTiposRubrica(data.tipos || []);
         } finally {
             setGlobalLoading(false);
+        }
+    };
+
+    const handlePreloading = async (preData, initialCarreras) => {
+        try {
+            // 1. Validar Carrera
+            const carreraExiste = initialCarreras.find(c => String(c.codigo) === String(preData.carrera));
+            if (!carreraExiste) return;
+
+            // 2. Cargar Semestres
+            const dataSem = await teacherRubricasService.getSemestres(preData.carrera);
+            if (dataSem) setSemestres(dataSem);
+
+            // 3. Cargar Materias
+            const dataMat = await teacherRubricasService.getMaterias(preData.carrera, preData.semestre);
+            if (dataMat) setMaterias(dataMat);
+
+            // 4. Cargar Secciones
+            const dataSec = await teacherRubricasService.getSecciones(preData.materia_codigo);
+            if (dataSec) setSecciones(dataSec);
+
+            // 5. Cargar Evaluaciones
+            const dataEval = await teacherRubricasService.getEvaluaciones(preData.seccion_id);
+            if (dataEval && dataEval.length > 0) {
+                setEvaluaciones(dataEval);
+                
+                // Encontrar la evaluación específica para obtener su porcentaje
+                const targetEval = dataEval.find(ev => String(ev.id) === String(preData.evaluacion_id));
+                const finalPorcentaje = targetEval?.ponderacion || 0;
+
+                // 6. Actualizar formData (con conversión explícita a String para los selects)
+                setFormData(prev => ({
+                    ...prev,
+                    carrera_codigo: String(preData.carrera),
+                    semestre: String(preData.semestre),
+                    materia_codigo: String(preData.materia_codigo),
+                    seccion_id: String(preData.seccion_id),
+                    evaluacion_id: String(preData.evaluacion_id),
+                    porcentaje_evaluacion: finalPorcentaje,
+                    criterios: redistribuirPuntajes(finalPorcentaje, prev.criterios)
+                }));
+            }
+        } catch (error) {
+            console.error("Error en preloading docente:", error);
+            Swal.fire('Error', 'No se pudieron precargar los datos de la evaluación', 'error');
         }
     };
 
@@ -347,28 +395,48 @@ export default function TeacherCrearRubricas() {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                                 <div>
                                     <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Carrera</label>
-                                    <select value={formData.carrera_codigo} onChange={(e) => handleCarreraChange(e.target.value)} className="form-select">
+                                    <select 
+                                        value={formData.carrera_codigo} 
+                                        onChange={(e) => handleCarreraChange(e.target.value)} 
+                                        className="form-select"
+                                        disabled={!!location.state?.preloaded}
+                                    >
                                         <option value="">Seleccione carrera</option>
                                         {carreras.map(c => <option key={c.codigo} value={c.codigo}>{c.nombre}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Semestre</label>
-                                    <select value={formData.semestre} onChange={(e) => handleSemestreChange(e.target.value)} className="form-select" disabled={!semestres.length}>
+                                    <select 
+                                        value={formData.semestre} 
+                                        onChange={(e) => handleSemestreChange(e.target.value)} 
+                                        className="form-select" 
+                                        disabled={!semestres.length || !!location.state?.preloaded}
+                                    >
                                         <option value="">Seleccione semestre</option>
                                         {semestres.map(s => <option key={s} value={s}>Semestre {s}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Materia</label>
-                                    <select value={formData.materia_codigo} onChange={(e) => handleMateriaChange(e.target.value)} className="form-select" disabled={!materias.length}>
+                                    <select 
+                                        value={formData.materia_codigo} 
+                                        onChange={(e) => handleMateriaChange(e.target.value)} 
+                                        className="form-select" 
+                                        disabled={!materias.length || !!location.state?.preloaded}
+                                    >
                                         <option value="">Seleccione materia</option>
                                         {materias.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Sección</label>
-                                    <select value={formData.seccion_id} onChange={(e) => handleSeccionChange(e.target.value)} className="form-select" disabled={!secciones.length}>
+                                    <select 
+                                        value={formData.seccion_id} 
+                                        onChange={(e) => handleSeccionChange(e.target.value)} 
+                                        className="form-select" 
+                                        disabled={!secciones.length || !!location.state?.preloaded}
+                                    >
                                         <option value="">Seleccione sección</option>
                                         {secciones.map(s => <option key={s.id} value={s.id}>{s.letra} ({s.lapso_academico || s.codigo_periodo})</option>)}
                                     </select>
@@ -376,7 +444,13 @@ export default function TeacherCrearRubricas() {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                                     <div style={{ flex: 1, marginRight: '20px' }}>
                                         <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Evaluación</label>
-                                        <select value={formData.evaluacion_id} onChange={(e) => handleEvaluacionChange(e.target.value)} className="form-select" required disabled={!evaluaciones.length}>
+                                        <select 
+                                            value={formData.evaluacion_id} 
+                                            onChange={(e) => handleEvaluacionChange(e.target.value)} 
+                                            className="form-select" 
+                                            required 
+                                            disabled={!evaluaciones.length || !!location.state?.preloaded}
+                                        >
                                             <option value="">Seleccione evaluación</option>
                                             {evaluaciones.map(ev => <option key={ev.id} value={ev.id}>{ev.competencias} ({ev.ponderacion}%)</option>)}
                                         </select>

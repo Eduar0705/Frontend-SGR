@@ -122,6 +122,10 @@ export default function TeacherEvaluaciones() {
         const now = new Date('2025-10-10'); //FECHA PERSONALIZADA
 
         lista.forEach(ev => {
+            // Normalizar nombres de campos
+            ev.carrera_codigo = ev.carrera_codigo || ev.codigo_carrera;
+            ev.materia_codigo = ev.materia_codigo || ev.codigo_materia;
+
             const c  = ev.carrera_nombre;
             const s  = `Semestre ${ev.materia_semestre}`;
             const m  = ev.materia_nombre;
@@ -171,8 +175,8 @@ export default function TeacherEvaluaciones() {
                 info: { 
                     horario: ev.seccion_horario, 
                     aula: ev.seccion_aula,
-                    carrera_codigo: ev.carrera_codigo,
-                    materia_codigo: ev.materia_codigo,
+                    carrera_codigo: ev.carrera_codigo || ev.codigo_carrera,
+                    materia_codigo: ev.materia_codigo || ev.codigo_materia,
                     id_seccion: ev.id_seccion 
                 }, 
                 rubricas: {} 
@@ -491,7 +495,17 @@ export default function TeacherEvaluaciones() {
                                                                                                                          <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
                                                                                                                              <button 
                                                                                                                                 className="action-btn-rubrica create"
-                                                                                                                                onClick={() => navigate('/teacher/crear-rubricas')} 
+                                                                                                                                onClick={() => navigate('/teacher/crear-rubricas', { 
+                                                                                                      state: { 
+                                                                                                          preloaded: {
+                                                                                                              carrera: evalInfo.carrera_codigo,
+                                                                                                              semestre: evalInfo.materia_semestre,
+                                                                                                              materia_codigo: evalInfo.materia_codigo,
+                                                                                                              seccion_id: evalInfo.id_seccion,
+                                                                                                              evaluacion_id: evalInfo.id_evaluacion
+                                                                                                          }
+                                                                                                      }
+                                                                                                  })} 
                                                                                                                                 disabled={!evalInfo.canModify}
                                                                                                                                 style={{ padding: '10px 20px', background: !evalInfo.canModify ? '#cbd5e1' : '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', cursor: !evalInfo.canModify ? 'not-allowed' : 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', opacity: !evalInfo.canModify ? 0.7 : 1 }}
                                                                                                                              >
