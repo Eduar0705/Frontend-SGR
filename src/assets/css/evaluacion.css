@@ -4519,3 +4519,79 @@ body {
         justify-content: flex-start;
     }
 }
+.evaluacion-row-premium {
+    flex-wrap: nowrap;
+    gap: 12px;
+    padding: 10px 14px;
+}
+
+.row-student-info {
+    flex: 2;
+    min-width: 0;        /* elimina el min-width fijo de 250px */
+}
+
+.row-student-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.row-eval-meta {
+    flex: 1;
+    min-width: 0;        /* elimina el min-width fijo de 160px */
+    flex-wrap: nowrap;
+}
+
+.meta-tag {
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.row-status-center {
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+.row-score-section {
+    flex: 0 0 auto;
+    min-width: 70px;
+}
+
+.row-actions {
+    flex: 0 0 auto;
+    min-width: 0;
+    gap: 6px;
+}
+
+/* Botones de acción: solo ícono por defecto */
+.btn-row-action.eval,
+.btn-row-action.view {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    font-size: 0.85em;
+    gap: 0;
+}
+
+.btn-row-action.eval span,
+.btn-row-action.view span {
+    display: none;
+}
+
+/* Mostrar texto solo cuando hay pantalla suficiente */
+@media (min-width: 1280px) {
+    .btn-row-action.eval,
+    .btn-row-action.view {
+        width: auto;
+        padding: 0 12px;
+        gap: 6px;
+    }
+
+    .btn-row-action.eval span,
+    .btn-row-action.view span {
+        display: inline;
+    }
+}

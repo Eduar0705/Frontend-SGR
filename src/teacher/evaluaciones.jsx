@@ -49,7 +49,7 @@ export default function TeacherEvaluaciones() {
     const [cortesPeriodo, setCortesPeriodo] = useState([]);
 
     const hasAvailableCortes = React.useMemo(() => {
-        const now = new Date(); // FECHA PERSONALIZADA
+        const now = new Date('2025-10-10'); // FECHA PERSONALIZADA
         now.setHours(0, 0, 0, 0);
         return cortesPeriodo.some(c => new Date(c.fecha_fin) >= now);
     }, [cortesPeriodo]);
@@ -75,8 +75,8 @@ export default function TeacherEvaluaciones() {
         try {
             const [evals, resCortes, resLapsos] = await Promise.all([
                 evaluacionesService.getTeacherEvaluaciones(),
-                periodosService.getCortesByPeriodo(user.periodo_usuario), //FECHA PERSONALIZADA
-                periodosService.getLapsosByPeriodo(user.periodo_usuario) //FECHA PERSONALIZADA
+                periodosService.getCortesByPeriodo('2025-1'), //FECHA PERSONALIZADA
+                periodosService.getLapsosByPeriodo('2025-1') //FECHA PERSONALIZADA
             ]);
 
             if (resCortes.success) {
@@ -119,7 +119,7 @@ export default function TeacherEvaluaciones() {
 
     const agruparEvaluaciones = (lista, cortes = [], lapsos = []) => {
         const agrupadas = {};
-        const now = new Date(); //FECHA PERSONALIZADA
+        const now = new Date('2025-10-10'); //FECHA PERSONALIZADA
 
         lista.forEach(ev => {
             // Normalizar nombres de campos
@@ -541,32 +541,29 @@ export default function TeacherEvaluaciones() {
                                                                                                                                                 <span className="row-student-id">CI: {ev.estudiante_cedula}</span>
                                                                                                                                             </div>
                                                                                                                                         </div>
-                                                                                                                                        <div className="row-eval-meta">
-                                                                                                                                            <span className="meta-tag type">{evalInfo.tipo_evaluacion || evalInfo.nombre_rubrica}</span>
-                                                                                                                                            <span className="meta-tag pct">{evalInfo.porcentaje_evaluacion || evalInfo.valor}%</span>
-                                                                                                                                        </div>
+
                                                                                                                                         <div className="row-status-center">
                                                                                                                                             <span className={`status-badge-premium ${ev.estado === 'Completada' ? 'completada' : 'pendiente'}`}>
                                                                                                                                                 {ev.estado}
                                                                                                                                             </span>
                                                                                                                                         </div>
                                                                                                                                         <div className="row-score-section">
-                                                                                                                                            <span className="score-main">{ev.puntaje_obtenido || '0.00'}</span>
+                                                                                                                                            <span className="score-main">{ev.puntaje_total || '0.00'}</span>
                                                                                                                                             <span className="score-label">Nota / 100</span>
                                                                                                                                         </div>
                                                                                                                                         <div className="row-actions">
                                                                                                                                             {ev.estado === 'Completada' ? (
                                                                                                                                                 <>
                                                                                                                                                     <button className="btn-row-action eval" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} disabled={!evalInfo.canEvaluate} title="Editar Evaluacion">
-                                                                                                                                                        <i className="fas fa-edit"></i> Editar
+                                                                                                                                                        <i className="fas fa-edit"></i> <span> Editar </span>
                                                                                                                                                     </button>
                                                                                                                                                     <button className="btn-row-action view" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteDetalles({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowDetalles(true); }, 800); }} title="Ver Detalles">
-                                                                                                                                                        <i className="fas fa-eye"></i> Ver
+                                                                                                                                                        <i className="fas fa-eye"></i> <span> Ver </span>
                                                                                                                                                     </button>
                                                                                                                                                 </>
                                                                                                                                             ) : (
                                                                                                                                                 <button className="btn-row-action eval" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} disabled={!evalInfo.canEvaluate}>
-                                                                                                                                                    <i className="fas fa-clipboard-check"></i> Evaluar
+                                                                                                                                                    <i className="fas fa-clipboard-check"></i> <span> Evaluar</span>
                                                                                                                                                 </button>
                                                                                                                                             )}
                                                                                                                                         </div>
