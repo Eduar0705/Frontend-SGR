@@ -68,8 +68,8 @@ export default function TeacherEvaluaciones() {
         try {
             const [evals, resCortes, resLapsos] = await Promise.all([
                 evaluacionesService.getTeacherEvaluaciones(),
-                periodosService.getCortesByPeriodo(user.periodo_usuario), //FECHA PERSONALIZADA
-                periodosService.getLapsosByPeriodo(user.periodo_usuario) //FECHA PERSONALIZADA
+                periodosService.getCortesByPeriodo('2025-1'), //FECHA PERSONALIZADA
+                periodosService.getLapsosByPeriodo('2025-1') //FECHA PERSONALIZADA
             ]);
 
             if (resCortes.success) {
@@ -112,7 +112,7 @@ export default function TeacherEvaluaciones() {
 
     const agruparEvaluaciones = (lista, cortes = [], lapsos = []) => {
         const agrupadas = {};
-        const now = new Date(); //FECHA PERSONALIZADA
+        const now = new Date('2025-08-15'); //FECHA PERSONALIZADA
 
         lista.forEach(ev => {
             const c  = ev.carrera_nombre;
@@ -167,25 +167,6 @@ export default function TeacherEvaluaciones() {
 
         setEvaluacionesAgrupadas(agrupadas);
 
-        // Expandir primer árbol completo por defecto
-        if (Object.keys(agrupadas).length > 0) {
-            const pc = Object.keys(agrupadas)[0];
-            setExpandedCarreras({ [pc]: true });
-
-            const newSem = {}, newM = {};
-            Object.keys(agrupadas[pc]).forEach(sem => {
-                const semKey = `${pc}|${sem}`;
-                newSem[semKey] = true;
-                Object.keys(agrupadas[pc][sem]).forEach(mat => {
-                    const mKey = `${pc}|${sem}|${mat}`;
-                    newM[mKey] = true;
-                });
-            });
-            setExpandedSemestres(newSem);
-            setExpandedMaterias(newM);
-            setExpandedSecciones({});
-            setExpandedRubricas({});
-        }
     };
 
     // Handlers para el modal de evaluación

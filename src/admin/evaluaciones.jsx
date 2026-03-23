@@ -44,6 +44,13 @@ export default function Evaluaciones() {
     const [docenteFilter, setDocenteFilter] = useState('');
     const [estadoFilter, setEstadoFilter] = useState('');
 
+    // Estados de Detalle de Evaluación (Progresivo)
+    const [estudiantesPorEvaluacion, setEstudiantesPorEvaluacion] = useState({});
+    const [loadingEvaluados, setLoadingEvaluados] = useState({});
+    const [showDetalles, setShowDetalles] = useState(false);
+    const [selectedEstudianteDetalles, setSelectedEstudianteDetalles] = useState(null);
+    const [isActionLoading, setIsActionLoading] = useState(false);
+
 
 
     // Estados del Modal
@@ -114,6 +121,22 @@ export default function Evaluaciones() {
             return [];
         } finally {
             setLoadingSeccionesDetalle(prev => ({ ...prev, [idSeccion]: false }));
+        }
+    };
+
+    const fetchEstudiantesDeEvaluacion = async (idEval) => {
+        if (loadingEvaluados[idEval]) return;
+        try {
+            setLoadingEvaluados(prev => ({ ...prev, [idEval]: true }));
+            const data = await evaluacionesService.getEvaluadasByEval(idEval);
+            setEstudiantesPorEvaluacion(prev => ({ ...prev, [idEval]: data }));
+            return data;
+        } catch (error) {
+            console.error('Error fetching estudiantes:', error);
+            Swal.fire('Error', 'No se pudieron cargar los estudiantes de esta evaluación', 'error');
+            return [];
+        } finally {
+            setLoadingEvaluados(prev => ({ ...prev, [idEval]: false }));
         }
     };
 
@@ -244,27 +267,14 @@ export default function Evaluaciones() {
             return { ...prev, [key]: newState };
         });
     };
-    const toggleRubrica  = tog(setExpandedRubricas);
+    const toggleRubrica  = (key, idEval) => {
+        setExpandedRubricas(prev => {
+            const newState = !prev[key];
+            if (newState && idEval) fetchEstudiantesDeEvaluacion(idEval);
+            return { ...prev, [key]: newState };
+        });
+    };
 
-    // Expandir primer árbol completo por defecto al cargar
-    useEffect(() => {
-        if (Object.keys(seccionesAgrupadas).length > 0 && Object.keys(expandedCarreras).length === 0) {
-            const firstC = Object.keys(seccionesAgrupadas).sort()[0];
-            setExpandedCarreras({ [firstC]: true });
-
-            const newSem = {}, newMat = {};
-            Object.keys(seccionesAgrupadas[firstC]).forEach(sem => {
-                const sKey = `${firstC}|${sem}`;
-                newSem[sKey] = true;
-                Object.keys(seccionesAgrupadas[firstC][sem]).forEach(mat => {
-                    const mKey = `${sKey}|${mat}`;
-                    newMat[mKey] = true;
-                });
-            });
-            setExpandedSemestres(newSem);
-            setExpandedMaterias(newMat);
-        }
-    }, [seccionesAgrupadas]); 
 
     const Chevron = ({ open }) => (
         <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} style={{ color: '#64748b', fontSize: '0.82em', flexShrink: 0 }} />
@@ -369,6 +379,38 @@ export default function Evaluaciones() {
             setSubmitting(false);
         }
     };
+    const handleDelete = async (e, id) => {
+        e.stopPropagation();
+        const result = await Swal.fire({
+            title: '¿Estás seguro?',
+            text: "Esta acción eliminará la evaluación y todas sus calificaciones asociadas.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                setGlobalLoading(true);
+                const res = await evaluacionesService.deleteEvaluacion(id);
+                if (res.success) {
+                    Swal.fire('Eliminado', res.message, 'success');
+                    loadEvaluaciones();
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'No se pudo eliminar la evaluación', 'error');
+            } finally {
+                setGlobalLoading(false);
+            }
+        }
+    };
+
     const esDiagnostico = estrategias.filter(est => formData.estrategias_eval.includes(est.id))
         .some(est => est.ponderable === 0);
     // ── Render ─────────────────────────────────────────────────────────────────
@@ -490,97 +532,93 @@ export default function Evaluaciones() {
                                                                                                         <div style={{ textAlign: 'center', padding: '15px', color: '#64748b' }}>
                                                                                                             No hay evaluaciones para esta sección.
                                                                                                         </div>
-                                                                                                    ) : (() => {
-                                                                                                        // Agrupar evaluaciones de la sección por rúbrica
-                                                                                                        const rubricasObj = {};
-                                                                                                        evaluations.forEach(ev => {
-                                                                                                            const rName = `${ev.contenido_evaluacion} (${ev.rubrica_id ? 'Rúbrica: ' : ''}${ev.nombre_rubrica})`;
-                                                                                                            if (!rubricasObj[rName]) rubricasObj[rName] = [];
-                                                                                                            rubricasObj[rName].push(ev);
-                                                                                                        });
-
-                                                                                                        return Object.keys(rubricasObj).sort((a, b) => {
-                                                                                                            const rA = rubricasObj[a][0];
-                                                                                                            const rB = rubricasObj[b][0];
-                                                                                                            const dateA = new Date(rA.fecha_fija || rA.fecha_evaluacion);
-                                                                                                            const dateB = new Date(rB.fecha_fija || rB.fecha_evaluacion);
-                                                                                                            return dateB - dateA;
-                                                                                                        }).map(rubrica => {
-                                                                                                            const evs = rubricasObj[rubrica];
-                                                                                                            const rKey = `${scKey}|${rubrica}`;
+                                                                                                    ) : (
+                                                                                                        evaluations.sort((a,b) => {
+                                                                                                            const dA = new Date(a.fecha_fija || a.fecha_evaluacion);
+                                                                                                            const dB = new Date(b.fecha_fija || b.fecha_evaluacion);
+                                                                                                            return dB - dA;
+                                                                                                        }).map(ev => {
+                                                                                                            const rKey  = `${scKey}|${ev.evaluacion_id}`;
                                                                                                             const openR = expandedRubricas[rKey];
-                                                                                                            const fecha_mostrar = evs[0].fecha_fija || evs[0].fecha_evaluacion;
+                                                                                                            const fecha_mostrar = ev.fecha_fija || ev.fecha_evaluacion;
+                                                                                                            const isLoadingEval = loadingEvaluados[ev.evaluacion_id];
+                                                                                                            const evalRecords   = estudiantesPorEvaluacion[ev.evaluacion_id] || [];
 
                                                                                                             return (
-                                                                                                                <div key={rubrica} style={{ marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                                                                                                                <div key={ev.evaluacion_id} style={{ marginBottom: '15px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                                                                                                                     {/* NIVEL 5: RÚBRICA / EVALUACIÓN */}
-                                                                                                                    <h5 onClick={() => toggleRubrica(rKey)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0, padding: '10px 14px', color: '#065f46', fontSize: '0.95em', background: '#f0fdf4', borderBottom: openR ? '1px solid #a7f3d0' : 'none' }}>
-                                                                                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                                                            <i className="fas fa-clipboard-check" style={{ color: '#10b981' }} />
-                                                                                                                            {rubrica}
-                                                                                                                        </span>
-                                                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                                                                                            <span style={{ fontSize: '0.85em', color: '#065f46', opacity: 0.5, fontWeight: '500' }}>
-                                                                                                                                <i className="fas fa-calendar-alt" style={{ marginRight: '5px' }} />
+                                                                                                                    <div onClick={() => toggleRubrica(rKey, ev.evaluacion_id)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', background: '#f0fdf4', borderBottom: openR ? '1px solid #a7f3d0' : 'none' }}>
+                                                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                                                                                                            <div style={{ background: '#dcfce7', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                                                                                <i className="fas fa-clipboard-check" style={{ color: '#10b981' }} />
+                                                                                                                            </div>
+                                                                                                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                                                                                <span style={{ fontWeight: '600', color: '#065f46', fontSize: '1.05em' }}>{ev.contenido_evaluacion}</span>
+                                                                                                                                <span style={{ fontSize: '0.82em', color: '#059669' }}>{ev.nombre_rubrica} • {ev.valor}%</span>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                        
+                                                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                                                                                                            <span style={{ fontSize: '0.85em', color: '#059669', background: 'rgba(5, 150, 105, 0.08)', padding: '4px 10px', borderRadius: '6px', fontWeight: '500' }}>
+                                                                                                                                <i className="fas fa-calendar-alt" style={{ marginRight: '6px' }} />
                                                                                                                                 {formatearFecha(fecha_mostrar)}
                                                                                                                             </span>
+                                                                                                                            
+                                                                                                                            <div className="evaluacion-actions" style={{ display: 'flex', gap: '8px' }}>
+                                                                                                                               <button className="action-btn-mini view" title="Ver Detalles" onClick={(e) => { e.stopPropagation(); handleOpenView(ev); }}>
+                                                                                                                                   <i className="fas fa-eye"></i>
+                                                                                                                               </button>
+                                                                                                                                <button className="action-btn-mini edit" title="Editar" onClick={(e) => { e.stopPropagation(); handleOpenEdit(ev); }}>
+                                                                                                                                    <i className="fas fa-edit"></i>
+                                                                                                                                </button>
+                                                                                                                                <button className="action-btn-mini delete" title="Eliminar" onClick={(e) => handleDelete(e, ev.evaluacion_id)}>
+                                                                                                                                    <i className="fas fa-trash-alt"></i>
+                                                                                                                                </button>
+                                                                                                                            </div>
                                                                                                                             <Chevron open={openR} />
                                                                                                                         </div>
-                                                                                                                    </h5>
+                                                                                                                    </div>
 
                                                                                                                     {openR && (
-                                                                                                                        <div style={{ padding: '20px' }}>
-                                                                                                                            <div className="evaluaciones-premium-grid">
-                                                                                                                                {evs.map(ev => (
-                                                                                                                                    <div key={ev.evaluacion_id} className={`eval-card-premium ${ev.estado.toLowerCase().replace(' ', '-')}`}>
-                                                                                                                                        <div className="card-badge">{ev.estado}</div>
-                                                                                                                                        <div className="card-header-premium">
-                                                                                                                                            <div className="materia-info">
-                                                                                                                                                <h3>{ev.materia_nombre}</h3>
-                                                                                                                                                <span>{ev.seccion_codigo}</span>
-                                                                                                                                            </div>
-                                                                                                                                            <div className="docente-info">
-                                                                                                                                                <i className="fas fa-user-tie"></i>
-                                                                                                                                                <span>{ev.docente_nombre} {ev.docente_apellido}</span>
-                                                                                                                                            </div>
-                                                                                                                                        </div>
-                                                                                                                                        <div className="card-body-premium">
-                                                                                                                                            <p className="eval-content">{ev.contenido_evaluacion}</p>
-                                                                                                                                            <div className="eval-stats">
-                                                                                                                                                <div className="stat-item">
-                                                                                                                                                    <label>Ponderación</label>
-                                                                                                                                                    <strong>{ev.valor}%</strong>
+                                                                                                                        <div style={{ padding: '0px', background: 'white' }}>
+                                                                                                                            {isLoadingEval ? (
+                                                                                                                                <div style={{ padding: '30px', textAlign: 'center' }}>
+                                                                                                                                    <div className="spinner-mini" style={{ margin: '0 auto 10px' }}></div>
+                                                                                                                                    <p style={{ fontSize: '0.9em', color: '#64748b' }}>Cargando estudiantes...</p>
+                                                                                                                                </div>
+                                                                                                                            ) : evalRecords.length === 0 ? (
+                                                                                                                                <div style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>
+                                                                                                                                    <i className="fas fa-users-slash" style={{ fontSize: '2em', marginBottom: '10px', display: 'block' }}></i>
+                                                                                                                                    No hay estudiantes para mostrar.
+                                                                                                                                </div>
+                                                                                                                            ) : (
+                                                                                                                                <div style={{ padding: '15px' }}>
+                                                                                                                                    <div className="evaluados-list-premium">
+                                                                                                                                        {evalRecords.map(record => (
+                                                                                                                                            <div key={record.estudiante_cedula} className="estudiante-record-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 15px', borderBottom: '1px solid #f1f5f9' }}>
+                                                                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                                                                                                                                    <div className={`status-dot ${record.estado === 'Completada' ? 'done' : 'pending'}`} style={{ width: '10px', height: '10px', borderRadius: '50%', background: record.estado === 'Completada' ? '#10b981' : '#f59e0b' }}></div>
+                                                                                                                                                    <div>
+                                                                                                                                                        <div style={{ fontWeight: '600', color: '#1e293b' }}>{record.estudiante_nombre} {record.estudiante_apellido}</div>
+                                                                                                                                                        <div style={{ fontSize: '0.8em', color: '#64748b' }}>{record.estudiante_cedula} • {record.estado}</div>
+                                                                                                                                                    </div>
                                                                                                                                                 </div>
-                                                                                                                                                <div className="stat-item">
-                                                                                                                                                    <label>Progreso</label>
-                                                                                                                                                    <strong>{ev.completadas}/{ev.total_evaluaciones}</strong>
-                                                                                                                                                </div>
+                                                                                                                                                {record.estado === 'Completada' && (
+                                                                                                                                                    <div style={{ textAlign: 'right' }}>
+                                                                                                                                                        <div style={{ fontWeight: 'bold', color: '#065f46' }}>{record.nota_total}/20</div>
+                                                                                                                                                    </div>
+                                                                                                                                                )}
                                                                                                                                             </div>
-                                                                                                                                            <div className="eval-footer-info">
-                                                                                                                                                <span><i className="fas fa-calendar-alt"></i> {formatearFecha(ev.fecha_evaluacion)}</span>
-                                                                                                                                                <span><i className="fas fa-clock"></i> {ev.tipo_horario}</span>
-                                                                                                                                            </div>
-                                                                                                                                        </div>
-                                                                                                                                        <div className="card-actions-premium">
-                                                                                                                                            <button type="button" onClick={() => handleOpenView(ev)} title="Ver Detalles">
-                                                                                                                                                <i className="fas fa-eye"></i>
-                                                                                                                                            </button>
-                                                                                                                                            <button type="button" onClick={() => handleOpenEdit(ev)} title="Editar">
-                                                                                                                                                <i className="fas fa-edit"></i>
-                                                                                                                                            </button>
-                                                                                                                                            <button type="button" onClick={() => navigate(`/admin/reportes`)} title="Ver Estadísticas">
-                                                                                                                                                <i className="fas fa-chart-bar"></i>
-                                                                                                                                            </button>
-                                                                                                                                        </div>
+                                                                                                                                        ))}
                                                                                                                                     </div>
-                                                                                                                                ))}
-                                                                                                                            </div>
+                                                                                                                                </div>
+                                                                                                                            )}
                                                                                                                         </div>
                                                                                                                     )}
                                                                                                                 </div>
                                                                                                             );
-                                                                                                        });
-                                                                                                    })()}
+                                                                                                        })
+                                                                                                    )}
                                                                                                 </div>
                                                                                             )}
                                                                                         </div>
