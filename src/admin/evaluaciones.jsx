@@ -480,7 +480,7 @@ export default function Evaluaciones() {
                                 <option value="Completada">Completada</option>
                             </select>
                             <button className="btn-add-premium" onClick={() => handleOpenCreate()}>
-                                <i className="fas fa-plus"></i> Nueva Evaluación
+                                <i className="fas fa-plus"></i> Agregar Evaluación
                             </button>
                         </div>
                     </div>
@@ -579,7 +579,7 @@ export default function Evaluaciones() {
                                                                                                         }}
                                                                                                         title="Agregar evaluación a esta sección"
                                                                                                     >
-                                                                                                        <i className="fas fa-plus" /> Nueva
+                                                                                                        <i className="fas fa-plus" /> Agregar Evaluación
                                                                                                     </button>
                                                                                                     <Chevron open={openSc} />
                                                                                                 </div>
@@ -593,8 +593,22 @@ export default function Evaluaciones() {
                                                                                                             <p style={{ fontSize: '0.9em', color: '#92400e', marginTop: '8px' }}>Cargando detalles...</p>
                                                                                                         </div>
                                                                                                     ) : evaluations.length === 0 ? (
-                                                                                                        <div style={{ textAlign: 'center', padding: '15px', color: '#64748b' }}>
-                                                                                                            No hay evaluaciones para esta sección.
+                                                                                                        <div style={{ textAlign: 'center', padding: '30px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #e2e8f0', margin: '10px' }}>
+                                                                                                            <i className="fas fa-clipboard-list" style={{ fontSize: '2.5em', color: '#cbd5e1', marginBottom: '15px' }} />
+                                                                                                            <h4 style={{ color: '#64748b', margin: '0 0 15px 0' }}>No hay evaluaciones registradas en esta sección</h4>
+                                                                                                            <button 
+                                                                                                                className="btn-add-premium" 
+                                                                                                                style={{ margin: '0 auto' }}
+                                                                                                                onClick={() => { 
+                                                                                                                    handleOpenCreate({
+                                                                                                                        carrera_codigo: secInfo.carrera_codigo,
+                                                                                                                        materia_codigo: secInfo.materia_codigo,
+                                                                                                                        id_seccion:     secInfo.id_seccion
+                                                                                                                    });
+                                                                                                                }}
+                                                                                                            >
+                                                                                                                <i className="fas fa-plus"></i> Agregar Evaluación
+                                                                                                            </button>
                                                                                                         </div>
                                                                                                     ) : (
                                                                                                         evaluations.sort((a,b) => {
@@ -663,7 +677,17 @@ export default function Evaluaciones() {
                                                                                                                                     <p style={{ color: '#b45309', fontSize: '0.9em', marginBottom: '20px' }}>No hay una rúbrica asociada para calificar esta evaluación. Por favor, crea una nueva o elige una existente.</p>
                                                                                                                                     <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
                                                                                                                                         <button 
-                                                                                                                                            onClick={() => navigate('/admin/crear-rubricas')} 
+                                                                                                                                            onClick={() => navigate('/admin/crear-rubricas', { 
+                                                                                                                                                state: { 
+                                                                                                                                                    preloaded: {
+                                                                                                                                                        carrera: secInfo.carrera_codigo,
+                                                                                                                                                        semestre: secInfo.semestre,
+                                                                                                                                                        materia_codigo: secInfo.materia_codigo,
+                                                                                                                                                        seccion_id: secInfo.id_seccion, // o secInfo.id
+                                                                                                                                                        evaluacion_id: ev.evaluacion_id
+                                                                                                                                                    }
+                                                                                                                                                }
+                                                                                                                                            })} 
                                                                                                                                             style={{ padding: '10px 20px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
                                                                                                                                         >
                                                                                                                                             <i className="fas fa-plus" /> Crear Rúbrica
@@ -742,7 +766,7 @@ export default function Evaluaciones() {
                         <div className="modal-premium-content">
                             <div className="modal-premium-header">
                                 <h2>
-                                    {modalMode === 'create' ? 'Nueva Evaluación' :
+                                    {modalMode === 'create' ? 'Agregar Evaluación' :
                                         modalMode === 'edit' ? 'Editar Evaluación' : 'Ver Evaluación'}
                                 </h2>
                                 <button className="close-btn" onClick={() => setShowModal(false)}>&times;</button>

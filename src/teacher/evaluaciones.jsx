@@ -75,8 +75,8 @@ export default function TeacherEvaluaciones() {
         try {
             const [evals, resCortes, resLapsos] = await Promise.all([
                 evaluacionesService.getTeacherEvaluaciones(),
-                periodosService.getCortesByPeriodo(user.periodo_usuario), //FECHA PERSONALIZADA
-                periodosService.getLapsosByPeriodo(user.periodo_usuario) //FECHA PERSONALIZADA
+                periodosService.getCortesByPeriodo('2025-1'), //FECHA PERSONALIZADA
+                periodosService.getLapsosByPeriodo('2025-1') //FECHA PERSONALIZADA
             ]);
 
             if (resCortes.success) {
@@ -119,7 +119,7 @@ export default function TeacherEvaluaciones() {
 
     const agruparEvaluaciones = (lista, cortes = [], lapsos = []) => {
         const agrupadas = {};
-        const now = new Date(); //FECHA PERSONALIZADA
+        const now = new Date('2025-10-10'); //FECHA PERSONALIZADA
 
         lista.forEach(ev => {
             const c  = ev.carrera_nombre;
@@ -375,7 +375,7 @@ export default function TeacherEvaluaciones() {
                                                                                         }}
                                                                                         title={!hasAvailableCortes ? "No hay cortes disponibles" : "Agregar evaluación a esta sección"}
                                                                                     >
-                                                                                        <i className="fas fa-plus" /> Nueva
+                                                                                        <i className="fas fa-plus" /> Agregar Evaluación
                                                                                     </button>
                                                                                     <Chevron open={openS} />
                                                                                 </div>
@@ -390,11 +390,22 @@ export default function TeacherEvaluaciones() {
                                                                                             <button 
                                                                                                 className="btn-add-premium" 
                                                                                                 style={{ margin: '0 auto', opacity: !hasAvailableCortes ? 0.6 : 1, cursor: !hasAvailableCortes ? 'not-allowed' : 'pointer' }}
-                                                                                                onClick={() => { if(hasAvailableCortes) { setModalMode('create'); setSelectedEvalId(null); setShowAddModal(true); } }}
+                                                                                                onClick={() => { 
+                                                                                                    if(hasAvailableCortes) { 
+                                                                                                        setModalMode('create'); 
+                                                                                                        setSelectedEvalId(null); 
+                                                                                                        setPreloadedData({
+                                                                                                            carrera_codigo: secData.info.carrera_codigo,
+                                                                                                            materia_codigo: secData.info.materia_codigo,
+                                                                                                            id_seccion:     secData.info.id_seccion
+                                                                                                        });
+                                                                                                        setShowAddModal(true); 
+                                                                                                    } 
+                                                                                                }}
                                                                                                 disabled={!hasAvailableCortes}
                                                                                                 title={!hasAvailableCortes ? "No hay cortes disponibles para crear evaluaciones" : ""}
                                                                                             >
-                                                                                                <i className="fas fa-plus"></i> Nueva Evaluación
+                                                                                                <i className="fas fa-plus"></i> Agregar Evaluación
                                                                                             </button>
                                                                                         </div>
                                                                                     ) : (
@@ -625,7 +636,7 @@ export default function TeacherEvaluaciones() {
                                 }}
                                 title={!hasAvailableCortes ? "No hay cortes disponibles para crear evaluaciones" : ""}
                             >
-                                <i className="fas fa-plus" /> Nueva Evaluación
+                                <i className="fas fa-plus" /> Agregar Evaluación
                             </button>
                         </div>
                     </div>
