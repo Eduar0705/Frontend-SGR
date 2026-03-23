@@ -240,7 +240,7 @@ export const evaluacionesService = {
             url = `${API_URL}/evaluaciones/crear`;
             method = 'POST';
         }
-
+        formData.periodo = (JSON.parse(localStorage.getItem('user'))).periodo_usuario
         const response = await fetch(url, {
             method: method,
             headers: {
