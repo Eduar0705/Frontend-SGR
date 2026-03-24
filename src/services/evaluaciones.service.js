@@ -64,7 +64,7 @@ export const evaluacionesService = {
     },
 
 
-    async getCarreras() {
+    async getCarrerasByPeriodo() {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/evaluaciones/carreras`, {
             params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
@@ -74,7 +74,7 @@ export const evaluacionesService = {
         return data;
     },
 
-    async getMateriasByCarrera(carreraCodigo) {
+    async getMateriasByCarreraAndPeriodo(carreraCodigo) {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/evaluaciones/carrera/${carreraCodigo}/materias`, {
             params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
@@ -84,7 +84,7 @@ export const evaluacionesService = {
         return data;
     },
 
-    async getSecciones(materiaCodigo, carreraCodigo) {
+    async getSeccionesByMatCarrAndPer(materiaCodigo, carreraCodigo) {
         const token = localStorage.getItem('token');
         const url = carreraCodigo
             ? `${API_URL}/evaluaciones/materia/${materiaCodigo}/${carreraCodigo}/secciones`

@@ -153,7 +153,7 @@ export default function Evaluaciones() {
     // ── Carga de catálogos al abrir modal ──────────────────────────────────────
     useEffect(() => {
         if (showModal) {
-            evaluacionesService.getCarreras().then(res => res.success && setCarreras(res.carreras));
+            evaluacionesService.getCarrerasByPeriodo().then(res => res.success && setCarreras(res.carreras));
             evaluacionesService.getEstrategias().then(res => res.success && setEstrategias(res.estrategias_eval));
             periodosService.getCortes().then(res => res.success && setCortes(res.cortes));
         }
@@ -163,7 +163,7 @@ export default function Evaluaciones() {
     const handleCarreraChange = async (codigo) => {
         setFormData(prev => ({ ...prev, carrera_codigo: codigo, materia_codigo: '', id_seccion: '', id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
         resetFechas();
-        const res = await evaluacionesService.getMateriasByCarrera(codigo);
+        const res = await evaluacionesService.getMateriasByCarreraAndPeriodo(codigo);
         if (res.success) setMaterias(res.materias);
         return res;
     };
@@ -172,7 +172,7 @@ export default function Evaluaciones() {
         const carrera = explicitCarrera || formData.carrera_codigo;
         setFormData(prev => ({ ...prev, materia_codigo: codigo, id_seccion: '', id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
         resetFechas();
-        const res = await evaluacionesService.getSecciones(codigo, carrera);
+        const res = await evaluacionesService.getSeccionesByMatCarrAndPer(codigo, carrera);
         if (res.success) setSecciones(res.secciones);
         return res;
     };
