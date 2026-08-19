@@ -1,54 +1,69 @@
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-// Importar componentes
-import Index from './index';
-import Login from './auth/login';
-import Register from './auth/register';
-import Recovery from './auth/recovery';
-import ResetPassword from './auth/resetPassword';
-
-//Importar archivos de Administrador
-import Home from './admin/home';
-import Docentes from './admin/docentes';
-import Configuracion from './admin/configuracion';
-import Reportes from './admin/reportes';
-import CrearRubricas from './admin/crearRubrica';
-import EvaluacionDocente from './admin/evaluacionDocente';
-import Evaluaciones from './admin/evaluaciones';
-import Rubricas from './admin/rubricas';
-import PermisosDocente from './admin/PermisosDocente';
-import Periodos from './admin/periodos';
-
-//Importar archivos de Docentes
-import Teacher from './teacher/teacher';
-import TeacherEvaluaciones from './teacher/evaluaciones';
-import TeacherCrearRubricas from './teacher/crearRubricas';
-import TeacherEstudiantes from './teacher/estudiantes';
-import TeacherReportes from './teacher/reportes';
-import TeacherRubrica from './teacher/rubricas';
-import TeacherEditarRubrica from './teacher/editarRubrica';
-
-//Importar archivos de Estudiantes
-import Student from './students/student';
-import StudentCalificaciones from './students/calificaciones';
-import StudentEvaluaciones from './students/evaluaciones';
-import UserProfile from './components/UserProfile';
-
+// Componentes comunes
 import { UIProvider, useUI } from './context/UIContext';
 import Loader from './components/Loader';
+
+// ── Vistas Públicas y Auth (Carga Diferida) ─────────────────────────
+const Index = lazy(() => import('./index'));
+const Login = lazy(() => import('./auth/login'));
+const Register = lazy(() => import('./auth/register'));
+const Recovery = lazy(() => import('./auth/recovery'));
+const ResetPassword = lazy(() => import('./auth/resetPassword'));
+
+// ── Vistas de Administrador (Carga Diferida) ────────────────────────
+const Home = lazy(() => import('./admin/home'));
+const Docentes = lazy(() => import('./admin/docentes'));
+const Configuracion = lazy(() => import('./admin/configuracion'));
+const Reportes = lazy(() => import('./admin/reportes'));
+const CrearRubricas = lazy(() => import('./admin/crearRubrica'));
+const EvaluacionDocente = lazy(() => import('./admin/evaluacionDocente'));
+const Evaluaciones = lazy(() => import('./admin/evaluaciones'));
+const Rubricas = lazy(() => import('./admin/rubricas'));
+const PermisosDocente = lazy(() => import('./admin/PermisosDocente'));
+const Periodos = lazy(() => import('./admin/periodos'));
+
+// ── Vistas de Docentes (Carga Diferida) ─────────────────────────────
+const Teacher = lazy(() => import('./teacher/teacher'));
+const TeacherEvaluaciones = lazy(() => import('./teacher/evaluaciones'));
+const TeacherCrearRubricas = lazy(() => import('./teacher/crearRubricas'));
+const TeacherEstudiantes = lazy(() => import('./teacher/estudiantes'));
+const TeacherReportes = lazy(() => import('./teacher/reportes'));
+const TeacherRubrica = lazy(() => import('./teacher/rubricas'));
+const TeacherEditarRubrica = lazy(() => import('./teacher/editarRubrica'));
+
+// ── Vistas de Estudiantes y Perfil (Carga Diferida) ──────────────────
+const Student = lazy(() => import('./students/student'));
+const StudentCalificaciones = lazy(() => import('./students/calificaciones'));
+const StudentEvaluaciones = lazy(() => import('./students/evaluaciones'));
+const UserProfile = lazy(() => import('./components/UserProfile'));
 
 function AppContent() {
     const { loading } = useUI();
     
+    // Función auxiliar para obtener el usuario de forma segura
+    const getUser = () => {
+        try {
+            return JSON.parse(localStorage.getItem('user')) || {};
+        } catch {
+            return {};
+        }
+    };
+
     return (
         <BrowserRouter>
+            {/* Loader global para peticiones asíncronas de la API */}
             <Loader show={loading} />
-            <Routes>
+            
+            {/* Suspense muestra el Loader mientras se descarga el chunk JS de la vista */}
+            <Suspense fallback={<Loader show={true} />}>
+                <Routes>
                     {/* Página principal */}
                     <Route path="/" element={<Index />} />
                     <Route path="/index" element={<Navigate to="/" replace />} />
 
-                    {/* Auth */}
+                    {/* Rutas de Autenticación */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/recovery" element={<Recovery />} />
@@ -66,7 +81,7 @@ function AppContent() {
                     <Route path='/admin/permisos/:cedula' element={<PermisosDocente />} />
                     <Route path='/admin/periodos' element={<Periodos />} />
 
-                    {/* Rutas para Docentes*/}
+                    {/* Rutas para Docentes */}
                     <Route path="/teacher" element={<Teacher />} />
                     <Route path="/teacher/evaluaciones" element={<TeacherEvaluaciones />} />
                     <Route path="/teacher/crear-rubricas" element={<TeacherCrearRubricas />} />
@@ -74,16 +89,18 @@ function AppContent() {
                     <Route path="/teacher/reportes" element={<TeacherReportes />} />
                     <Route path="/teacher/rubricas" element={<TeacherRubrica />} />
                     <Route path="/teacher/rubricas/editar/:id" element={<TeacherEditarRubrica />} />
-                    <Route path="/teacher/config" element={<UserProfile user={JSON.parse(localStorage.getItem('user'))} onLogout={() => window.location.href = '/login'} />} />
+                    <Route path="/teacher/config" element={<UserProfile user={getUser()} onLogout={() => window.location.href = '/login'} />} />
 
-                    {/* Rutas para Estudiantes*/}
+                    {/* Rutas para Estudiantes */}
                     <Route path="/student" element={<Student />} />
                     <Route path="/student/calificaciones" element={<StudentCalificaciones />} />
                     <Route path="/student/evaluaciones" element={<StudentEvaluaciones />} />
-                    <Route path="/student/config" element={<UserProfile user={JSON.parse(localStorage.getItem('user'))} onLogout={() => window.location.href = '/login'} />} />
+                    <Route path="/student/config" element={<UserProfile user={getUser()} onLogout={() => window.location.href = '/login'} />} />
+                    
                     {/* Ruta por defecto */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
+            </Suspense>
         </BrowserRouter>
     );
 }
