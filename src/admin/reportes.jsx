@@ -116,7 +116,7 @@ export default function Reportes() {
                 tension: 0.4
             },
             {
-                label: 'Profesores Activos',
+                label: 'Profesores por Actividad',
                 data: stats.actividadMensual.map(m => m.profesores_activos),
                 borderColor: colors.success,
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -260,13 +260,13 @@ export default function Reportes() {
                             {/* Gráficas Principales */}
                             <div className="content-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '30px' }}>
                                 <div className="card" style={{ padding: '25px' }}>
-                                    <h3 className="card-title" style={{ marginBottom: '20px' }}><i className="fas fa-trophy" style={{ color: '#fbbf24' }}></i> Top Profesores (Rúbricas)</h3>
+                                    <h3 className="card-title" style={{ marginBottom: '20px' }}><i className="fas fa-trophy" style={{ color: '#fbbf24' }}></i> Top Profesores por Rúbricas</h3>
                                     <div style={{ height: '350px' }}>
                                         {topRubricasChartData && <Bar data={topRubricasChartData} options={horizontalBarOptions} />}
                                     </div>
                                 </div>
                                 <div className="card" style={{ padding: '25px' }}>
-                                    <h3 className="card-title" style={{ marginBottom: '20px' }}><i className="fas fa-medal" style={{ color: '#94a3b8' }}></i> Top Profesores (Evaluaciones)</h3>
+                                    <h3 className="card-title" style={{ marginBottom: '20px' }}><i className="fas fa-medal" style={{ color: '#94a3b8' }}></i> Top Profesores por Evaluaciones</h3>
                                     <div style={{ height: '350px' }}>
                                         {topEvaluacionesChartData && <Bar data={topEvaluacionesChartData} options={horizontalBarOptions} />}
                                     </div>
@@ -274,7 +274,7 @@ export default function Reportes() {
                             </div>
 
                             <div className="card" style={{ padding: '25px', marginBottom: '30px' }}>
-                                <h3 className="card-title" style={{ marginBottom: '20px' }}><i className="fas fa-chart-area"></i> Tendencia de Actividad (Últimos 6 Meses)</h3>
+                                <h3 className="card-title" style={{ marginBottom: '20px' }}><i className="fas fa-chart-area"></i> Tendencia de Actividad</h3>
                                 <div style={{ height: '400px' }}>
                                     {actividadMensualData && <Line data={actividadMensualData} options={chartOptions} />}
                                 </div>
