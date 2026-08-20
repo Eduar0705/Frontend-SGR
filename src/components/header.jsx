@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { useUI } from '../context/UIContext';
 import notificacionesService from '../services/notificaciones.service';
@@ -16,6 +16,8 @@ export default function Header({ title, user, onLogout }) {
     const [showConfigMenu, setShowConfigMenu] = useState(false);
     const [periodos, setPeriodos] = useState([]);
     const configMenuRef = useRef(null);
+    const routesWithAllOption = ['/admin/reportes']; //modificable
+    const showAllOption = routesWithAllOption.includes(useLocation().pathname);
     const loadNotifications = async () => {
         try {
             const result = await notificacionesService.getNotifications();
@@ -126,6 +128,10 @@ export default function Header({ title, user, onLogout }) {
                 <div className="form-header">
                     {storedUser?.id_rol == 1 && (
                         <select id="selector_periodo" className="form-select" value={periodoActual || ''} onChange={handlePeriodoChange}>
+                            {showAllOption && (
+                                <option value="any">Todos</option>
+                            )}
+                            
                             {periodos.length === 0 ? (
                                 <option value="" disabled>Cargando periodos...</option>
                             ) : (
