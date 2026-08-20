@@ -9,8 +9,8 @@ export default function Menu({ user }) {
     if (!user) return null;
 
     const handleNavClick = () => {
-        setLoading(true);
         closeSidebar();
+        setLoading(false);
     };
 
     return (
@@ -60,6 +60,10 @@ export default function Menu({ user }) {
                                 <i className="fas fa-file-alt"></i>
                                 <span>Reportes</span>
                             </NavLink>
+                            <NavLink to="/admin/guias" onClick={handleNavClick} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                                <i className="fas fa-book-open"></i>
+                                <span>Manuales y Guías</span>
+                            </NavLink>
                         </>
                     )}
 
@@ -89,6 +93,10 @@ export default function Menu({ user }) {
                                 <i className="fas fa-file-alt"></i>
                                 <span>Reportes</span>
                             </NavLink>
+                            <NavLink to="/teacher/guias" onClick={handleNavClick} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                                <i className="fas fa-book-open"></i>
+                                <span>Guía de Usuario</span>
+                            </NavLink>
                         </>
                     )}
 
@@ -105,6 +113,10 @@ export default function Menu({ user }) {
                             <NavLink to="/student/evaluaciones" onClick={handleNavClick} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                 <i className="fas fa-clipboard-check"></i>
                                 <span>Mis Evaluaciones</span>
+                            </NavLink>
+                            <NavLink to="/student/guias" onClick={handleNavClick} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                                <i className="fas fa-book-open"></i>
+                                <span>Guía de Usuario</span>
                             </NavLink>
                         </>
                     )}

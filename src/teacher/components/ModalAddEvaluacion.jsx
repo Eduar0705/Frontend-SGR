@@ -50,7 +50,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
                 if (resCarreras.success) setCarreras(resCarreras.carreras);
                 if (resEstrategias.success) setEstrategias(resEstrategias.estrategias_eval);
                 if (resCortes.success) {
-                    const now = new Date();
+                    const now = new Date('2025-11-01');
                     now.setHours(0, 0, 0, 0);
                     const filtered = resCortes.cortes.filter(c => new Date(c.fecha_fin) >= now);
                     setCortes(filtered);

@@ -1,9 +1,21 @@
-import React, { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 // Componentes comunes
 import { UIProvider, useUI } from './context/UIContext';
 import Loader from './components/Loader';
+
+// Componente para vigilar cambios de ruta y resetear loaders residuales
+function RouteChangeWatcher() {
+    const location = useLocation();
+    const { setLoading } = useUI();
+
+    useEffect(() => {
+        setLoading(false);
+    }, [location.pathname, setLoading]);
+
+    return null;
+}
 
 // ── Vistas Públicas y Auth (Carga Diferida) ─────────────────────────
 const Index = lazy(() => import('./index'));
@@ -23,6 +35,7 @@ const Evaluaciones = lazy(() => import('./admin/evaluaciones'));
 const Rubricas = lazy(() => import('./admin/rubricas'));
 const PermisosDocente = lazy(() => import('./admin/PermisosDocente'));
 const Periodos = lazy(() => import('./admin/periodos'));
+const AdminGuias = lazy(() => import('./admin/guias'));
 
 // ── Vistas de Docentes (Carga Diferida) ─────────────────────────────
 const Teacher = lazy(() => import('./teacher/teacher'));
@@ -32,11 +45,13 @@ const TeacherEstudiantes = lazy(() => import('./teacher/estudiantes'));
 const TeacherReportes = lazy(() => import('./teacher/reportes'));
 const TeacherRubrica = lazy(() => import('./teacher/rubricas'));
 const TeacherEditarRubrica = lazy(() => import('./teacher/editarRubrica'));
+const TeacherGuias = lazy(() => import('./teacher/guias'));
 
 // ── Vistas de Estudiantes y Perfil (Carga Diferida) ──────────────────
 const Student = lazy(() => import('./students/student'));
 const StudentCalificaciones = lazy(() => import('./students/calificaciones'));
 const StudentEvaluaciones = lazy(() => import('./students/evaluaciones'));
+const StudentGuias = lazy(() => import('./students/guias'));
 const UserProfile = lazy(() => import('./components/UserProfile'));
 
 function AppContent() {
@@ -53,6 +68,9 @@ function AppContent() {
 
     return (
         <BrowserRouter>
+            {/* Resetea loaders al cambiar de ruta */}
+            <RouteChangeWatcher />
+
             {/* Loader global para peticiones asíncronas de la API */}
             <Loader show={loading} />
             
@@ -80,6 +98,7 @@ function AppContent() {
                     <Route path='/admin/rubricas' element={<Rubricas />} />
                     <Route path='/admin/permisos/:cedula' element={<PermisosDocente />} />
                     <Route path='/admin/periodos' element={<Periodos />} />
+                    <Route path='/admin/guias' element={<AdminGuias />} />
 
                     {/* Rutas para Docentes */}
                     <Route path="/teacher" element={<Teacher />} />
@@ -89,12 +108,14 @@ function AppContent() {
                     <Route path="/teacher/reportes" element={<TeacherReportes />} />
                     <Route path="/teacher/rubricas" element={<TeacherRubrica />} />
                     <Route path="/teacher/rubricas/editar/:id" element={<TeacherEditarRubrica />} />
+                    <Route path="/teacher/guias" element={<TeacherGuias />} />
                     <Route path="/teacher/config" element={<UserProfile user={getUser()} onLogout={() => window.location.href = '/login'} />} />
 
                     {/* Rutas para Estudiantes */}
                     <Route path="/student" element={<Student />} />
                     <Route path="/student/calificaciones" element={<StudentCalificaciones />} />
                     <Route path="/student/evaluaciones" element={<StudentEvaluaciones />} />
+                    <Route path="/student/guias" element={<StudentGuias />} />
                     <Route path="/student/config" element={<UserProfile user={getUser()} onLogout={() => window.location.href = '/login'} />} />
                     
                     {/* Ruta por defecto */}

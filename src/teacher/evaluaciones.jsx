@@ -49,7 +49,7 @@ export default function TeacherEvaluaciones() {
     const [cortesPeriodo, setCortesPeriodo] = useState([]);
 
     const hasAvailableCortes = React.useMemo(() => {
-        const now = new Date('2025-10-10'); // FECHA PERSONALIZADA
+        const now = new Date('2025-11-01'); // FECHA PERSONALIZADA
         now.setHours(0, 0, 0, 0);
         return cortesPeriodo.some(c => new Date(c.fecha_fin) >= now);
     }, [cortesPeriodo]);
@@ -119,7 +119,7 @@ export default function TeacherEvaluaciones() {
 
     const agruparEvaluaciones = (lista, cortes = [], lapsos = []) => {
         const agrupadas = {};
-        const now = new Date('2025-10-10'); //FECHA PERSONALIZADA
+        const now = new Date('2025-11-01'); //FECHA PERSONALIZADA
 
         lista.forEach(ev => {
             // Normalizar nombres de campos
