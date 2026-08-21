@@ -14,7 +14,6 @@ const getStats = async () => {
 const getAdvancedStats = async () => {
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user'));
-    // En el backend agregamos el endpoint /advanced-stats
     const response = await axios.get(`${API_URL}/dashboard/advanced-stats?roleId=${user.id_rol}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
