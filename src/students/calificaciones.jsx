@@ -101,7 +101,6 @@ export default function StudentCalificaciones() {
                                     ))}
                                 </div>
 
-                                {/* Table Content */}
                                 {lapsos.map((lapso, index) => (
                                     <div key={index} style={{ display: activeTab === index ? 'block' : 'none' }}>
                                         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000', fontFamily: "'Segoe UI', sans-serif" }}>
@@ -111,7 +110,7 @@ export default function StudentCalificaciones() {
                                                     <th style={{ ...thStyle, width: '40%' }}>Materia</th>
                                                     <th style={thStyle}>UC</th>
                                                     <th style={thStyle}>Nota</th>
-                                                    <th style={thStyle}>Nota refer.*</th>
+                                                    <th style={thStyle}>Puntaje eval.</th>   {/* ← Nueva columna */}
                                                     <th style={thStyle}>% eval.</th>
                                                     <th style={thStyle}>Sección</th>
                                                 </tr>
@@ -125,7 +124,9 @@ export default function StudentCalificaciones() {
                                                         <td style={{ ...tdStyle, fontWeight: 'bold', textDecoration: 'underline', color: '#002e6d' }}>{materia.nombre}</td>
                                                         <td style={tdCenter}>{materia.uc}</td>
                                                         <td style={{ ...tdCenter, color: '#000080', fontWeight: 'bold' }}>{materia.nota_display}</td>
-                                                        <td style={{ ...tdCenter, color: '#000080', fontWeight: 'bold' }}>{materia.nota_referencial}</td>
+                                                        <td style={{ ...tdCenter }}>
+                                                            {(materia.porcentaje_acumulado / 5).toFixed(1)}
+                                                        </td>
                                                         <td style={tdCenter}>{materia.porcentaje_acumulado}%</td>
                                                         <td style={tdCenter}>{materia.seccion}</td>
                                                     </tr>
