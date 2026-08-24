@@ -34,7 +34,7 @@ export default function StudentCalificaciones() {
         try {
             const data = await calificacionesService.getCalificaciones();
             setLapsos(data.lapsos || []);
-            setStats(data.stats || { promedioGeneral: 0, materiasAprobadas: 0, totalMaterias: 0, porcentajeCompletado: 0 });
+            setStats(data.stats || { promedioGeneral: 0, materiasAprobadas: 0, totalMaterias: 0, porcentajeCompletado: 0, puntajeEvaluadoSobre20: 0  });
         } catch (error) {
             console.error('Error al cargar calificaciones:', error);
             Swal.fire('Error', 'No se pudieron cargar las calificaciones', 'error');
@@ -110,7 +110,7 @@ export default function StudentCalificaciones() {
                                                     <th style={{ ...thStyle, width: '40%' }}>Materia</th>
                                                     <th style={thStyle}>UC</th>
                                                     <th style={thStyle}>Nota</th>
-                                                    <th style={thStyle}>Puntaje eval.</th>   {/* ← Nueva columna */}
+                                                    <th style={thStyle}>Puntaje eval.</th>
                                                     <th style={thStyle}>% eval.</th>
                                                     <th style={thStyle}>Sección</th>
                                                 </tr>
@@ -119,14 +119,12 @@ export default function StudentCalificaciones() {
                                                 {lapso.materias.map((materia, mi) => (
                                                     <tr key={mi}
                                                         onClick={() => openMateriaDetail(materia)}
-                                                        style={{ cursor: 'pointer', background: mi % 2 === 0 ? '#fff' : '#f9f9f9' }}>
+                                                            style={{ cursor: 'pointer', background: mi % 2 === 0 ? '#fff' : '#f9f9f9' }}>
                                                         <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 'bold' }}>{materia.codigo}</td>
                                                         <td style={{ ...tdStyle, fontWeight: 'bold', textDecoration: 'underline', color: '#002e6d' }}>{materia.nombre}</td>
                                                         <td style={tdCenter}>{materia.uc}</td>
                                                         <td style={{ ...tdCenter, color: '#000080', fontWeight: 'bold' }}>{materia.nota_display}</td>
-                                                        <td style={{ ...tdCenter }}>
-                                                            {(materia.porcentaje_acumulado / 5).toFixed(1)}
-                                                        </td>
+                                                        <td style={{ ...tdCenter }}> {(materia.porcentaje_acumulado / 5).toFixed(1)}</td>
                                                         <td style={tdCenter}>{materia.porcentaje_acumulado}%</td>
                                                         <td style={tdCenter}>{materia.seccion}</td>
                                                     </tr>
