@@ -123,8 +123,8 @@ export default function StudentCalificaciones() {
                                                         <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 'bold' }}>{materia.codigo}</td>
                                                         <td style={{ ...tdStyle, fontWeight: 'bold', textDecoration: 'underline', color: '#002e6d' }}>{materia.nombre}</td>
                                                         <td style={tdCenter}>{materia.uc}</td>
-                                                        <td style={{ ...tdCenter, color: '#000080', fontWeight: 'bold' }}>{materia.nota_display}</td>
-                                                        <td style={{ ...tdCenter }}> {(materia.porcentaje_acumulado / 5).toFixed(1)}</td>
+                                                        <td style={{ ...tdCenter, color: '#000080', fontWeight: 'bold' }}>{materia.nota_20}</td>
+                                                        <td style={{ ...tdCenter }}> {(materia.puntaje_acum_sobre_20)}</td>
                                                         <td style={tdCenter}>{materia.porcentaje_acumulado}%</td>
                                                         <td style={tdCenter}>{materia.seccion}</td>
                                                     </tr>
@@ -157,7 +157,7 @@ export default function StudentCalificaciones() {
                             </div>
                             <div style={{ background: '#f0f9ff', padding: '15px', borderRadius: '8px', textAlign: 'center', marginBottom: '20px' }}>
                                 <span style={{ display: 'block', color: '#64748b', fontSize: '14px', marginBottom: '5px' }}>Calificación Actual</span>
-                                <span style={{ fontSize: '2em', fontWeight: 'bold', color: '#1e40af' }}>{selectedMateria.nota_display}/20</span>
+                                <span style={{ fontSize: '2em', fontWeight: 'bold', color: '#1e40af' }}>{selectedMateria.nota_20}/20</span>
                             </div>
 
                             <h4 style={{ marginBottom: '15px' }}><i className="fas fa-list-alt"></i> Evaluaciones (Rúbricas)</h4>
