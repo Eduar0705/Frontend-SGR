@@ -170,7 +170,7 @@ function DetailContent({ data }) {
             <Section title="Resultados de la Evaluación" icon="fa-chart-line">
                 <div style={{ background: '#f0f9ff', padding: '15px', borderRadius: '8px', textAlign: 'center', marginBottom: '10px' }}>
                     <span style={{ display: 'block', color: '#64748b', fontSize: '13px' }}>Puntaje Total</span>
-                    <span style={{ fontSize: '2em', fontWeight: 'bold', color: '#1e40af' }}>{evaluacion.puntaje_total || 'Pendiente'}</span>
+                    <span style={{ fontSize: '2em', fontWeight: 'bold', color: '#1e40af' }}>{evaluacion.puntaje_total || "Pendiente"}</span>
                 </div>
                 <p><strong>Fecha:</strong> {evaluacion.fecha_evaluacion ? new Date(evaluacion.fecha_evaluacion).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'}</p>
                 {evaluacion.observaciones && (
@@ -203,7 +203,7 @@ function DetailContent({ data }) {
                                            style={{ color: nivel.seleccionado ? '#3b82f6' : '#cbd5e1' }}></i>
                                         <strong style={{ flex: 1 }}>{nivel.nombre}</strong>
                                         <span style={{ color: '#3b82f6', fontSize: '13px', fontWeight: 'bold' }}>
-                                            {nivel.puntaje >= nivel.puntaje_maximo
+                                            {nivel.puntaje > nivel.puntaje_maximo
                                                 ? `${nivel.puntaje} pts`
                                                 : `${nivel.puntaje}/${nivel.puntaje_maximo} pts`}
                                         </span>

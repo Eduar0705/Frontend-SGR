@@ -17,12 +17,9 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
         try {
             const resp = await evaluacionesService.getEvaluacionDetalles(idEvaluacion, cedula);
             if (resp.success) {
-                // El backend devuelve id_evaluacion en minúsculas o camello? 
-                // Revisando TeacherEvaluacionesModel.js:302 es er.id_evaluacion
                 setEvalData(resp);
                 setObservaciones(resp.evaluacion.observaciones || '');
                 
-                // Initialize selections from already saved detail if any
                 const initialSels = {};
                 resp.criterios.forEach(crit => {
                     const selectedNivel = crit.niveles.find(n => n.seleccionado);
@@ -54,15 +51,15 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
         }));
     };
 
-    const calcularCalificacion = () => {
-        if (!evalData) return 0;
-        const puntajeObtenido = Object.values(selecciones).reduce((sum, sel) => sum + sel.puntaje, 0);
-        const puntajeMaximo = evalData.criterios.reduce((sum, crit) => sum + parseFloat(crit.puntaje_maximo), 0);
-        return puntajeMaximo > 0 ? (puntajeObtenido / puntajeMaximo) * 100 : 0;
-    };
-
     const puntajeRealObtenido = () => {
-        return Object.values(selecciones).reduce((sum, sel) => sum + sel.puntaje, 0);
+        let puntaje = 0;
+        let seleccionados = Object.values(selecciones);
+        if (!evalData) return 0;
+        for(let i = 0; i<seleccionados.length; i++)
+        {
+            puntaje += seleccionados[i].puntaje
+        }
+        return puntaje
     };
 
     const handleGuardar = async () => {
@@ -74,7 +71,7 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
             return;
         }
 
-        const calificacionFinal = calcularCalificacion();
+        const calificacionFinal = puntajeRealObtenido();
 
         const detalles = evalData.criterios.map(crit => ({
             criterio_id: crit.id,
@@ -184,7 +181,7 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                                                 <div style={{ flex: 1 }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                                                         <strong style={{ color: isSelected ? '#1e3a8a' : '#334155' }}>{nivel.nombre}</strong>
-                                                        <span style={{ color: isSelected ? '#2563eb' : '#64748b', fontWeight: 'bold' }}>{nivel.puntaje} pts</span>
+                                                        <span style={{ color: isSelected ? '#2563eb' : '#64748b', fontWeight: 'bold' }}>{nivel.puntaje}/{nivel.puntaje_maximo} pts</span>
                                                     </div>
                                                     <p style={{ margin: 0, fontSize: '0.9em', color: '#64748b' }}>{nivel.descripcion}</p>
                                                 </div>
@@ -200,11 +197,11 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                     <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginTop: '25px', marginBottom: '25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                             <div style={{ color: '#64748b' }}>Puntaje Obtenido: <strong style={{ color: '#1e293b' }}>{puntajeRealObtenido().toFixed(2)}</strong></div>
-                            <div style={{ color: '#64748b' }}>Puntaje Máximo: <strong style={{ color: '#1e293b' }}>{maxPts.toFixed(2)}</strong></div>
+                            <div style={{ color: '#64748b' }}>Puntaje Máximo: <strong style={{ color: '#1e293b' }}>{evalData.evaluacion.porcentaje_evaluacion}</strong></div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ color: '#64748b', fontSize: '0.9em', textTransform: 'uppercase', fontWeight: 'bold' }}>Calificación Final</div>
-                            <div style={{ fontSize: '2em', color: '#3b82f6', fontWeight: 'bold' }}>{calcularCalificacion().toFixed(2)}<span style={{ fontSize: '0.5em', color: '#94a3b8' }}>/100</span></div>
+                            <div style={{ fontSize: '2em', color: '#3b82f6', fontWeight: 'bold' }}>{(puntajeRealObtenido() * 100/parseFloat(evalData.evaluacion.porcentaje_evaluacion)).toFixed(2)}<span style={{ fontSize: '0.5em', color: '#94a3b8' }}>/100</span></div>
                         </div>
                     </div>
 

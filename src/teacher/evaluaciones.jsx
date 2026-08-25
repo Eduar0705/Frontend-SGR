@@ -49,7 +49,7 @@ export default function TeacherEvaluaciones() {
     const [cortesPeriodo, setCortesPeriodo] = useState([]);
 
     const hasAvailableCortes = React.useMemo(() => {
-        const now = new Date('2025-11-01'); // FECHA PERSONALIZADA
+        const now = new Date('2026-03-16'); // FECHA PERSONALIZADA
         now.setHours(0, 0, 0, 0);
         return cortesPeriodo.some(c => new Date(c.fecha_fin) >= now);
     }, [cortesPeriodo]);
@@ -119,7 +119,7 @@ export default function TeacherEvaluaciones() {
 
     const agruparEvaluaciones = (lista, cortes = [], lapsos = []) => {
         const agrupadas = {};
-        const now = new Date('2025-11-01'); //FECHA PERSONALIZADA
+        const now = new Date('2025-08-21'); //FECHA PERSONALIZADA
 
         lista.forEach(ev => {
             // Normalizar nombres de campos
@@ -549,12 +549,12 @@ export default function TeacherEvaluaciones() {
                                                                                                                                         </div>
                                                                                                                                         <div className="row-score-section">
                                                                                                                                             <span className="score-main">{ev.puntaje_total || '0.00'}</span>
-                                                                                                                                            <span className="score-label">Nota / 100</span>
+                                                                                                                                            <span className="score-label">Nota / %</span>
                                                                                                                                         </div>
                                                                                                                                         <div className="row-actions">
                                                                                                                                             {ev.estado === 'Completada' ? (
                                                                                                                                                 <>
-                                                                                                                                                    <button className="btn-row-action eval" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} disabled={!evalInfo.canEvaluate} title="Editar Evaluacion">
+                                                                                                                                                    <button className="btn-row-action eval" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} disabled={false} title="Editar Evaluacion">
                                                                                                                                                         <i className="fas fa-edit"></i> <span> Editar </span>
                                                                                                                                                     </button>
                                                                                                                                                     <button className="btn-row-action view" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteDetalles({ idEvaluacion: ev.id_evaluacion, cedula: ev.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowDetalles(true); }, 800); }} title="Ver Detalles">
