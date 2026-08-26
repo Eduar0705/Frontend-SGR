@@ -106,10 +106,10 @@ export default function Rubricas() {
     }, [filteredRubricas, entriesPerPage]);
 
     // Ver / Imprimir rúbrica
-    const handleVerRubrica = async (id) => {
+    const handleVerRubrica = async (id, id_eval) => {
         try {
             Swal.fire({ title: 'Cargando rúbrica...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const data = await rubricasService.getRubricaDetalle(id);
+            const data = await rubricasService.getRubricaDetalle(id, id_eval);
             if (data.success) {
                 Swal.close();
                 imprimirRubricaFormal(data.rubrica, data.criterios);
@@ -163,7 +163,7 @@ export default function Rubricas() {
     };
 
     // Apertura del Modal de Edición
-    const handleEditRubrica = async (id) => {
+    const handleEditRubrica = async (id, id_eval) => {
         try {
             Swal.fire({ title: 'Cargando datos...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
@@ -176,7 +176,7 @@ export default function Rubricas() {
             setTiposRubrica(tipos);
             setCarreras(carrs);
 
-            const res = await rubricasService.getRubricaForEdit(id);
+            const res = await rubricasService.getRubricaForEdit(id, id_eval);
             if (res.success) {
                 const r = res.rubrica;
                 setCurrentRubricaId(id);
@@ -509,10 +509,10 @@ export default function Rubricas() {
                                                 </td>
                                                 <td style={{ padding: '15px', textAlign: 'center' }}>
                                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                                        <button onClick={() => handleVerRubrica(r.id)} className="btns" style={{ background: '#94a3b8', color: 'white', padding: '8px', borderRadius: '8px' }} title="Ver">
+                                                        <button onClick={() => handleVerRubrica(r.id, r.id_evaluacion)} className="btns" style={{ background: '#94a3b8', color: 'white', padding: '8px', borderRadius: '8px' }} title="Ver">
                                                             <i className="fas fa-eye"></i>
                                                         </button>
-                                                        <button onClick={() => handleEditRubrica(r.id)} className="btns" style={{ background: '#3b82f6', color: 'white', padding: '8px', borderRadius: '8px' }} title="Editar">
+                                                        <button onClick={() => handleEditRubrica(r.id, r.id_evaluacion)} className="btns" style={{ background: '#3b82f6', color: 'white', padding: '8px', borderRadius: '8px' }} title="Editar">
                                                             <i className="fas fa-edit"></i>
                                                         </button>
                                                         <button onClick={() => handleEliminarRubrica(r.id)} className="btns" style={{ background: '#ef4444', color: 'white', padding: '8px', borderRadius: '8px' }} title="Eliminar">

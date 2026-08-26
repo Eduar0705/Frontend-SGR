@@ -92,7 +92,7 @@ export const rubricasService = {
     async getRubricas() {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         if (!user.periodo_usuario) {
-            console.warn('No hay período de usuario disponible');
+            console.error('No hay período de usuario disponible');
         }
         
         const response = await fetchJSON(`/rubricas/admin/rubricas`, {
@@ -118,16 +118,16 @@ export const rubricasService = {
         return Array.isArray(response?.estrategias_eval) ? response.estrategias_eval : [];
     },
 
-    async getRubricaDetalle(id) {
+    async getRubricaDetalle(id, id_eval) {
         if (!id) throw new Error('ID de rúbrica requerido');
-        return fetchJSON(`/rubricas/admin/rubricas/detalle/${id}`, {
-            params: { t: Date.now() } // Evitar caché
+        return fetchJSON(`/rubricas/admin/rubricas/detalle/${id}/${id_eval}`, {
+            params: { t: Date.now() }
         });
     },
 
-    async getRubricaForEdit(id) {
+    async getRubricaForEdit(id, id_eval) {
         if (!id) throw new Error('ID de rúbrica requerido');
-        return fetchJSON(`/rubricas/admin/rubricas/editar/${id}`);
+        return fetchJSON(`/rubricas/admin/rubricas/editar/${id}/${id_eval}`);
     },
 
     async getCarreraXSeccion(idSecc) {
