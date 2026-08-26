@@ -10,7 +10,7 @@ import '../assets/css/crearRubrica.css';
 import { useUI } from '../context/UIContext';
 
 export default function TeacherEditarRubrica() {
-    const { id } = useParams();
+    const { id, id_eval } = useParams();
     const navigate = useNavigate();
     const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
@@ -75,7 +75,7 @@ export default function TeacherEditarRubrica() {
             setTiposRubrica(data.tipos || []);
 
             // Load the rubric data to be edited
-            const editData = await teacherRubricasService.getRubricaForEdit(id);
+            const editData = await teacherRubricasService.getRubricaForEdit(id, id_eval);
             if (!editData.success) throw new Error(editData.message || 'Error al cargar rúbrica');
 
             const r = editData.rubrica;

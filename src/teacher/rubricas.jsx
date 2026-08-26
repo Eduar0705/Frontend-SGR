@@ -77,14 +77,14 @@ export default function TeacherRubrica() {
         }
     };
 
-    const handleEdit = (id) => {
-        navigate(`/teacher/rubricas/editar/${id}`);
+    const handleEdit = (id, id_eval) => {
+        navigate(`/teacher/rubricas/editar/${id}/${id_eval}`);
     };
 
-    const handleView = async (id) => {
+    const handleView = async (id, id_eval) => {
         try {
             Swal.fire({ title: 'Cargando rúbrica...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const data = await teacherRubricasService.getRubricaDetalle(id);
+            const data = await teacherRubricasService.getRubricaDetalle(id, id_eval);
             if (data.success) {
                 Swal.close();
                 const opened = imprimirRubricaFormal(data.rubrica, data.criterios);
@@ -178,10 +178,10 @@ export default function TeacherRubrica() {
                                             </td>
                                             <td style={{ padding: '12px', textAlign: 'center' }}>
                                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                                    <button onClick={() => handleView(rubrica.id)} className="btn-icon view" title="Ver" style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>
+                                                    <button onClick={() => handleView(rubrica.id, rubrica.id_evaluacion)} className="btn-icon view" title="Ver" style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>
                                                         <i className="fas fa-eye"></i>
                                                     </button>
-                                                    <button onClick={() => handleEdit(rubrica.id)} className="btn-icon edit" title="Editar" style={{ background: '#eab308', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>
+                                                    <button onClick={() => handleEdit(rubrica.id, rubrica.id_evaluacion)} className="btn-icon edit" title="Editar" style={{ background: '#eab308', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>
                                                         <i className="fas fa-edit"></i>
                                                     </button>
                                                     <button onClick={() => handleDelete(rubrica.id)} className="btn-icon delete" title="Eliminar" style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>

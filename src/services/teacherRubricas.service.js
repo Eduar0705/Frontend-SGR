@@ -61,16 +61,16 @@ export const teacherRubricasService = {
         return await res.json();
     },
 
-    async getRubricaDetalle(id) {
+    async getRubricaDetalle(id, id_eval) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/teacher/rubricas/detalle/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/teacher/rubricas/detalle/${id}/${id_eval}`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (!res.ok) throw new Error('Error al obtener detalle de la rúbrica');
         return await res.json();
     },
 
-    async getRubricaForEdit(id) {
+    async getRubricaForEdit(id, id_eval) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/teacher/rubricas/editar/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/teacher/rubricas/editar/${id}/${id_eval}`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (!res.ok) throw new Error('Error al obtener rúbrica para editar');
         return await res.json();
     },

@@ -107,7 +107,7 @@ function AppContent() {
                     <Route path="/teacher/estudiantes" element={<TeacherEstudiantes />} />
                     <Route path="/teacher/reportes" element={<TeacherReportes />} />
                     <Route path="/teacher/rubricas" element={<TeacherRubrica />} />
-                    <Route path="/teacher/rubricas/editar/:id" element={<TeacherEditarRubrica />} />
+                    <Route path="/teacher/rubricas/editar/:id/:id_eval" element={<TeacherEditarRubrica />} />
                     <Route path="/teacher/guias" element={<TeacherGuias />} />
                     <Route path="/teacher/config" element={<UserProfile user={getUser()} onLogout={() => window.location.href = '/login'} />} />
 
