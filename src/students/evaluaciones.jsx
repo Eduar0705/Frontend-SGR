@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Menu from '../components/menu';
 import Header from '../components/header';
@@ -20,6 +20,7 @@ export default function StudentEvaluaciones() {
     const [loading, setLoading] = useState(true);
     const [selectedDetail, setSelectedDetail] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
+    const [orderBy, setOrderBy] = useState('fecha_fija'); // nuevo estado
 
     useEffect(() => {
         if (!user) { navigate('/login'); return; }
@@ -46,11 +47,28 @@ export default function StudentEvaluaciones() {
             setSelectedDetail(data);
         } catch (error) {
             Swal.fire('Error', 'No se pudieron cargar los detalles', 'error');
+            console.error(error)
             setSelectedDetail(null);
         } finally {
             setDetailLoading(false);
         }
     };
+    const sortedEvaluaciones = useMemo(() => {
+        const sorted = [...evaluaciones];
+        if (orderBy === 'fecha_fija') {
+            sorted.sort((a, b) => new Date(b.fecha_fija) - new Date(a.fecha_fija));
+        } else if (orderBy === 'fecha_evaluacion') {
+            sorted.sort((a, b) => {
+                const dateA = a.fecha_evaluacion ? new Date(a.fecha_evaluacion) : null;
+                const dateB = b.fecha_evaluacion ? new Date(b.fecha_evaluacion) : null;
+                if (dateA === null && dateB === null) return 0;
+                if (dateA === null) return -1;
+                if (dateB === null) return 1;
+                return dateB - dateA;
+            });
+        }
+        return sorted;
+    }, [evaluaciones, orderBy]);
 
     if (!user) return null;
 
@@ -61,7 +79,32 @@ export default function StudentEvaluaciones() {
                 <Header title="Mis Evaluaciones" user={user} onLogout={() => navigate('/login')} />
 
                 <div className="view active" style={{ padding: '20px' }}>
-                    <h1 style={{ marginBottom: '20px', color: '#1e293b' }}>Evaluaciones del Estudiante</h1>
+                    {/* Título y desplegable */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <h1 style={{ color: '#1e293b' }}>Tus Evaluaciones</h1>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <label htmlFor="orderSelect" style={{ fontSize: '14px', color: '#475569' }}>Ordenar por:</label>
+                            <div className="filter-group">
+                                <select 
+                                    class="form-select"
+                                    id="orderSelect"
+                                    value={orderBy}
+                                    onChange={(e) => setOrderBy(e.target.value)}
+                                    style={{
+                                        padding: '6px 12px',
+                                        borderRadius: '6px',
+                                        border: '1px solid #cbd5e1',
+                                        background: '#fff',
+                                        fontSize: '14px',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <option value="fecha_fija">Fecha de evaluación</option>
+                                    <option value="fecha_evaluacion">Fecha de corregido</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
                     {loading ? (
                         <p style={{ textAlign: 'center', color: '#666', padding: '40px' }}>Cargando evaluaciones...</p>
@@ -69,18 +112,28 @@ export default function StudentEvaluaciones() {
                         <p style={{ textAlign: 'center', color: '#666', padding: '40px' }}>No hay evaluaciones disponibles.</p>
                     ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
-                            {evaluaciones.map((ev) => (
+                            {sortedEvaluaciones.map((ev) => (
                                 <div key={ev.evaluacion_id} style={cardStyle}>
                                     <h3 style={{ color: '#1e40af', marginBottom: '12px', fontSize: '1.1rem' }}>{ev.contenido}</h3>
                                     <InfoLine icon="fa-book" label="Materia" value={ev.materia} />
                                     <InfoLine icon="fa-clipboard" label="Tipo" value={ev.tipo_evaluacion || '-'} />
-                                    <InfoLine icon="fa-percent" label="Porcentaje" value={`${ev.porcentaje_evaluacion}%`} />
-                                    <InfoLine icon="fa-star" label="Puntaje Total" value={`${(parseFloat(ev.puntaje_total) / 5).toFixed(1)}/20 (${parseFloat(ev.puntaje_total).toFixed(1)}/100)`} />
                                     <InfoLine icon="fa-user-tie" label="Profesor" value={ev.profesor} />
-                                    <InfoLine icon="fa-calendar" label="Fecha" value={ev.fecha_evaluacion ? new Date(ev.fecha_evaluacion).toLocaleDateString('es-ES') : 'Pendiente'} />
+                                    <InfoLine icon="fa-percent" label="Ponderación" value={`${ev.porcentaje_evaluacion} pts`} />
+                                    <InfoLine icon="fa-star" label="Puntaje Obtenido" value={ev.puntaje_total ? `${parseFloat(ev.puntaje_total).toFixed(2)} pts` : "Pendiente"} />
+                                    <InfoLine icon="fa-calendar" label="Fecha" value={new Date(ev.fecha_fija).toLocaleDateString('es-ES')} />
+                                    {ev.fecha_evaluacion ? (
+                                        <InfoLine icon="fa-calendar" label="Corregido el" value={new Date(ev.fecha_evaluacion).toLocaleDateString('es-ES')} />
+                                    ) : (
+                                        <InfoLine icon="fa-clock" label="Sin Corregir" value="Pendiente" />
+                                    )
+                                    }
                                     <button
                                         onClick={() => verDetalles(ev.evaluacion_id)}
-                                        style={{ marginTop: '15px', width: '100%', padding: '10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                        style=
+                                        {ev.fecha_evaluacion
+                                            ? { marginTop: '15px', width: '100%', padding: '10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }
+                                            : { marginTop: '15px', width: '100%', padding: '10px', background: '#bebebe', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }
+                                        }
                                     >
                                         <i className="fas fa-eye"></i> Ver Detalles
                                     </button>
@@ -121,7 +174,7 @@ export default function StudentEvaluaciones() {
     );
 }
 
-// --- Sub-componentes ---
+// --- Sub-componentes (sin cambios) ---
 function InfoLine({ icon, label, value }) {
     return (
         <p style={{ margin: '6px 0', color: '#475569', fontSize: '14px' }}>
@@ -144,7 +197,6 @@ function DetailContent({ data }) {
     const { evaluacion, estudiante, rubrica, criterios } = data;
     return (
         <>
-            {/* Estudiante */}
             <Section title="Información del Estudiante" icon="fa-user">
                 <div style={infoGridStyle}>
                     <p><strong>Nombre:</strong> {estudiante.nombre} {estudiante.apellido}</p>
@@ -154,7 +206,6 @@ function DetailContent({ data }) {
                 </div>
             </Section>
 
-            {/* Rúbrica */}
             <Section title="Información de la Rúbrica" icon="fa-book">
                 <div style={infoGridStyle}>
                     <p><strong>Nombre:</strong> {rubrica.nombre_rubrica}</p>
@@ -166,7 +217,6 @@ function DetailContent({ data }) {
                 {rubrica.competencias && <p style={{ marginTop: '4px' }}><strong>Competencias:</strong> {rubrica.competencias}</p>}
             </Section>
 
-            {/* Resultados */}
             <Section title="Resultados de la Evaluación" icon="fa-chart-line">
                 <div style={{ background: '#f0f9ff', padding: '15px', borderRadius: '8px', textAlign: 'center', marginBottom: '10px' }}>
                     <span style={{ display: 'block', color: '#64748b', fontSize: '13px' }}>Puntaje Total</span>
@@ -181,7 +231,6 @@ function DetailContent({ data }) {
                 )}
             </Section>
 
-            {/* Criterios */}
             <Section title="Criterios de Evaluación" icon="fa-clipboard-list">
                 {criterios.map((criterio, ci) => (
                     <div key={ci} style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', marginBottom: '15px' }}>
@@ -200,7 +249,7 @@ function DetailContent({ data }) {
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                                         <i className={nivel.seleccionado ? 'fas fa-check-circle' : 'far fa-circle'}
-                                           style={{ color: nivel.seleccionado ? '#3b82f6' : '#cbd5e1' }}></i>
+                                            style={{ color: nivel.seleccionado ? '#3b82f6' : '#cbd5e1' }}></i>
                                         <strong style={{ flex: 1 }}>{nivel.nombre}</strong>
                                         <span style={{ color: '#3b82f6', fontSize: '13px', fontWeight: 'bold' }}>
                                             {nivel.puntaje > nivel.puntaje_maximo
@@ -230,7 +279,7 @@ function Section({ title, icon, children }) {
     );
 }
 
-// --- Estilos ---
+// --- Estilos (sin cambios) ---
 const cardStyle = {
     background: '#fff', borderRadius: '12px', padding: '20px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'transform 0.2s, box-shadow 0.2s',

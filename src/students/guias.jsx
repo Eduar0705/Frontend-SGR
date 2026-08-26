@@ -77,7 +77,7 @@ export default function StudentGuias() {
                             </span>
                             <h1><i className="fas fa-book-open"></i> Guía y Manual de Usuario</h1>
                             <p>
-                                Bienvenido a la guía oficial para estudiantes de <strong>SYSRUBR</strong>. Aprende a consultar tus calificaciones desglosadas por rúbrica, verificar tus próximas evaluaciones y entender los criterios pedagógicos con los que serás evaluado.
+                                Bienvenido a la guía oficial de <strong>SGR</strong> para estudiantes. Aprende a consultar tus calificaciones desglosadas por rúbrica, verificar tus próximas evaluaciones y entender los criterios pedagógicos con los que serás evaluado.
                             </p>
 
                             <div className="guide-search-wrapper">

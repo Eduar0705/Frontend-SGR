@@ -734,7 +734,7 @@ export default function Evaluaciones() {
                                                                                                                                                  </div>
                                                                                                                                                  <div className="row-score-section">
                                                                                                                                                      <span className="score-main">{record.puntaje_total || '0.00'}</span>
-                                                                                                                                                     <span className="score-label">Nota / 100</span>
+                                                                                                                                                     <span className="score-label">Nota / %</span>
                                                                                                                                                  </div>
                                                                                                                                                  <div className="row-actions">
                                                                                                                                                      {record.estado === 'Completada' ? (
