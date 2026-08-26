@@ -162,20 +162,6 @@ export const evaluacionesService = {
         return await response.data;
     },
 
-    async createEvaluaciones(rubrica_id, estudiantes, observaciones) {
-        const token = localStorage.getItem('token');
-        const periodo = (JSON.parse(localStorage.getItem('user'))).periodo_usuario
-        const response = await fetch(`${API_URL}/teacher/evaluaciones/crear`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ rubrica_id, estudiantes, observaciones, periodo })
-        });
-        return await response.json();
-    },
-
     async getEstrategias() {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/evaluaciones/estrategias`, {
