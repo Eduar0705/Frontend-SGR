@@ -247,6 +247,7 @@ export default function TeacherCrearRubricas() {
     // Manejo de Criterios y Niveles
     const addCriterio = () => {
         const nuevoCriterio = {
+            id: null,
             id_local: Date.now(),
             descripcion: '',
             puntaje_maximo: '',

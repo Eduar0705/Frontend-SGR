@@ -116,32 +116,46 @@ export default function TeacherRubrica() {
         <main className="main-content">
             <Menu user={user} />
             <div className="content-wrapper">
-                <Header title="Mis Rúbricas" user={user} onLogout={() => navigate('/login')} />
+                <Header title="Rúbricas por Evaluación" user={user} onLogout={() => navigate('/login')} />
                 <div className="view active" style={{ padding: '20px' }}>
                     <div className="view-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span>Mostrar:</span>
+                            <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Mostrar:</span>
                             <select 
                                 value={itemsPerPage} 
                                 onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px' }}
+                                style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                             >
                                 <option value="5">5</option>
                                 <option value="10">10</option>
                                 <option value="25">25</option>
                                 <option value="50">50</option>
                             </select>
-                            <span>entradas</span>
                         </div>
-                        <div className="search-box" style={{ position: 'relative' }}>
-                            <i className="fa fa-search" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#666' }}></i>
-                            <input 
-                                type="text" 
-                                placeholder="Buscar rúbrica..." 
-                                value={searchTerm}
-                                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                                style={{ padding: '8px 12px 8px 30px', border: '1px solid #ddd', borderRadius: '6px' }}
-                            />
+                        <div style={{ display: 'flex', gap: '15px', flex: 1, maxWidth: '600px' }}>
+                            <div className="search-box" style={{ position: 'relative' }}>
+                                <i className="fa fa-search" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#666' }}></i>
+                                <input 
+                                    type="text" 
+                                    placeholder="Buscar rúbrica..." 
+                                    value={searchTerm}
+                                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                    style={{ width: '100%', padding: '10px 15px 10px 45px', borderRadius: '10px', border: '1px solid #e2e8f0' }}
+                                />
+                            </div>
+                            <select
+                                value={'professorFilter'}
+                                style={{ padding: '10px 15px', borderRadius: '10px', border: '1px solid #e2e8f0', minWidth: '180px' }}
+                            >
+                                <option value="">Todas las rúbricas</option>
+                            </select>
+                            <button
+                            onClick={() => navigate('/teacher/crear-rubricas')}
+                            className="btns"
+                            style={{ background: '#1e3a8a', color: 'white', padding: '10px 25px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}
+                        >
+                            <i className="fas fa-plus"></i> Nueva Rúbrica
+                        </button>
                         </div>
                     </div>
 
@@ -149,28 +163,31 @@ export default function TeacherRubrica() {
                         {loading ? (
                             <div style={{ padding: '20px', textAlign: 'center' }}>Cargando rúbricas...</div>
                         ) : (
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead style={{ background: '#f8f9fa' }}>
+                            <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                                     <tr>
-                                        <th style={{ padding: '12px', borderBottom: '1px solid #ddd', textAlign: 'left' }}>Nombre G.</th>
-                                        <th style={{ padding: '12px', borderBottom: '1px solid #ddd', textAlign: 'left' }}>Materia</th>
-                                        <th style={{ padding: '12px', borderBottom: '1px solid #ddd', textAlign: 'left' }}>Sección</th>
-                                        <th style={{ padding: '12px', borderBottom: '1px solid #ddd', textAlign: 'left' }}>Tipo</th>
-                                        <th style={{ padding: '12px', borderBottom: '1px solid #ddd', textAlign: 'left' }}>%</th>
-                                        <th style={{ padding: '12px', borderBottom: '1px solid #ddd', textAlign: 'left' }}>F. Evaluación</th>
-                                        <th style={{ padding: '12px', borderBottom: '1px solid #ddd', textAlign: 'left' }}>Estado</th>
-                                        <th style={{ padding: '12px', borderBottom: '1px solid #ddd', textAlign: 'center' }}>Acciones</th>
+                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Rúbrica</th>
+                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Evaluación</th>
+                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Usada por</th>
+                                        <th style={{ padding: '15px', textAlign: 'center', color: '#64748b' }}>Estado</th>
+                                        <th style={{ padding: '15px', textAlign: 'center', color: '#64748b' }}>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {currentItems.length > 0 ? currentItems.map(rubrica => (
                                         <tr key={rubrica.id} style={{ borderBottom: '1px solid #eee' }}>
-                                            <td style={{ padding: '12px' }}>{rubrica.nombre_rubrica}</td>
-                                            <td style={{ padding: '12px' }}>{rubrica.materia_nombre}</td>
-                                            <td style={{ padding: '12px' }}>{rubrica.seccion_codigo}</td>
-                                            <td style={{ padding: '12px' }}>{rubrica.tipo_evaluacion || 'N/A'}</td>
-                                            <td style={{ padding: '12px' }}>{rubrica.porcentaje_evaluacion}%</td>
-                                            <td style={{ padding: '12px' }}>{rubrica.fecha_evaluacion ? new Date(rubrica.fecha_evaluacion).toLocaleDateString() : 'N/A'}</td>
+                                            <td style={{ padding: '12px' }}>
+                                                <div style={{ fontWeight: 'bold', color: '#1e293b' }}>{rubrica.nombre_rubrica}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Creada el: {new Date(rubrica.fecha_creacion).toLocaleDateString('es-ES')}</div>
+                                            </td>
+                                            <td style={{ padding: '12px' }}>
+                                                    <div style={{ fontSize: '0.9rem'}}>{rubrica.contenido}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#64748b'}}>{rubrica.carrera_nombre} - {rubrica.materia_nombre} Sec. {rubrica.seccion_letra}</div>
+                                            </td>
+                                            <td style={{ padding: '12px' }}>
+                                                <div style={{ fontSize: '0.9rem'}}>{rubrica.docente_nombre}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#64748b'}}>el día {rubrica.fecha_evaluacion ? new Date(rubrica.fecha_evaluacion).toLocaleDateString() : 'N/A'}</div>
+                                            </td>
                                             <td style={{ padding: '12px' }}>
                                                 <span className={`status-badge ${rubrica.estado === 'Activa' ? 'active' : 'inactive'}`} style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '0.85em', background: rubrica.estado === 'Activa' ? '#e2f5ec' : '#fee2e2', color: rubrica.estado === 'Activa' ? '#10b981' : '#ef4444' }}>
                                                     {rubrica.estado}
@@ -178,16 +195,16 @@ export default function TeacherRubrica() {
                                             </td>
                                             <td style={{ padding: '12px', textAlign: 'center' }}>
                                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                                    <button onClick={() => handleView(rubrica.id, rubrica.id_evaluacion)} className="btn-icon view" title="Ver" style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>
-                                                        <i className="fas fa-eye"></i>
-                                                    </button>
-                                                    <button onClick={() => handleEdit(rubrica.id, rubrica.id_evaluacion)} className="btn-icon edit" title="Editar" style={{ background: '#eab308', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>
-                                                        <i className="fas fa-edit"></i>
-                                                    </button>
-                                                    <button onClick={() => handleDelete(rubrica.id)} className="btn-icon delete" title="Eliminar" style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
+                                                        <button onClick={() => handleView(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#94a3b8', color: 'white', padding: '8px', borderRadius: '8px' }} title="Ver">
+                                                            <i className="fas fa-eye"></i>
+                                                        </button>
+                                                        <button onClick={() => handleEdit(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#3b82f6', color: 'white', padding: '8px', borderRadius: '8px' }} title="Editar">
+                                                            <i className="fas fa-edit"></i>
+                                                        </button>
+                                                        <button onClick={() => handleDelete(rubrica.id)} className="btns" style={{ background: '#ef4444', color: 'white', padding: '8px', borderRadius: '8px' }} title="Eliminar">
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
                                             </td>
                                         </tr>
                                     )) : (

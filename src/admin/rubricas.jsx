@@ -204,11 +204,13 @@ export default function Rubricas() {
                     instrucciones: r.instrucciones || '',
                     estrategias: r.estrategias ? r.estrategias.map(e => e.id) : [],
                     criterios: res.criterios.map((c, idx) => ({
+                        id: c.id,
                         id_local: idx + 1,
                         descripcion: c.descripcion,
                         puntaje_maximo: c.puntaje_maximo,
                         orden: c.orden,
                         niveles: c.niveles.map((n, nidx) => ({
+                            id: n.id,
                             id_local: nidx + 1,
                             nombre_nivel: n.nombre_nivel,
                             descripcion: n.descripcion,
@@ -423,7 +425,7 @@ export default function Rubricas() {
         <main className="main-content">
             <Menu user={user} />
             <div className="content-wrapper" style={{ width: '100%' }}>
-                <Header title="Banco de Rúbricas" user={user} onLogout={() => navigate('/login')} />
+                <Header title="Rúbricas por evaluación" user={user} onLogout={() => navigate('/login')} />
 
                 <div style={{ padding: '30px' }}>
                     <div className="view-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', gap: '20px' }}>
@@ -478,10 +480,10 @@ export default function Rubricas() {
                             <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                                     <tr>
-                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Rúbrica / Materia</th>
+                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Rúbrica</th>
                                         <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Evaluación</th>
-                                        <th style={{ padding: '15px', textAlign: 'center', color: '#64748b' }}>Puntos</th>
-                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Docente</th>
+                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Usada por</th>
+                                        <th style={{ padding: '15px', textAlign: 'center', color: '#64748b' }}>Estado</th>
                                         <th style={{ padding: '15px', textAlign: 'center', color: '#64748b' }}>Acciones</th>
                                     </tr>
                                 </thead>
@@ -493,19 +495,21 @@ export default function Rubricas() {
                                             <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                                 <td style={{ padding: '15px' }}>
                                                     <div style={{ fontWeight: 'bold', color: '#1e293b' }}>{r.nombre_rubrica}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{r.materia_nombre} - {r.seccion_codigo}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Creada el: {new Date(r.fecha_creacion).toLocaleDateString('es-ES')}</div>
+                                                    
                                                 </td>
                                                 <td style={{ padding: '15px' }}>
-                                                    <div style={{ fontSize: '0.9rem' }}>{r.tipo_evaluacion}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{new Date(r.fecha_evaluacion).toLocaleDateString('es-ES')}</div>
-                                                </td>
-                                                <td style={{ padding: '15px', textAlign: 'center' }}>
-                                                    <span style={{ background: '#dcfce7', color: '#166534', padding: '4px 10px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                                                        {r.porcentaje_evaluacion}%
-                                                    </span>
+                                                    <div style={{ fontSize: '0.9rem' }}>{r.contenido}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{r.carrera_nombre} - {r.materia_nombre} Sec. {r.seccion_letra}</div>
                                                 </td>
                                                 <td style={{ padding: '15px' }}>
                                                     <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>{r.docente_nombre}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>el dia {new Date(r.fecha_evaluacion).toLocaleDateString('es-ES')}</div>
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    <span className={`status-badge ${r.estado === 'Activa' ? 'active' : 'inactive'}`} style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '0.85em', background: r.estado === 'Activa' ? '#e2f5ec' : '#fee2e2', color: r.estado === 'Activa' ? '#10b981' : '#ef4444' }}>
+                                                        {r.estado}
+                                                    </span>
                                                 </td>
                                                 <td style={{ padding: '15px', textAlign: 'center' }}>
                                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -603,7 +607,27 @@ export default function Rubricas() {
                                         </select>
                                     </div>
                                 </div>
-
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                        <div style={{ flex: 1, marginRight: '20px' }}>
+                                            <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Evaluación</label>
+                                            <select
+                                                value={formData.evaluacion_id}
+                                                onChange={(e) => handleEvaluacionChange(e.target.value)}
+                                                className="form-select"
+                                                required
+                                                disabled={!evaluaciones.length}
+                                            >
+                                                <option value="">Seleccione evaluación</option>
+                                                {evaluaciones.map(ev => (
+                                                    <option key={ev.evaluacion_id} value={ev.evaluacion_id}>
+                                                        {ev.contenido_evaluacion || ev.competencias} ({ev.valor || ev.ponderacion}%)
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                                     <div>
                                         <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Carrera</label>
@@ -664,32 +688,14 @@ export default function Rubricas() {
                                             {secciones.map(s => <option key={s.id} value={s.id}>{s.codigo}</option>)}
                                         </select>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                                        <div style={{ flex: 1, marginRight: '20px' }}>
-                                            <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Evaluación</label>
-                                            <select
-                                                value={formData.evaluacion_id}
-                                                onChange={(e) => handleEvaluacionChange(e.target.value)}
-                                                className="form-select"
-                                                required
-                                                disabled={!evaluaciones.length}
-                                            >
-                                                <option value="">Seleccione evaluación</option>
-                                                {evaluaciones.map(ev => (
-                                                    <option key={ev.evaluacion_id} value={ev.evaluacion_id}>
-                                                        {ev.contenido_evaluacion || ev.competencias} ({ev.valor || ev.ponderacion}%)
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
+                                    <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
                                             <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', textTransform: 'uppercase' }}>Suma de Criterios</div>
-                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios - formData.porcentaje_evaluacion) < 0.01 ? '#059669' : '#ef4444' }}>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios) > 0.025 ? '#059669' : '#ef4444' }}>
                                                 {totalPuntosCriterios.toFixed(2)} / {formData.porcentaje_evaluacion}
                                             </div>
-                                        </div>
                                     </div>
                                 </div>
+                                
 
                                 <div className="criterios-container">
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #1e3a8a', paddingBottom: '10px', marginBottom: '20px' }}>
