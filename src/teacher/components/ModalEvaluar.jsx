@@ -76,7 +76,8 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
         const detalles = evalData.criterios.map(crit => ({
             criterio_id: crit.id,
             nivel_id: selecciones[crit.id].nivel_id,
-            puntaje_obtenido: selecciones[crit.id].puntaje
+            puntaje_obtenido: selecciones[crit.id].puntaje, //CAMBIAR POR EL INPUT
+            puntaje_maximo: selecciones[crit.id].puntaje
         }));
 
         try {
@@ -88,7 +89,7 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                 detalles
             };
 
-            const resp = await evaluacionesService.saveEvaluacionResultado(evalData.evaluacion.id_evaluacion, evalData.estudiante.cedula, payload);
+            const resp = await evaluacionesService.saveEvaluacionResultado(evalData.evaluacion.evaluacion_id, evalData.estudiante.cedula, payload);
 
             if (resp.success) {
                 Swal.fire('Éxito', 'Evaluación guardada correctamente', 'success').then(() => onSaved());
