@@ -117,7 +117,7 @@ export default function Student() {
                                                         </div>
                                                         <div style={{ textAlign: 'right' }}>
                                                             <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: parseFloat(evaluacion.puntaje_total) >= 10 ? '#15803d' : '#ef4444' }}>
-                                                                {parseFloat(evaluacion.puntaje_total).toFixed(1)} / 20
+                                                                {parseFloat(evaluacion.puntaje_total)} / {evaluacion.ponderacion}
                                                             </div>
                                                             <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                                                                 {new Date(evaluacion.fecha_evaluacion).toLocaleDateString()}
