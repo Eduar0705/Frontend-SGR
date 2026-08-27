@@ -147,7 +147,7 @@ export const rubricasService = {
         
         return fetchJSON(`/rubricas/rubrica/actualizar/${id}`, {
             method: 'POST',
-            body: rubricaData // Axios serializará automáticamente
+            body: rubricaData
         });
     },
 
@@ -181,8 +181,8 @@ export const rubricasService = {
     async saveRubrica(rubricaData) {
         if (!rubricaData || typeof rubricaData !== 'object') throw new Error('Datos de rúbrica inválidos');
         
-        const { nombre_rubrica, id_evaluacion, tipo_rubrica, instrucciones, criterios } = rubricaData;
-        if (!nombre_rubrica || !id_evaluacion || !tipo_rubrica || !instrucciones || !criterios) {
+        const { nombre_rubrica, id_evaluacion, tipo_rubrica, instrucciones, criterios, porcentaje_evaluacion } = rubricaData;
+        if (!nombre_rubrica || !id_evaluacion || !tipo_rubrica || !instrucciones || !criterios || !porcentaje_evaluacion) {
             throw new Error('Faltan campos obligatorios');
         }
         
