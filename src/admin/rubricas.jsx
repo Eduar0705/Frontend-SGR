@@ -377,7 +377,7 @@ export default function Rubricas() {
         if (Math.abs(totalPuntos - formData.porcentaje_evaluacion) > 0.01) {
             return Swal.fire(
                 'Error de Puntos',
-                `La suma de criterios (${totalPuntos.toFixed(2)}) debe ser igual al porcentaje (${formData.porcentaje_evaluacion}%)`,
+                `La suma de criterios (${totalPuntos.toFixed(3)}) debe ser igual al porcentaje (${formData.porcentaje_evaluacion}%)`,
                 'error'
             );
         }
@@ -691,7 +691,7 @@ export default function Rubricas() {
                                     <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
                                             <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', textTransform: 'uppercase' }}>Suma de Criterios</div>
                                             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios) > 0.025 ? '#059669' : '#ef4444' }}>
-                                                {totalPuntosCriterios.toFixed(2)} / {formData.porcentaje_evaluacion}
+                                                {totalPuntosCriterios.toFixed(3)} / {formData.porcentaje_evaluacion}
                                             </div>
                                     </div>
                                 </div>

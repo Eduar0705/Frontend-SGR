@@ -119,7 +119,7 @@ export default function StudentEvaluaciones() {
                                     <InfoLine icon="fa-clipboard" label="Tipo" value={ev.tipo_evaluacion || '-'} />
                                     <InfoLine icon="fa-user-tie" label="Profesor" value={ev.profesor} />
                                     <InfoLine icon="fa-percent" label="Ponderación" value={`${ev.porcentaje_evaluacion} pts`} />
-                                    <InfoLine icon="fa-star" label="Puntaje Obtenido" value={ev.puntaje_total ? `${parseFloat(ev.puntaje_total).toFixed(2)} pts` : "Pendiente"} />
+                                    <InfoLine icon="fa-star" label="Puntaje Obtenido" value={ev.puntaje_total ? `${parseFloat(ev.puntaje_total).toFixed(3)} pts` : "Pendiente"} />
                                     <InfoLine icon="fa-calendar" label="Fecha" value={new Date(ev.fecha_fija).toLocaleDateString('es-ES')} />
                                     {ev.fecha_evaluacion ? (
                                         <InfoLine icon="fa-calendar" label="Corregido el" value={new Date(ev.fecha_evaluacion).toLocaleDateString('es-ES')} />

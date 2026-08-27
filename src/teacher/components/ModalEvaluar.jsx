@@ -197,12 +197,12 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                     {/* Resumen */}
                     <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginTop: '25px', marginBottom: '25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                            <div style={{ color: '#64748b' }}>Puntaje Obtenido: <strong style={{ color: '#1e293b' }}>{puntajeRealObtenido().toFixed(2)}</strong></div>
+                            <div style={{ color: '#64748b' }}>Puntaje Obtenido: <strong style={{ color: '#1e293b' }}>{puntajeRealObtenido().toFixed(3)}</strong></div>
                             <div style={{ color: '#64748b' }}>Puntaje Máximo: <strong style={{ color: '#1e293b' }}>{evalData.evaluacion.porcentaje_evaluacion}</strong></div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ color: '#64748b', fontSize: '0.9em', textTransform: 'uppercase', fontWeight: 'bold' }}>Calificación Final</div>
-                            <div style={{ fontSize: '2em', color: '#3b82f6', fontWeight: 'bold' }}>{(puntajeRealObtenido() * 100/parseFloat(evalData.evaluacion.porcentaje_evaluacion)).toFixed(2)}<span style={{ fontSize: '0.5em', color: '#94a3b8' }}>/100</span></div>
+                            <div style={{ fontSize: '2em', color: '#3b82f6', fontWeight: 'bold' }}>{(puntajeRealObtenido() * 100/parseFloat(evalData.evaluacion.porcentaje_evaluacion)).toFixed(3)}<span style={{ fontSize: '0.5em', color: '#94a3b8' }}>/100</span></div>
                         </div>
                     </div>
 

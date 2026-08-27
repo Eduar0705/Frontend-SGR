@@ -220,7 +220,7 @@ export default function TeacherEstudiantes() {
                                             </td>
                                             <td>
                                                 <span className={`promedio ${est.promedio_puntaje >= 70 ? 'alto' : (est.promedio_puntaje >= 50 ? 'medio' : 'bajo')}`}>
-                                                    {est.promedio_puntaje ? parseFloat(est.promedio_puntaje).toFixed(2) : '0.00'}
+                                                    {est.promedio_puntaje ? parseFloat(est.promedio_puntaje).toFixed(3) : '0.00'}
                                                 </span>
                                             </td>
                                             <td>

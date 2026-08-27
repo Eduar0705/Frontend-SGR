@@ -164,8 +164,8 @@ export default function StudentCalificaciones() {
 
                             {selectedMateria.rubricas && selectedMateria.rubricas.length > 0 ? (
                                 selectedMateria.rubricas.map((rubrica, ri) => {
-                                    const puntaje = rubrica.puntaje_obtenido !== null ? parseFloat(rubrica.puntaje_obtenido).toFixed(2) : '-';
-                                    const maximo = parseFloat(rubrica.puntaje_maximo).toFixed(2);
+                                    const puntaje = rubrica.puntaje_obtenido !== null ? parseFloat(rubrica.puntaje_obtenido).toFixed(3) : '-';
+                                    const maximo = parseFloat(rubrica.puntaje_maximo).toFixed(3);
                                     const progressWidth = rubrica.puntaje_obtenido !== null && rubrica.puntaje_maximo > 0
                                         ? (rubrica.puntaje_obtenido / rubrica.puntaje_maximo) * 100 : 0;
 

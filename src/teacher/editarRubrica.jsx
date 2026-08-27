@@ -305,7 +305,7 @@ export default function TeacherEditarRubrica() {
         }
 
         if (Math.abs(sumaCriterios - formData.porcentaje_evaluacion) > 0.5) {
-            Swal.fire('Error', `La suma de puntajes (${sumaCriterios.toFixed(2)}) no coincide con el porcentaje (${formData.porcentaje_evaluacion}%)`, 'error');
+            Swal.fire('Error', `La suma de puntajes (${sumaCriterios.toFixed(3)}) no coincide con el porcentaje (${formData.porcentaje_evaluacion}%)`, 'error');
             return;
         }
 
@@ -409,7 +409,7 @@ export default function TeacherEditarRubrica() {
                                     <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
                                         <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', textTransform: 'uppercase' }}>Suma de Criterios</div>
                                         <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios - formData.porcentaje_evaluacion) < 0.01 ? '#059669' : '#ef4444' }}>
-                                            {totalPuntosCriterios.toFixed(2)} / {formData.porcentaje_evaluacion}
+                                            {totalPuntosCriterios.toFixed(3)} / {formData.porcentaje_evaluacion}
                                         </div>
                                     </div>
                                 </div>

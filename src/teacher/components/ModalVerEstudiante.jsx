@@ -85,7 +85,7 @@ export default function ModalVerEstudiante({ estudiante, onClose }) {
                         </div>
                         <div className="stat-item">
                             <span className="stat-label">Promedio General</span>
-                            <span className="stat-value">{estudiante.promedio_puntaje ? parseFloat(estudiante.promedio_puntaje).toFixed(2) : '0.00'}</span>
+                            <span className="stat-value">{estudiante.promedio_puntaje ? parseFloat(estudiante.promedio_puntaje).toFixed(3) : '0.00'}</span>
                         </div>
                         <div className="stat-item">
                             <span className="stat-label">Última Evaluación</span>

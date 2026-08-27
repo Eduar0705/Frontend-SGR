@@ -70,7 +70,7 @@ export default function TeacherReportes() {
         labels: advancedStats?.rendimientoMateria.map(m => m.nombre) || [],
         datasets: [{
             label: 'Promedio de Notas',
-            data: advancedStats?.rendimientoMateria.map(m => parseFloat(m.promedio).toFixed(2)) || [],
+            data: advancedStats?.rendimientoMateria.map(m => parseFloat(m.promedio).toFixed(3)) || [],
             backgroundColor: 'rgba(54, 162, 235, 0.6)',
             borderColor: 'rgba(54, 162, 235, 1)',
             borderWidth: 1,

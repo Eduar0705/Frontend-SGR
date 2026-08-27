@@ -333,7 +333,7 @@ export default function CrearRubricas() {
 
         const porcentajeTotal = parseFloat(formData.porcentaje_evaluacion);
         if (Math.abs(sumaPuntajes - porcentajeTotal) > 0.01) {
-            return Swal.fire('Error', `La suma de puntajes (${sumaPuntajes.toFixed(2)}) debe ser igual al porcentaje total (${porcentajeTotal}%)`, 'error');
+            return Swal.fire('Error', `La suma de puntajes (${sumaPuntajes.toFixed(3)}) debe ser igual al porcentaje total (${porcentajeTotal}%)`, 'error');
         }
 
         const rubricaData = {
