@@ -136,15 +136,9 @@ export default function TeacherCrearRubricas() {
 
         if (!codigo) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/teacher/rubricas/semestres/${codigo}`, {
-                params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json()
-            if (data.success) {
-                setSemestres(data.data);
-            }
+
+            const data = await teacherRubricasService.getSemestres(codigo)
+                setSemestres(data);
         } catch (error) { console.error(error); }
     };
 
@@ -154,14 +148,8 @@ export default function TeacherCrearRubricas() {
 
         if (!semestre) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/teacher/rubricas/materias/${formData.carrera_codigo}/${semestre}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.success) {
-                setMaterias(data.data);
-            }
+            const data = await teacherRubricasService.getMaterias(formData.carrera_codigo, semestre);
+                setMaterias(data);
         } catch (error) { console.error(error); }
     };
 
@@ -171,14 +159,8 @@ export default function TeacherCrearRubricas() {
 
         if (!materiaCodigo) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/teacher/rubricas/secciones/${materiaCodigo}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.success) {
-                setSecciones(data.data);
-            }
+            const data = await teacherRubricasService.getSecciones(materiaCodigo)
+                setSecciones(data);
         } catch (error) { console.error(error); }
     };
 
@@ -188,14 +170,8 @@ export default function TeacherCrearRubricas() {
 
         if (!seccionId) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/teacher/rubricas/evaluaciones/${seccionId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.success) {
-                setEvaluaciones(data.evaluaciones);
-            }
+            const evaluaciones = await teacherRubricasService.getEvaluaciones(seccionId);
+                setEvaluaciones(evaluaciones);
         } catch (error) { console.error(error); }
     };
 
@@ -341,16 +317,7 @@ export default function TeacherCrearRubricas() {
 
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/teacher/rubricas`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            });
-            const data = await res.json();
+            const data = await teacherRubricasService.crearRubrica(formData)
 
             if (data.status === 'ok' || data.success) {
                 Swal.fire('Éxito', 'Rúbrica creada correctamente', 'success');
@@ -459,7 +426,7 @@ export default function TeacherCrearRubricas() {
                                 </div>
                                     <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
                                         <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', textTransform: 'uppercase' }}>Suma de Criterios</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: totalPuntosCriterios === formData.porcentaje_evaluacion ? '#059669' : '#ef4444' }}>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: totalPuntosCriterios == formData.porcentaje_evaluacion ? '#059669' : '#ef4444' }}>
                                             {totalPuntosCriterios} / {formData.porcentaje_evaluacion}
                                         </div>
                                     </div>

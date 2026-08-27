@@ -504,7 +504,7 @@ export default function Rubricas() {
                                                 </td>
                                                 <td style={{ padding: '15px' }}>
                                                     <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>{r.docente_nombre}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>el dia {new Date(r.fecha_evaluacion).toLocaleDateString('es-ES')}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>para el dia {new Date(r.fecha_evaluacion).toLocaleDateString('es-ES')}</div>
                                                 </td>
                                                 <td style={{ padding: '15px', textAlign: 'center' }}>
                                                     <span className={`status-badge ${r.estado === 'Activa' ? 'active' : 'inactive'}`} style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '0.85em', background: r.estado === 'Activa' ? '#e2f5ec' : '#fee2e2', color: r.estado === 'Activa' ? '#10b981' : '#ef4444' }}>
