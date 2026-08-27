@@ -421,7 +421,7 @@ export default function TeacherEditarRubrica() {
                                     </div>
                                     <div className="form-group">
                                         <label>Porcentaje de Evaluación (%) *</label>
-                                        <input type="number" value={formData.porcentaje_evaluacion} className="form-input" style={inputStyle} disabled />
+                                        <input type="number" step="0.001" value={formData.porcentaje_evaluacion} className="form-input" style={inputStyle} disabled />
                                     </div>
                                 </div>
 
@@ -448,7 +448,7 @@ export default function TeacherEditarRubrica() {
                                                 <input type="text" value={crit.descripcion} onChange={e => updateCriterio(crit.id, 'descripcion', e.target.value)} placeholder="Descripción del Criterio (Ej: Originalidad)" style={{ ...inputStyle, flex: 1 }} required />
                                                 <div style={{ width: '120px' }}>
                                                     <small>Puntaje Max.</small>
-                                                    <input type="number" value={crit.puntaje_maximo} onChange={e => updateCriterio(crit.id, 'puntaje_maximo', e.target.value)} style={inputStyle} step="0.01" min="0" required />
+                                                    <input type="number" step="0.001" value={crit.puntaje_maximo} onChange={e => updateCriterio(crit.id, 'puntaje_maximo', e.target.value)} style={inputStyle} min="0" required />
                                                 </div>
                                                 <button type="button" onClick={() => removeCriterio(crit.id)} style={{ ...btnStyle('#ef4444', '#fff'), padding: '10px' }} title="Eliminar Criterio"><i className="fas fa-trash"></i></button>
                                             </div>
@@ -464,7 +464,7 @@ export default function TeacherEditarRubrica() {
                                                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                             <div style={{ display: 'flex', gap: '10px' }}>
                                                                 <input type="text" value={nivel.nombre_nivel} onChange={e => updateNivel(crit.id, nivel.id, 'nombre_nivel', e.target.value)} placeholder="Nombre Nivel" style={{ ...inputStyle, flex: 1 }} required />
-                                                                <input type="number" value={nivel.puntaje} onChange={e => updateNivel(crit.id, nivel.id, 'puntaje', e.target.value)} placeholder="Puntos" style={{ ...inputStyle, width: '100px' }} step="0.01" min="0" required />
+                                                                <input type="number" step="0.001" value={nivel.puntaje} onChange={e => updateNivel(crit.id, nivel.id, 'puntaje', e.target.value)} placeholder="Puntos" style={{ ...inputStyle, width: '100px' }} min="0" required />
                                                             </div>
                                                             <textarea value={nivel.descripcion} onChange={e => updateNivel(crit.id, nivel.id, 'descripcion', e.target.value)} placeholder="Descripción del nivel..." style={inputStyle} rows="1" required />
                                                         </div>
