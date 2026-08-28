@@ -278,9 +278,10 @@ export default function Rubricas() {
             puntaje_maximo: '',
             orden: formData.criterios.length + 1,
             niveles: [
-                { id_local: Date.now() + 1, nombre_nivel: 'Excelente', descripcion: '', puntaje: '', orden: 1 },
-                { id_local: Date.now() + 2, nombre_nivel: 'Regular', descripcion: '', puntaje: '', orden: 2 },
-                { id_local: Date.now() + 3, nombre_nivel: 'Deficiente', descripcion: '', puntaje: 0, orden: 3 }
+                { id_local: Date.now() + 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '', orden: 1 },
+                { id_local: Date.now() + 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '', orden: 2 },
+                { id_local: Date.now() + 3, nombre_nivel: 'Bueno', descripcion: '', puntaje: '', orden: 3 },
+                { id_local: Date.now() + 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0, orden: 4 }
             ]
         };
 

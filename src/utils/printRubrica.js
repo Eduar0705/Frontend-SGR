@@ -19,7 +19,7 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
     // FIX #2: Si no hay niveles en ningún criterio, usar nombres por defecto
     const nombresNiveles = nivelesMap.size > 0
         ? [...nivelesMap.entries()]
-            .sort((a, b) => b[1] - a[1])   // mayor puntaje primero
+            .sort((a, b) => a[1] - b[1])   // mayor puntaje primero
             .map(([nombre]) => nombre)
         : ['Sobresaliente', 'Notable', 'Aprobado', 'Insuficiente'];
 

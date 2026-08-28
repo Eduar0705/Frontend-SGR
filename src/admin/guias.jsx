@@ -561,7 +561,7 @@ export default function AdminGuias() {
                                             </div>
                                         </div>
                                         <p className="guide-section-lead">
-                                            El docente estructura criterios y niveles de desempeño (Excelente, Bueno, Regular, Deficiente) garantizando que la suma de ponderaciones porcentuales sea exactamente 100%.
+                                            El docente estructura criterios y niveles de desempeño (Sobresaliente, Notable, Aprobado, Insuficiente) garantizando que la suma de ponderaciones porcentuales sea exactamente 100%.
                                         </p>
                                     </section>
 

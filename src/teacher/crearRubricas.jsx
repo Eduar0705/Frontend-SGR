@@ -44,10 +44,10 @@ export default function TeacherCrearRubricas() {
                 descripcion: '',
                 puntaje_maximo: '',
                 niveles: [
-                    { id_local: 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '' },
-                    { id_local: 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '' },
+                    { id_local: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0 },
                     { id_local: 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: '' },
-                    { id_local: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: '' }
+                    { id_local: 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '' },
+                    { id_local: 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '' }
                 ]
             }
         ]
@@ -228,10 +228,10 @@ export default function TeacherCrearRubricas() {
             descripcion: '',
             puntaje_maximo: '',
             niveles: [
-                { id_local: Date.now() + 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '' },
-                { id_local: Date.now() + 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '' },
-                { id_local: Date.now() + 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: '' },
-                { id_local: Date.now() + 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0 }
+                { id_local: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0 },
+                { id_local: 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: '' },
+                { id_local: 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '' },
+                { id_local: 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '' }
             ]
         };
 
