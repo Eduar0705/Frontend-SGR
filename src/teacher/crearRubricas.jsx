@@ -453,6 +453,8 @@ export default function TeacherCrearRubricas() {
                                             <i className="fas fa-trash"></i>
                                         </button>
 
+                                        <label style={{ display: 'block', color: '#1e3a8a', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '6px' }}>Nombre de Criterio</label>
+
                                         <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', paddingRight: '40px' }}>
                                             <input type="text" placeholder="Descripción del criterio (Ej: Dominio del tema)" value={c.descripcion} onChange={(e) => handleCriterioChange(cIdx, 'descripcion', e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>

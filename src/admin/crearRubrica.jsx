@@ -51,10 +51,10 @@ export default function CrearRubricas() {
             puntaje_maximo: 10,
             orden: 1,
             niveles: [
-                { id: 2, nombre: 'Sobresaliente', puntaje: 10, descripcion: '', orden: 1 },
-                { id: 3, nombre: 'Notable', puntaje: 8, descripcion: '', orden: 2 },
-                { id: 4, nombre: 'Aprobado', puntaje: 6, descripcion: '', orden: 3 },
-                { id: 5, nombre: 'Insuficiente', puntaje: 0, descripcion: '', orden: 4 }
+                { id: 5, nombre: 'Insuficiente', puntaje: 0, descripcion: '', orden: 4 },
+                { id: 4, nombre: 'Aprobado', puntaje: 0, descripcion: '', orden: 3 },
+                { id: 3, nombre: 'Notable', puntaje: 0, descripcion: '', orden: 2 },
+                { id: 2, nombre: 'Sobresaliente', puntaje: 0, descripcion: '', orden: 1 }
             ]
         }
     ]);
@@ -256,10 +256,10 @@ export default function CrearRubricas() {
             puntaje_maximo: 0,
             orden: criterios.length + 1,
             niveles: [
-                { id: id + 1, nombre: 'Sobresaliente', puntaje: 0, descripcion: '', orden: 1 },
-                { id: id + 2, nombre: 'Notable', puntaje: 0, descripcion: '', orden: 2 },
+                { id: id + 4, nombre: 'Insuficiente', puntaje: 0, descripcion: '', orden: 4 },
                 { id: id + 3, nombre: 'Aprobado', puntaje: 0, descripcion: '', orden: 3 },
-                { id: id + 4, nombre: 'Insuficiente', puntaje: 0, descripcion: '', orden: 4 }
+                { id: id + 2, nombre: 'Notable', puntaje: 0, descripcion: '', orden: 2 },
+                { id: id + 1, nombre: 'Sobresaliente', puntaje: 0, descripcion: '', orden: 1 }
             ]
         };
         const nuevosCriterios = redistribuirPuntajes(parseFloat(formData.porcentaje_evaluacion) || 10, [...criterios, nuevoCriterio]);
@@ -454,6 +454,8 @@ export default function CrearRubricas() {
                                             <i className="fas fa-trash"></i>
                                         </button>
                                         
+                                        <label style={{ display: 'block', color: '#1e3a8a', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '6px' }}>Nombre de Criterio</label>
+
                                         <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', paddingRight: '40px' }}>
                                             <input type="text" placeholder="Descripción del criterio (Ej: Dominio del tema)" value={c.descripcion} onChange={(e) => handleCriterioChange(c.id, 'descripcion', e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
                                             <input type="number" step="0.001" placeholder="Pts" value={c.puntaje_maximo} onChange={(e) => handleCriterioChange(c.id, 'puntaje_maximo', e.target.value)} style={{ width: '80px', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required disabled />
