@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useUI } from '../context/UIContext';
+import '../assets/css/home.css';
 
 export default function Menu({ user }) {
     const location = useLocation();

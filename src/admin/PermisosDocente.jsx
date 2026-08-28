@@ -5,6 +5,7 @@ import Header from '../components/header';
 import { permisosService } from '../services/permisos.service';
 import { docentesService } from '../services/docentes.service';
 import Swal from 'sweetalert2';
+import '../assets/css/home.css';
 import '../assets/css/permisos_docente.css';
 
 import { useUI } from '../context/UIContext';

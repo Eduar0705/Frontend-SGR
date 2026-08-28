@@ -4,6 +4,7 @@ import Menu from '../components/menu';
 import Header from '../components/header';
 import { docentesService } from '../services/docentes.service';
 import Swal from 'sweetalert2';
+import '../assets/css/home.css';
 import '../assets/css/docentes.css';
 import { useUI } from '../context/UIContext';
 

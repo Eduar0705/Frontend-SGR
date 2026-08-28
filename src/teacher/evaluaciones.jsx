@@ -5,6 +5,7 @@ import Menu from '../components/menu';
 import Swal from 'sweetalert2';
 import { evaluacionesService } from '../services/evaluaciones.service';
 import { periodosService } from '../services/periodos.service';
+import '../assets/css/home.css';
 import '../assets/css/evaluacion.css';
 
 import ModalEvaluar from './components/ModalEvaluar';
