@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 // Componentes comunes
 import { UIProvider, useUI } from './context/UIContext';
 import Loader from './components/Loader';
+import { handleSessionExpired, getJwtExpirationTime } from './utils/sessionHandler';
 
 // Componente para vigilar cambios de ruta y resetear loaders residuales
 function RouteChangeWatcher() {
@@ -13,6 +14,47 @@ function RouteChangeWatcher() {
     useEffect(() => {
         setLoading(false);
     }, [location.pathname, setLoading]);
+
+    return null;
+}
+
+// Componente para vigilar la expiración del token JWT e inactividad
+function SessionWatcher() {
+    const location = useLocation();
+
+    useEffect(() => {
+        const checkToken = () => {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const publicRoutes = ['/', '/index', '/login', '/register', '/recovery', '/reset-password'];
+            if (publicRoutes.includes(location.pathname)) return;
+
+            const exp = getJwtExpirationTime(token);
+            if (exp && Date.now() >= exp) {
+                handleSessionExpired();
+            }
+        };
+
+        checkToken();
+
+        const interval = setInterval(checkToken, 10000);
+
+        const handleFocusOrVisibility = () => {
+            if (!document.hidden) {
+                checkToken();
+            }
+        };
+
+        window.addEventListener('focus', handleFocusOrVisibility);
+        document.addEventListener('visibilitychange', handleFocusOrVisibility);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocusOrVisibility);
+            document.removeEventListener('visibilitychange', handleFocusOrVisibility);
+        };
+    }, [location.pathname]);
 
     return null;
 }
@@ -70,6 +112,9 @@ function AppContent() {
         <BrowserRouter>
             {/* Resetea loaders al cambiar de ruta */}
             <RouteChangeWatcher />
+
+            {/* Vigila expiración de sesión por inactividad / token */}
+            <SessionWatcher />
 
             {/* Loader global para peticiones asíncronas de la API */}
             <Loader show={loading} />
