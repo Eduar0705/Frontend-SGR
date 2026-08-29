@@ -155,9 +155,23 @@ export default function StudentCalificaciones() {
                                 <span><i className="fas fa-code"></i> Código: {selectedMateria.codigo}</span>
                                 <span><i className="fas fa-layer-group"></i> Sección: {selectedMateria.seccion}</span>
                             </div>
-                            <div style={{ background: '#f0f9ff', padding: '15px', borderRadius: '8px', textAlign: 'center', marginBottom: '20px' }}>
-                                <span style={{ display: 'block', color: '#64748b', fontSize: '14px', marginBottom: '5px' }}>Calificación Actual</span>
-                                <span style={{ fontSize: '2em', fontWeight: 'bold', color: '#1e40af' }}>{selectedMateria.nota_20}/20</span>
+                            <div style={{ background: '#f0f9ff', padding: '15px', borderRadius: '8px', textAlign: 'center', marginBottom: '20px', border: '1px solid #e0f2fe' }}>
+                                <span style={{ display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '8px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Calificación de la Materia</span>
+                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '30px' }}>
+                                    <div>
+                                        <span style={{ fontSize: '2.2em', fontWeight: 'bold', color: '#1e40af' }}>
+                                            {typeof selectedMateria.nota_20 === 'number' ? selectedMateria.nota_20.toFixed(2) : selectedMateria.nota_20}
+                                        </span>
+                                        <span style={{ display: 'block', fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Escala sobre 20</span>
+                                    </div>
+                                    <div style={{ width: '1px', height: '45px', background: '#cbd5e1' }}></div>
+                                    <div>
+                                        <span style={{ fontSize: '2.2em', fontWeight: 'bold', color: '#059669' }}>
+                                            {selectedMateria.nota_100 !== undefined ? (typeof selectedMateria.nota_100 === 'number' ? selectedMateria.nota_100.toFixed(2) : selectedMateria.nota_100) : (parseFloat(selectedMateria.nota_20 || 0) * 5).toFixed(2)}
+                                        </span>
+                                        <span style={{ display: 'block', fontSize: '12px', color: '#64748b', fontWeight: '600' }}>Escala sobre 100</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <h4 style={{ marginBottom: '15px' }}><i className="fas fa-list-alt"></i> Evaluaciones (Rúbricas)</h4>
