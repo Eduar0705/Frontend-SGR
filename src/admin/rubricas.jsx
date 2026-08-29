@@ -214,7 +214,7 @@ export default function Rubricas() {
                             id_local: nidx + 1,
                             nombre_nivel: n.nombre_nivel,
                             descripcion: n.descripcion,
-                            puntaje: n.puntaje,
+                            puntaje: n.puntaje.toFixed(3),
                             orden: n.orden
                         }))
                     }))

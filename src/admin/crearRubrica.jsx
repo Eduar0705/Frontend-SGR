@@ -285,7 +285,7 @@ export default function CrearRubricas() {
                 const orden = c.niveles.length + 1;
                 return {
                     ...c,
-                    niveles: [...c.niveles, { id: Date.now(), nombre: '', puntaje: '0.25', descripcion: '', orden }]
+                    niveles: [...c.niveles, { id: Date.now(), nombre: '', puntaje: '0.025', descripcion: '', orden }]
                 };
             }
             return c;
@@ -349,7 +349,7 @@ export default function CrearRubricas() {
                 niveles: c.niveles.map(n => ({
                     nombre_nivel: n.nombre.trim(),
                     descripcion: n.descripcion.trim(),
-                    puntaje: parseFloat(n.puntaje),
+                    puntaje: parseFloat(n.puntaje).toFixed(3),
                     orden: parseInt(n.orden)
                 }))
             }))

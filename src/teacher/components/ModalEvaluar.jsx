@@ -157,7 +157,7 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                             <div key={crit.id} className="criterio-card" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '15px', padding: '15px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
                                     <h5 style={{ margin: 0, color: '#1e293b', fontSize: '1.05em' }}>{crit.nombre}</h5>
-                                    <strong style={{ color: '#3b82f6' }}><i className="fas fa-star"></i> {crit.puntaje_maximo} pts</strong>
+                                    <strong style={{ color: '#3b82f6' }}><i className="fas fa-star"></i> {parseFloat(crit.puntaje_maximo).toFixed(3)} pts</strong>
                                 </div>
                                 <div className="niveles-desempeno" style={{ display: 'grid', gap: '10px' }}>
                                     {crit.niveles.map(nivel => {
@@ -182,7 +182,7 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                                                 <div style={{ flex: 1 }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                                                         <strong style={{ color: isSelected ? '#1e3a8a' : '#334155' }}>{nivel.nombre}</strong>
-                                                        <span style={{ color: isSelected ? '#2563eb' : '#64748b', fontWeight: 'bold' }}>{nivel.puntaje}/{nivel.puntaje_maximo} pts</span>
+                                                        <span style={{ color: isSelected ? '#2563eb' : '#64748b', fontWeight: 'bold' }}>{parseFloat(nivel.puntaje).toFixed(3)}/{parseFloat(nivel.puntaje_maximo).toFixed(3)} pts</span>
                                                     </div>
                                                     <p style={{ margin: 0, fontSize: '0.9em', color: '#64748b' }}>{nivel.descripcion}</p>
                                                 </div>

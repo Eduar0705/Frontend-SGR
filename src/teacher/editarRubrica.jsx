@@ -102,7 +102,7 @@ export default function TeacherEditarRubrica() {
                         id: n.id,
                         nombre_nivel: n.nombre_nivel || n.nombre || '',
                         descripcion: n.descripcion || '',
-                        puntaje: n.puntaje,
+                        puntaje: n.puntaje.toFixed(3),
                         orden: n.orden || nIdx + 1
                     }))
                 })));
@@ -278,7 +278,7 @@ export default function TeacherEditarRubrica() {
                 niveles: c.niveles.map((n, nIdx) => ({
                     nombre_nivel: n.nombre_nivel.trim(),
                     descripcion: n.descripcion.trim(),
-                    puntaje: parseFloat(n.puntaje),
+                    puntaje: parseFloat(n.puntaje).toFixed(3),
                     orden: nIdx + 1
                 }))
             }))

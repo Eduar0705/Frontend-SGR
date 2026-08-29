@@ -71,8 +71,8 @@ export default function TeacherEvaluaciones() {
         return fechaFormateada;
     }
 
-    const fetchEvaluaciones = async () => {
-        setLoading(true);
+    const fetchEvaluaciones = async (isSilent = false) => {
+        if (!isSilent) setLoading(true);
         try {
             const [evals, resCortes, resLapsos] = await Promise.all([
                 evaluacionesService.getTeacherEvaluaciones(),
@@ -85,18 +85,17 @@ export default function TeacherEvaluaciones() {
                 setCortesPeriodo(resCortes.data.cortes);
             }
 
-            setEstudiantesPorEvaluacion({});
-            setLoadingEvaluados({});
             agruparEvaluaciones(
                 evals, 
                 resCortes.success ? resCortes.data.cortes : [],
-                resLapsos.success ? resLapsos.data : []
+                resLapsos.success ? resLapsos.data : [],
+                isSilent
             );
         } catch (error) {
             console.error('Error fetching data:', error);
             Swal.fire('Error', 'No se pudieron cargar los datos', 'error');
         } finally {
-            setLoading(false);
+            if (!isSilent) setLoading(false);
             setGlobalLoading(false);
         }
     };
@@ -118,7 +117,7 @@ export default function TeacherEvaluaciones() {
         }
     };
 
-    const agruparEvaluaciones = (lista, cortes = [], lapsos = []) => {
+    const agruparEvaluaciones = (lista, cortes = [], lapsos = [], preserveExpanded = false) => {
         const agrupadas = {};
         const now = new Date('2025-08-21'); //FECHA PERSONALIZADA
 
@@ -190,28 +189,30 @@ export default function TeacherEvaluaciones() {
 
         setEvaluacionesAgrupadas(agrupadas);
 
-        // Expandir todos los árboles hasta la capa de secciones
-        const newCarreras = {};
-        const newSem = {};
-        const newM = {};
+        // Si no se solicita preservar (carga inicial), expandir los niveles base por defecto
+        if (!preserveExpanded) {
+            const newCarreras = {};
+            const newSem = {};
+            const newM = {};
 
-        Object.keys(agrupadas).forEach(carrera => {
-            newCarreras[carrera] = true;
-            Object.keys(agrupadas[carrera]).forEach(sem => {
-                const semKey = `${carrera}|${sem}`;
-                newSem[semKey] = true;
-                Object.keys(agrupadas[carrera][sem]).forEach(mat => {
-                    const mKey = `${carrera}|${sem}|${mat}`;
-                    newM[mKey] = true;
+            Object.keys(agrupadas).forEach(carrera => {
+                newCarreras[carrera] = true;
+                Object.keys(agrupadas[carrera]).forEach(sem => {
+                    const semKey = `${carrera}|${sem}`;
+                    newSem[semKey] = true;
+                    Object.keys(agrupadas[carrera][sem]).forEach(mat => {
+                        const mKey = `${carrera}|${sem}|${mat}`;
+                        newM[mKey] = true;
+                    });
                 });
             });
-        });
 
-        setExpandedCarreras(newCarreras);
-        setExpandedSemestres(newSem);
-        setExpandedMaterias(newM);
-        setExpandedSecciones({});
-        setExpandedRubricas({});
+            setExpandedCarreras(newCarreras);
+            setExpandedSemestres(newSem);
+            setExpandedMaterias(newM);
+            setExpandedSecciones({});
+            setExpandedRubricas({});
+        }
     };
 
     // Handlers para el modal de evaluación
@@ -246,7 +247,7 @@ export default function TeacherEvaluaciones() {
                     const res = await evaluacionesService.deleteEvaluacion(id);
                     if (res.success) {
                         Swal.fire('Eliminado', 'La evaluación ha sido eliminada con éxito.', 'success');
-                        fetchEvaluaciones();
+                        fetchEvaluaciones(true);
                     } else {
                         Swal.fire('Error', res.message || 'No se pudo eliminar la evaluación', 'error');
                     }
@@ -650,7 +651,7 @@ export default function TeacherEvaluaciones() {
                     onClose={() => setShowEvaluar(false)} 
                     onSaved={() => { 
                         setShowEvaluar(false); 
-                        fetchEvaluaciones(); 
+                        fetchEvaluaciones(true); 
                         if (selectedEstudianteEvaluar?.idEvaluacion) {
                             fetchEstudiantesDeEvaluacion(selectedEstudianteEvaluar.idEvaluacion, true);
                         }
@@ -666,7 +667,7 @@ export default function TeacherEvaluaciones() {
                     onSaved={() => { 
                         setShowAddModal(false); 
                         setPreloadedData(null);
-                        fetchEvaluaciones(); 
+                        fetchEvaluaciones(true); 
                     }} 
                     mode={modalMode}
                     currentEvalId={selectedEvalId}
