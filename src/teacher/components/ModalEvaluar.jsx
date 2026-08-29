@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { evaluacionesService } from '../../services/evaluaciones.service';
+import { aplicarRedondeoPuntaje } from '../../utils/evaluacionUtils';
 
 export default function ModalEvaluar({ data, onClose, onSaved }) {
     const { idEvaluacion, cedula } = data;
@@ -26,7 +27,9 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                     if (selectedNivel) {
                         initialSels[crit.id] = {
                             nivel_id: selectedNivel.id,
-                            puntaje: parseFloat(selectedNivel.puntaje)
+                            puntaje: parseFloat(selectedNivel.puntaje),
+                            nivel_puntaje_base: parseFloat(selectedNivel.puntaje_maximo || selectedNivel.puntaje),
+                            puntaje_maximo: parseFloat(selectedNivel.puntaje_maximo || selectedNivel.puntaje)
                         };
                     }
                 });
@@ -44,22 +47,44 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
         }
     };
 
-    const handleSelectNivel = (criterioId, nivelId, puntaje) => {
+    const handleSelectNivel = (criterioId, nivelId, puntaje, puntajeMaximo) => {
         setSelecciones(prev => ({
             ...prev,
-            [criterioId]: { nivel_id: nivelId, puntaje: parseFloat(puntaje) }
+            [criterioId]: {
+                nivel_id: nivelId,
+                puntaje: parseFloat(puntaje),
+                nivel_puntaje_base: parseFloat(puntaje),
+                puntaje_maximo: parseFloat(puntajeMaximo || puntaje)
+            }
         }));
     };
 
-    const puntajeRealObtenido = () => {
-        let puntaje = 0;
-        let seleccionados = Object.values(selecciones);
-        if (!evalData) return 0;
-        for(let i = 0; i<seleccionados.length; i++)
-        {
-            puntaje += seleccionados[i].puntaje
+    const handlePuntajeChange = (criterioId, value) => {
+        setSelecciones(prev => ({
+            ...prev,
+            [criterioId]: {
+                ...prev[criterioId],
+                puntaje: value
+            }
+        }));
+    };
+
+    const puntajeSumaDirecta = () => {
+        let suma = 0;
+        const seleccionados = Object.values(selecciones);
+        for (let i = 0; i < seleccionados.length; i++) {
+            const p = parseFloat(seleccionados[i]?.puntaje);
+            if (!isNaN(p)) {
+                suma += p;
+            }
         }
-        return puntaje
+        return suma;
+    };
+
+    const puntajeRealObtenido = () => {
+        const suma = puntajeSumaDirecta();
+        if (!evalData?.evaluacion?.porcentaje_evaluacion) return suma;
+        return aplicarRedondeoPuntaje(suma, evalData.evaluacion.porcentaje_evaluacion);
     };
 
     const handleGuardar = async () => {
@@ -71,14 +96,42 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
             return;
         }
 
+        // Validar que ningún criterio exceda el nivel por más de 10 centésimas ni sea negativo
+        for (const crit of evalData.criterios) {
+            const sel = selecciones[crit.id];
+            if (!sel) continue;
+            const nivel = crit.niveles.find(n => n.id === sel.nivel_id);
+            const basePuntaje = parseFloat(nivel?.puntaje_maximo || nivel?.puntaje || 0);
+            const puntajeAsignado = parseFloat(sel.puntaje);
+            const maxPermitido = Number((basePuntaje + 0.10001).toFixed(3));
+
+            if (isNaN(puntajeAsignado) || puntajeAsignado < 0) {
+                Swal.fire('Atención', `El puntaje del criterio "${crit.nombre}" debe ser mayor o igual a 0.`, 'warning');
+                return;
+            }
+
+            if (puntajeAsignado > maxPermitido) {
+                Swal.fire(
+                    'Atención',
+                    `El puntaje asignado al criterio "${crit.nombre}" (${puntajeAsignado}) no puede exceder el nivel por más de 0.10 centésimas (Máximo permitido: ${(basePuntaje + 0.10).toFixed(2)} pts).`,
+                    'warning'
+                );
+                return;
+            }
+        }
+
         const calificacionFinal = puntajeRealObtenido();
 
-        const detalles = evalData.criterios.map(crit => ({
-            criterio_id: crit.id,
-            nivel_id: selecciones[crit.id].nivel_id,
-            puntaje_obtenido: selecciones[crit.id].puntaje, //CAMBIAR POR EL INPUT
-            puntaje_maximo: selecciones[crit.id].puntaje
-        }));
+        const detalles = evalData.criterios.map(crit => {
+            const sel = selecciones[crit.id];
+            const nivel = crit.niveles.find(n => n.id === sel.nivel_id);
+            return {
+                criterio_id: crit.id,
+                nivel_id: sel.nivel_id,
+                puntaje_obtenido: parseFloat(sel.puntaje || 0),
+                puntaje_maximo: parseFloat(nivel?.puntaje_maximo || sel.puntaje || 1)
+            };
+        });
 
         try {
             Swal.fire({ title: 'Guardando...', didOpen: () => Swal.showLoading() });
@@ -113,8 +166,11 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
         );
     }
 
-    const maxPts = evalData.criterios.reduce((sum, crit) => sum + parseFloat(crit.puntaje_maximo), 0);
     const iniciales = `${evalData.estudiante.nombre.charAt(0)}${evalData.estudiante.apellido.charAt(0)}`.toUpperCase();
+    const sumaDirecta = puntajeSumaDirecta();
+    const puntajeFinal = puntajeRealObtenido();
+    const maxPorcentaje = parseFloat(evalData.evaluacion.porcentaje_evaluacion);
+    const fueRedondeado = puntajeFinal === maxPorcentaje && sumaDirecta < maxPorcentaje && (maxPorcentaje - sumaDirecta) <= 0.50001;
 
     return (
         <div className="modal active">
@@ -146,7 +202,7 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                             <div><strong>Rúbrica:</strong> <span style={{ color: '#475569' }}>{evalData.rubrica.nombre_rubrica}</span></div>
                             <div><strong>Materia:</strong> <span style={{ color: '#475569' }}>{evalData.rubrica.materia}</span></div>
                             <div><strong>Tipo:</strong> <span style={{ color: '#475569' }}>{evalData.rubrica.tipo_evaluacion}</span></div>
-                            <div><strong>Porcentaje:</strong> <span style={{ color: '#475569' }}>{evalData.rubrica.porcentaje_evaluacion}%</span></div>
+                            <div><strong>Porcentaje:</strong> <span style={{ color: '#475569', fontWeight: 'bold' }}>{evalData.rubrica.porcentaje_evaluacion}%</span></div>
                         </div>
                     </div>
 
@@ -160,49 +216,133 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                                     <strong style={{ color: '#3b82f6' }}><i className="fas fa-star"></i> {parseFloat(crit.puntaje_maximo).toFixed(3)} pts</strong>
                                 </div>
                                 <div className="niveles-desempeno" style={{ display: 'grid', gap: '10px' }}>
-                                    {crit.niveles.map(nivel => {
-                                        const isSelected = selecciones[crit.id]?.nivel_id === nivel.id;
-                                        return (
-                                            <label 
-                                                key={nivel.id} 
-                                                style={{ 
-                                                    display: 'flex', padding: '15px', border: `2px solid ${isSelected ? '#3b82f6' : '#e2e8f0'}`,
-                                                    borderRadius: '8px', cursor: 'pointer', background: isSelected ? '#eff6ff' : 'white',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                <input 
-                                                    type="radio" 
-                                                    name={`crit-${crit.id}`} 
-                                                    value={nivel.id} 
-                                                    checked={isSelected}
-                                                    onChange={() => handleSelectNivel(crit.id, nivel.id, nivel.puntaje)}
-                                                    style={{ display: 'none' }}
-                                                />
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                                                        <strong style={{ color: isSelected ? '#1e3a8a' : '#334155' }}>{nivel.nombre}</strong>
-                                                        <span style={{ color: isSelected ? '#2563eb' : '#64748b', fontWeight: 'bold' }}>{parseFloat(nivel.puntaje).toFixed(3)}/{parseFloat(nivel.puntaje_maximo).toFixed(3)} pts</span>
-                                                    </div>
-                                                    <p style={{ margin: 0, fontSize: '0.9em', color: '#64748b' }}>{nivel.descripcion}</p>
+                                    {crit.niveles.map((nivel, idx) => { 
+                                    const isSelected = selecciones[crit.id]?.nivel_id === nivel.id;
+                                    const maxPuntaje = parseFloat(nivel.puntaje_maximo !== undefined ? nivel.puntaje_maximo : nivel.puntaje);
+                                    const nextLevel = crit.niveles[idx + 1];
+                                    const minPuntaje = nextLevel ? parseFloat(nextLevel.puntaje) : 0;
+                                    const maxPermitido = maxPuntaje.toFixed(3);
+                                    const minPermitido = minPuntaje.toFixed(3); + 0.001
+
+                                    return (
+                                        <div 
+                                            key={nivel.id} 
+                                            onClick={() => handleSelectNivel(crit.id, nivel.id, nivel.puntaje, nivel.puntaje_maximo)}
+                                            style={{ 
+                                                padding: '14px', 
+                                                border: `2px solid ${isSelected ? '#3b82f6' : '#e2e8f0'}`,
+                                                borderRadius: '8px', 
+                                                cursor: 'pointer', 
+                                                background: isSelected ? '#eff6ff' : 'white',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <i className={isSelected ? 'fas fa-check-circle' : 'far fa-circle'} style={{ color: isSelected ? '#3b82f6' : '#cbd5e1' }}></i>
+                                                    <strong style={{ color: isSelected ? '#1e3a8a' : '#334155' }}>{nivel.nombre}</strong>
                                                 </div>
-                                            </label>
-                                        );
-                                    })}
+                                                <span style={{ color: isSelected ? '#2563eb' : '#64748b', fontWeight: 'bold' }}>
+                                                    {parseFloat(nivel.puntaje).toFixed(3)}/{parseFloat(nivel.puntaje_maximo).toFixed(3)} pts
+                                                </span>
+                                            </div>
+                                            <p style={{ margin: '0 0 0 24px', fontSize: '0.9em', color: '#64748b' }}>{nivel.descripcion}</p>
+
+                                            {isSelected && (
+                                                <div 
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    style={{ 
+                                                        marginTop: '12px', 
+                                                        paddingTop: '10px', 
+                                                        borderTop: '1px dashed #bfdbfe',
+                                                        display: 'flex',
+                                                        flexWrap: 'wrap',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        gap: '10px'
+                                                    }}
+                                                >
+                                                    <span style={{ fontSize: '0.85rem', color: '#1e40af', fontWeight: '600' }}>
+                                                        <i className="fas fa-pencil-alt"></i> Calificación para este criterio:
+                                                    </span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <input 
+                                                            type="number"
+                                                            step="0.001"
+                                                            min={minPuntaje}    
+                                                            max={maxPuntaje}    
+                                                            value={selecciones[crit.id]?.puntaje !== undefined ? parseFloat(selecciones[crit.id].puntaje).toFixed(3) : parseFloat(nivel.puntaje).toFixed(3)}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (val === '') {
+                                                                    handlePuntajeChange(crit.id, '');
+                                                                    return;
+                                                                }
+                                                                const num = parseFloat(val);
+                                                                if (!isNaN(num)) {
+                                                                    // ✅ Ajustar si supera el máximo o es inferior al mínimo
+                                                                    let newVal = num;
+                                                                    if (num > maxPuntaje) {
+                                                                        newVal = maxPuntaje;
+                                                                    } else if (num < minPuntaje) {
+                                                                        newVal = minPuntaje;
+                                                                    }
+                                                                    handlePuntajeChange(crit.id, newVal.toFixed(3));
+                                                                }
+                                                            }}
+                                                            onBlur={(e) => {
+                                                                const num = parseFloat(e.target.value);
+                                                                if (isNaN(num) || num < minPuntaje) {
+                                                                    handlePuntajeChange(crit.id, minPuntaje.toFixed(3));
+                                                                } else if (num > maxPuntaje) {
+                                                                    handlePuntajeChange(crit.id, maxPuntaje.toFixed(3));
+                                                                }
+                                                            }}
+                                                            style={{
+                                                                width: '95px',
+                                                                padding: '5px 8px',
+                                                                borderRadius: '6px',
+                                                                border: '1px solid #3b82f6',
+                                                                fontSize: '0.95rem',
+                                                                fontWeight: 'bold',
+                                                                color: '#1e40af',
+                                                                textAlign: 'right',
+                                                                background: '#fff'
+                                                            }}
+                                                        />
+                                                        <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#1e40af' }}>pts</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                                 </div>
                             </div>
                         ))}
                     </div>
 
                     {/* Resumen */}
-                    <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginTop: '25px', marginBottom: '25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginTop: '25px', marginBottom: '25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0' }}>
                         <div>
-                            <div style={{ color: '#64748b' }}>Puntaje Obtenido: <strong style={{ color: '#1e293b' }}>{puntajeRealObtenido().toFixed(3)}</strong></div>
-                            <div style={{ color: '#64748b' }}>Puntaje Máximo: <strong style={{ color: '#1e293b' }}>{evalData.evaluacion.porcentaje_evaluacion}</strong></div>
+                            <div style={{ color: '#64748b', fontSize: '0.95rem' }}>
+                                Puntaje Obtenido: <strong style={{ color: '#1e293b', fontSize: '1.1rem' }}>{puntajeFinal.toFixed(3)}</strong>
+                                {fueRedondeado && (
+                                    <span style={{ marginLeft: '8px', fontSize: '0.75rem', background: '#dcfce7', color: '#166534', padding: '2px 6px', borderRadius: '4px', fontWeight: '600' }}>
+                                        <i className="fas fa-arrow-up"></i> 
+                                    </span>
+                                )}
+                            </div>
+                            <div style={{ color: '#64748b', fontSize: '0.95rem', marginTop: '4px' }}>
+                                Puntaje Máximo: <strong style={{ color: '#1e293b' }}>{evalData.evaluacion.porcentaje_evaluacion} pts</strong>
+                            </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ color: '#64748b', fontSize: '0.9em', textTransform: 'uppercase', fontWeight: 'bold' }}>Calificación Final</div>
-                            <div style={{ fontSize: '2em', color: '#3b82f6', fontWeight: 'bold' }}>{(puntajeRealObtenido() * 100/parseFloat(evalData.evaluacion.porcentaje_evaluacion)).toFixed(3)}<span style={{ fontSize: '0.5em', color: '#94a3b8' }}>/100</span></div>
+                            <div style={{ fontSize: '2em', color: '#3b82f6', fontWeight: 'bold' }}>
+                                {(puntajeFinal * 100 / parseFloat(evalData.evaluacion.porcentaje_evaluacion)).toFixed(2)}
+                                <span style={{ fontSize: '0.5em', color: '#94a3b8' }}>/100</span>
+                            </div>
                         </div>
                     </div>
 
@@ -231,3 +371,4 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
         </div>
     );
 }
+

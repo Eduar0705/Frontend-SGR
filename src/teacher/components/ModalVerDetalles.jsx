@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { evaluacionesService } from '../../services/evaluaciones.service';
+import { aplicarRedondeoPuntaje } from '../../utils/evaluacionUtils';
 import Swal from 'sweetalert2';
 
 export default function ModalVerDetalles({ data, onClose }) {
@@ -42,6 +43,10 @@ export default function ModalVerDetalles({ data, onClose }) {
 
     const { evaluacion, estudiante, rubrica, criterios } = evalData;
     const iniciales = `${estudiante.nombre.charAt(0)}${estudiante.apellido.charAt(0)}`.toUpperCase();
+    const puntajeFinal = aplicarRedondeoPuntaje(evaluacion.puntaje_total, rubrica.porcentaje_evaluacion);
+    const calificacion100 = rubrica.porcentaje_evaluacion > 0
+        ? (puntajeFinal * 100 / parseFloat(rubrica.porcentaje_evaluacion)).toFixed(2)
+        : '0';
 
     return (
         <div className="modal active">
@@ -103,12 +108,12 @@ export default function ModalVerDetalles({ data, onClose }) {
                         <div className="criterios-list-detalles" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                             {criterios.map(crit => {
                                 const nivelSeleccionado = crit.niveles.find(n => n.seleccionado);
-                                const puntajeDesc = nivelSeleccionado ? nivelSeleccionado.puntaje : 0;
+                                const puntajeDesc = nivelSeleccionado ? parseFloat(nivelSeleccionado.puntaje).toFixed(3) : 0;
                                 return (
                                     <div key={crit.id} className="criterio-card-detalles" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '15px' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                                             <h5 style={{ margin: 0, color: '#1e293b', fontSize: '1em' }}>{crit.nombre}</h5>
-                                            <div style={{ fontWeight: 'bold', color: '#3b82f6' }}>{puntajeDesc} / {crit.puntaje_maximo} pts</div>
+                                            <div style={{ fontWeight: 'bold', color: '#3b82f6' }}>{puntajeDesc} / {parseFloat(crit.puntaje_maximo).toFixed(3)} pts</div>
                                         </div>
                                         {nivelSeleccionado ? (
                                             <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #3b82f6' }}>
@@ -138,9 +143,12 @@ export default function ModalVerDetalles({ data, onClose }) {
 
                     {/* Resumen */}
                     <div className="calificacion-final-detalles" style={{ background: '#1e293b', color: 'white', padding: '20px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ fontSize: '1.1em', fontWeight: '500' }}>Calificación Final</div>
+                        <div>
+                            <div style={{ fontSize: '0.9em', color: '#94a3b8' }}>Puntaje: {parseFloat(puntajeFinal).toFixed(3)} / {rubrica.porcentaje_evaluacion} pts</div>
+                            <div style={{ fontSize: '1.1em', fontWeight: 'bold' }}>Calificación Final</div>
+                        </div>
                         <div style={{ fontSize: '2em', fontWeight: 'bold' }}>
-                            {evaluacion.puntaje_total}<span style={{ fontSize: '0.5em', color: '#94a3b8' }}>/100  </span>
+                            {calificacion100}<span style={{ fontSize: '0.5em', color: '#94a3b8' }}>/100</span>
                         </div>
                     </div>
                 </div>
