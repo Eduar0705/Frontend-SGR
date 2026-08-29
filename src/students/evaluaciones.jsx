@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import { studentEvaluacionesService } from '../services/studentEvaluaciones.service';
@@ -11,6 +11,7 @@ import { useUI } from '../context/UIContext';
 
 export default function StudentEvaluaciones() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
@@ -27,6 +28,46 @@ export default function StudentEvaluaciones() {
         if (!user) { navigate('/login'); return; }
         loadEvaluaciones();
     }, [user, navigate]);
+
+    // Escuchar evento personalizado de notificación directa
+    useEffect(() => {
+        const handleOpenDirect = (e) => {
+            const { evaluacion_id, rubrica_id } = e.detail || {};
+            if (evaluacion_id) {
+                verDetalles(evaluacion_id);
+            } else if (rubrica_id) {
+                const found = evaluaciones.find(ev => String(ev.rubrica_id || ev.id_rubrica) === String(rubrica_id));
+                if (found) verDetalles(found.evaluacion_id);
+            }
+        };
+
+        window.addEventListener('open-student-evaluation', handleOpenDirect);
+        return () => window.removeEventListener('open-student-evaluation', handleOpenDirect);
+    }, [evaluaciones]);
+
+    // Abrir automáticamente el modal de detalles si se pasó state o query params al cargar
+    useEffect(() => {
+        if (!loading && evaluaciones.length > 0) {
+            const targetEvalId = location.state?.evaluacion_id || new URLSearchParams(location.search).get('evaluacion_id');
+            const targetRubricaId = location.state?.rubrica_id || new URLSearchParams(location.search).get('rubrica_id');
+
+            if (targetEvalId || targetRubricaId) {
+                let foundEval = null;
+                if (targetEvalId) {
+                    foundEval = evaluaciones.find(e => String(e.evaluacion_id) === String(targetEvalId));
+                }
+                if (!foundEval && targetRubricaId) {
+                    foundEval = evaluaciones.find(e => String(e.rubrica_id || e.id_rubrica) === String(targetRubricaId));
+                }
+
+                if (foundEval) {
+                    verDetalles(foundEval.evaluacion_id);
+                } else if (targetEvalId) {
+                    verDetalles(targetEvalId);
+                }
+            }
+        }
+    }, [loading, evaluaciones, location.state, location.search]);
 
     const loadEvaluaciones = async () => {
         try {
@@ -54,6 +95,24 @@ export default function StudentEvaluaciones() {
             setDetailLoading(false);
         }
     };
+
+    const verRubricaCard = async (evaluacionId) => {
+        try {
+            Swal.fire({ title: 'Cargando rúbrica...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const data = await studentEvaluacionesService.getDetalleEvaluacion(evaluacionId);
+            Swal.close();
+            if (data && (data.rubrica || data.success)) {
+                handleImprimirRubrica(data);
+            } else {
+                Swal.fire('Atención', data?.message || 'No se encontró la rúbrica para esta evaluación', 'info');
+            }
+        } catch (error) {
+            Swal.close();
+            console.error('Error verRubricaCard:', error);
+            Swal.fire('Error', 'No se pudo cargar la rúbrica', 'error');
+        }
+    };
+
     const sortedEvaluaciones = useMemo(() => {
         const sorted = [...evaluaciones];
         if (orderBy === 'fecha_fija') {
@@ -100,44 +159,90 @@ export default function StudentEvaluaciones() {
                                         cursor: 'pointer'
                                     }}
                                 >
-                                    <option value="fecha_fija">Fecha de evaluación</option>
-                                    <option value="fecha_evaluacion">Fecha de corregido</option>
+                                    <option value="fecha_fija">Fecha fija</option>
+                                    <option value="fecha_evaluacion">Fecha de evaluación</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
                     {loading ? (
-                        <p style={{ textAlign: 'center', color: '#666', padding: '40px' }}>Cargando evaluaciones...</p>
-                    ) : evaluaciones.length === 0 ? (
-                        <p style={{ textAlign: 'center', color: '#666', padding: '40px' }}>No hay evaluaciones disponibles.</p>
+                        <p style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Cargando evaluaciones...</p>
+                    ) : sortedEvaluaciones.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '60px 20px', background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                            <i className="fas fa-clipboard-list" style={{ fontSize: '48px', color: '#cbd5e1', marginBottom: '15px' }}></i>
+                            <p style={{ color: '#64748b', fontSize: '16px' }}>No tienes evaluaciones asignadas.</p>
+                        </div>
                     ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
-                            {sortedEvaluaciones.map((ev) => (
-                                <div key={ev.evaluacion_id} style={cardStyle}>
-                                    <h3 style={{ color: '#1e40af', marginBottom: '12px', fontSize: '1.1rem' }}>{ev.contenido}</h3>
-                                    <InfoLine icon="fa-book" label="Materia" value={ev.materia} />
-                                    <InfoLine icon="fa-clipboard" label="Tipo" value={ev.tipo_evaluacion || '-'} />
-                                    <InfoLine icon="fa-user-tie" label="Profesor" value={ev.profesor} />
-                                    <InfoLine icon="fa-percent" label="Ponderación" value={`${ev.porcentaje_evaluacion} pts`} />
-                                    <InfoLine icon="fa-star" label="Puntaje Obtenido" value={ev.puntaje_total ? `${parseFloat(ev.puntaje_total).toFixed(2)} pts` : "Pendiente"} />
-                                    <InfoLine icon="fa-calendar" label="Fecha" value={new Date(ev.fecha_fija).toLocaleDateString('es-ES')} />
+                        <div className="cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                            {sortedEvaluaciones.map(ev => (
+                                <div key={ev.evaluacion_id} className="card-evaluacion" style={{ background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                    <div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                                            <span style={{ fontSize: '12px', fontWeight: 'bold', background: '#e0e7ff', color: '#4338ca', padding: '3px 8px', borderRadius: '6px' }}>
+                                                {ev.materia_codigo}
+                                            </span>
+                                            <span style={{ fontSize: '12px', fontWeight: 'bold', background: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '6px' }}>
+                                                {ev.porcentaje_evaluacion}%
+                                            </span>
+                                        </div>
+                                        <h3 style={{ margin: '0 0 10px', fontSize: '17px', color: '#1e293b' }}>{ev.contenido_evaluacion || ev.competencias}</h3>
+                                        <InfoLine icon="fa-book" label="Evaluación" value={ev.contenido} />
+                                        <InfoLine icon="fa-book" label="Materia" value={ev.materia_nombre} />
+                                        <InfoLine icon="fa-layer-group" label="Sección" value={`Sección ${ev.seccion_letra}`} />
+                                        <InfoLine icon="fa-calendar-alt" label="Fecha Límite" value={ev.fecha_fija ? new Date(ev.fecha_fija).toLocaleDateString('es-ES') : 'Sin fecha'} />
+                                    </div>
                                     {ev.fecha_evaluacion ? (
                                         <InfoLine icon="fa-calendar" label="Corregido el" value={new Date(ev.fecha_evaluacion).toLocaleDateString('es-ES')} />
                                     ) : (
                                         <InfoLine icon="fa-clock" label="Sin Corregir" value="Pendiente" />
                                     )
                                     }
-                                    <button
-                                        onClick={() => verDetalles(ev.evaluacion_id)}
-                                        style=
-                                        {ev.fecha_evaluacion
-                                            ? { marginTop: '15px', width: '100%', padding: '10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }
-                                            : { marginTop: '15px', width: '100%', padding: '10px', background: '#bebebe', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }
-                                        }
-                                    >
-                                        <i className="fas fa-eye"></i> Ver Detalles
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => verRubricaCard(ev.evaluacion_id)}
+                                            style={{
+                                                flex: 1,
+                                                padding: '10px',
+                                                background: '#10b981',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontWeight: 'bold',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px',
+                                                fontSize: '13px'
+                                            }}
+                                            title="Ver Rúbrica Formal"
+                                        >
+                                            <i className="fas fa-file-alt"></i> Ver Rúbrica
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => verDetalles(ev.evaluacion_id)}
+                                            style={{
+                                                flex: 1,
+                                                padding: '10px',
+                                                background: ev.fecha_evaluacion ? '#3b82f6' : '#94a3b8',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontWeight: 'bold',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px',
+                                                fontSize: '13px'
+                                            }}
+                                        >
+                                            <i className="fas fa-eye"></i> Ver Detalles
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -154,7 +259,7 @@ export default function StudentEvaluaciones() {
                                 <i className="fas fa-file-alt" style={{ color: '#3b82f6' }}></i> Detalles de la Evaluación
                             </h2>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                {selectedDetail.success && (
+                                {(selectedDetail.rubrica || selectedDetail.criterios || selectedDetail.success) && (
                                     <button 
                                         type="button"
                                         onClick={() => handleImprimirRubrica(selectedDetail)}
@@ -185,9 +290,59 @@ export default function StudentEvaluaciones() {
                             ) : selectedDetail.success ? (
                                 <DetailContent data={selectedDetail} onPrint={() => handleImprimirRubrica(selectedDetail)} />
                             ) : selectedDetail.holdup ? (
-                                <StatusMessage icon="fa-lightbulb" color="#f59e0b" text="Esta evaluación aún está en curso. ¡Revisa más tarde!" />
+                                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                                    <i className="fas fa-lightbulb" style={{ fontSize: '48px', color: '#f59e0b', marginBottom: '15px', display: 'block' }}></i>
+                                    <h3 style={{ color: '#1e293b', marginBottom: '8px' }}>Evaluación en Curso</h3>
+                                    <p style={{ fontSize: '15px', color: '#64748b', marginBottom: '20px' }}>Esta evaluación aún está en curso. ¡Revisa más tarde!</p>
+                                    {(selectedDetail.rubrica || selectedDetail.criterios) && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleImprimirRubrica(selectedDetail)}
+                                            style={{
+                                                background: '#10b981',
+                                                color: '#fff',
+                                                border: 'none',
+                                                padding: '10px 24px',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontWeight: 'bold',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                fontSize: '14px'
+                                            }}
+                                        >
+                                            <i className="fas fa-file-alt"></i> Ver Rúbrica Formal
+                                        </button>
+                                    )}
+                                </div>
                             ) : selectedDetail.no_evaluada ? (
-                                <StatusMessage icon="fa-clock" color="#6366f1" text="No has sido evaluado aún. ¡Molesta al profesor!" />
+                                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                                    <i className="fas fa-clock" style={{ fontSize: '48px', color: '#6366f1', marginBottom: '15px', display: 'block' }}></i>
+                                    <h3 style={{ color: '#1e293b', marginBottom: '8px' }}>No has sido evaluado aún</h3>
+                                    <p style={{ fontSize: '15px', color: '#64748b', marginBottom: '20px' }}>Tu profesor aún no ha calificado esta evaluación. Puedes revisar los criterios de la rúbrica formal a continuación.</p>
+                                    {(selectedDetail.rubrica || selectedDetail.criterios) && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleImprimirRubrica(selectedDetail)}
+                                            style={{
+                                                background: '#10b981',
+                                                color: '#fff',
+                                                border: 'none',
+                                                padding: '10px 24px',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontWeight: 'bold',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                fontSize: '14px'
+                                            }}
+                                        >
+                                            <i className="fas fa-file-alt"></i> Ver Rúbrica Formal
+                                        </button>
+                                    )}
+                                </div>
                             ) : (
                                 <StatusMessage icon="fa-exclamation-triangle" color="#ef4444" text={`Error: ${selectedDetail.message || 'Por favor, intenta más tarde.'}`} />
                             )}
@@ -430,28 +585,6 @@ function DetailContent({ data, onPrint }) {
                     </div>
                 ))}
             </Section>
-
-            {/* Barra de acción al final */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '15px', marginTop: '20px' }}>
-                <button
-                    type="button"
-                    onClick={onPrint}
-                    style={{
-                        background: '#10b981',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '10px 20px',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                    }}
-                >
-                    <i className="fas fa-print"></i> Ver Rúbrica Formal / Imprimir
-                </button>
-            </div>
         </>
     );
 }

@@ -5,6 +5,10 @@ import { useUI } from '../context/UIContext';
 import notificacionesService from '../services/notificaciones.service';
 import periodosService from '../services/periodos.service';
 import { authService } from '../services/auth.service';
+import { rubricasService } from '../services/rubricas.service';
+import { teacherRubricasService } from '../services/teacherRubricas.service';
+import { studentEvaluacionesService } from '../services/studentEvaluaciones.service';
+import { imprimirRubricaFormal } from '../utils/printRubrica';
 import '../assets/css/periodos.css';
 
 export default function Header({ title, user, onLogout }) {
@@ -85,6 +89,59 @@ export default function Header({ title, user, onLogout }) {
             loadNotifications();
         } catch (error) {
             console.error('Error marking all as read:', error);
+        }
+    };
+
+    const handleNotificationClick = async (n) => {
+        if (!n.leido) {
+            await handleMarkAsRead(n.id);
+        }
+        setShowDropdown(false);
+
+        const rubricaId = n.rubrica_id || n.id_rubrica;
+        const evalId = n.evaluacion_id;
+
+        if (rubricaId || evalId) {
+            const rol = storedUser?.id_rol;
+
+            if (rol === 1) {
+                // Admin: navegar a /admin/rubricas y abrir rúbrica
+                navigate('/admin/rubricas');
+                try {
+                    Swal.fire({ title: 'Cargando rúbrica...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    const data = await rubricasService.getRubricaDetalle(rubricaId, evalId);
+                    Swal.close();
+                    if (data && (data.success || data.rubrica)) {
+                        imprimirRubricaFormal(data.rubrica, data.criterios);
+                    }
+                } catch (err) {
+                    Swal.close();
+                    console.error('Error al abrir rúbrica:', err);
+                }
+            } else if (rol === 2) {
+                // Teacher: navegar a /teacher/rubricas y abrir rúbrica
+                navigate('/teacher/rubricas');
+                try {
+                    Swal.fire({ title: 'Cargando rúbrica...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    const data = await teacherRubricasService.getRubricaDetalle(rubricaId, evalId);
+                    Swal.close();
+                    if (data && (data.success || data.rubrica)) {
+                        imprimirRubricaFormal(data.rubrica, data.criterios);
+                    }
+                } catch (err) {
+                    Swal.close();
+                    console.error('Error al abrir rúbrica:', err);
+                }
+            } else if (rol === 3) {
+                // Student: solo navegar a /student/evaluaciones y abrir modal de detalles
+                navigate('/student/evaluaciones', {
+                    state: {
+                        evaluacion_id: evalId,
+                        rubrica_id: rubricaId
+                    }
+                });
+                window.dispatchEvent(new CustomEvent('open-student-evaluation', { detail: { evaluacion_id: evalId, rubrica_id: rubricaId } }));
+            }
         }
     };
 
@@ -207,7 +264,8 @@ export default function Header({ title, user, onLogout }) {
                                         <div
                                             key={n.id}
                                             className={`notification-item ${!n.leido ? 'unread' : ''}`}
-                                            onClick={() => !n.leido && handleMarkAsRead(n.id)}
+                                            onClick={() => handleNotificationClick(n)}
+                                            style={{ cursor: 'pointer' }}
                                         >
                                             <div className="notification-content">
                                                 <p className="notif-message">{n.mensaje}</p>
