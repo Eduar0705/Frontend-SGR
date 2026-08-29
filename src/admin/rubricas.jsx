@@ -4,8 +4,9 @@ import Menu from '../components/menu';
 import Header from '../components/header';
 import { rubricasService } from '../services/rubricas.service';
 import { academicoService } from '../services/academico.service';
-import Swal from 'sweetalert2';
 import { imprimirRubricaFormal } from '../utils/printRubrica';
+import { validarEstructuraRubrica } from '../utils/evaluacionUtils';
+import Swal from 'sweetalert2';
 import '../assets/css/home.css';
 
 import { useUI } from '../context/UIContext';
@@ -29,9 +30,10 @@ export default function Rubricas() {
     const [entriesPerPage, setEntriesPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Estado del Modal de Edición
+    // Estado del Modal de Edición y Auditoría
     const [modalMode, setModalMode] = useState(null);
     const [currentRubricaId, setCurrentRubricaId] = useState(null);
+    const [auditRubrica, setAuditRubrica] = useState(null);
     const [formData, setFormData] = useState({
         nombre_rubrica: '',
         id_tipo: '',
@@ -237,11 +239,16 @@ export default function Rubricas() {
         const numCriterios = criterios.length;
         const puntajeBase = Math.floor((porcentaje / numCriterios) * 1000) / 1000;
         const resto = parseFloat((porcentaje - puntajeBase * numCriterios).toFixed(3));
+        const minBase = Math.floor((0.025 / numCriterios) * 1000) / 1000;
+        const minResto = parseFloat((0.025 - minBase * numCriterios).toFixed(3));
 
         return criterios.map((c, idx) => {
             const nuevoMax = idx === numCriterios - 1
                 ? parseFloat((puntajeBase + resto).toFixed(3))
                 : puntajeBase;
+            const minNivelCrit = idx === numCriterios - 1
+                ? parseFloat((minBase + minResto).toFixed(3))
+                : minBase;
 
             return {
                 ...c,
@@ -254,15 +261,11 @@ export default function Rubricas() {
                         nuevoPuntaje = nuevoMax;
                     } else if (nombre.includes('notable')) {
                         nuevoPuntaje = parseFloat((nuevoMax * 0.8).toFixed(3));
-                    } else if (nombre.includes('aprobado') || nombre.includes('regular')) {
+                    } else if (nombre.includes('aprobado') || nombre.includes('regular') || nombre.includes('bueno')) {
                         const factor = nombre.includes('aprobado') ? 0.6 : 0.5;
                         nuevoPuntaje = parseFloat((nuevoMax * factor).toFixed(3));
                     } else if (nombre.includes('insuficiente') || nombre.includes('deficiente')) {
-                        nuevoPuntaje = 0;
-                    }
-
-                    if (!nombre.includes('insuficiente') && !nombre.includes('deficiente') && nuevoPuntaje < 0.025) {
-                        nuevoPuntaje = 0.025;
+                        nuevoPuntaje = minNivelCrit;
                     }
 
                     return { ...n, puntaje: nuevoPuntaje };
@@ -271,7 +274,58 @@ export default function Rubricas() {
         });
     };
 
-    const handleAddCriterio = () => {
+    const handleOpenAuditModal = (rubrica) => {
+        setAuditRubrica(rubrica);
+        setModalMode('audit');
+    };
+
+    const handleAuditarAccion = async (nuevoEstado) => {
+        if (!auditRubrica) return;
+        try {
+            Swal.fire({ title: 'Actualizando estado...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const res = await rubricasService.auditarRubrica(auditRubrica.id, auditRubrica.id_evaluacion, nuevoEstado);
+            Swal.close();
+            if (res.success) {
+                Swal.fire('Éxito', res.message || `Rúbrica ${nuevoEstado.toLowerCase()} exitosamente`, 'success');
+                setModalMode(null);
+                setAuditRubrica(null);
+                loadInitialData();
+            } else {
+                Swal.fire('Error', res.message || 'No se pudo actualizar el estado', 'error');
+            }
+        } catch (error) {
+            Swal.close();
+            Swal.fire('Error', error.message || 'Error al procesar la auditoría', 'error');
+        }
+    };
+
+    const handleAddCriterio = async () => {
+        const confirm1 = await Swal.fire({
+            title: '¿Está seguro de agregar un criterio?',
+            text: 'Esta acción causará evaluaciones incompletas que tendrán que volverse a corregir.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f59e0b',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!confirm1.isConfirmed) return;
+
+        const confirm2 = await Swal.fire({
+            title: 'Confirmación definitiva',
+            text: '¿Realmente desea agregar un nuevo criterio a la rúbrica? Recuerde que deberá revisar las evaluaciones asociadas.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3b82f6',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, agregar criterio',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!confirm2.isConfirmed) return;
+
         const nuevoCriterio = {
             id_local: Date.now(),
             descripcion: '',
@@ -289,10 +343,24 @@ export default function Rubricas() {
         setFormData(prev => ({ ...prev, criterios: nuevosCriterios }));
     };
 
-    const handleRemoveCriterio = (idx) => {
+    const handleRemoveCriterio = async (idx) => {
         if (formData.criterios.length <= 1) {
             return Swal.fire('Aviso', 'Debe haber al menos un criterio', 'info');
         }
+
+        const confirmDelete = await Swal.fire({
+            title: '¿Está seguro de eliminar este criterio?',
+            text: 'Las evaluaciones corregidas se adaptarán automáticamente a la nueva cantidad de criterios.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!confirmDelete.isConfirmed) return;
+
         const tempCriterios = [...formData.criterios];
         tempCriterios.splice(idx, 1);
         const nuevosCriterios = redistribuirPuntajes(formData.porcentaje_evaluacion, tempCriterios);
@@ -372,26 +440,14 @@ export default function Rubricas() {
             return Swal.fire('Atención', 'Complete los campos obligatorios del encabezado', 'warning');
         }
 
-        const totalPuntos = formData.criterios.reduce(
-            (acc, c) => acc + parseFloat(c.puntaje_maximo || 0), 0
-        );
-        if (Math.abs(totalPuntos - formData.porcentaje_evaluacion) > 0.01) {
-            return Swal.fire(
-                'Error de Puntos',
-                `La suma de criterios (${totalPuntos.toFixed(3)}) debe ser igual al porcentaje (${formData.porcentaje_evaluacion}%)`,
-                'error'
-            );
-        }
+        const validacion = validarEstructuraRubrica({
+            criterios: formData.criterios,
+            porcentaje: formData.porcentaje_evaluacion,
+            esCreacion: false
+        });
 
-        for (const crit of formData.criterios) {
-            if (parseFloat(crit.puntaje_maximo) < 0.025) {
-                return Swal.fire('Error', `El puntaje del criterio "${crit.descripcion}" debe ser al menos 0.025`, 'error');
-            }
-            for (const nivel of crit.niveles) {
-                if (nivel.nombre_nivel !== 'Deficiente' && parseFloat(nivel.puntaje) < 0.025) {
-                    return Swal.fire('Error', `El nivel "${nivel.nombre_nivel}" del criterio "${crit.descripcion}" debe tener al menos 0.025 puntos`, 'error');
-                }
-            }
+        if (!validacion.valido) {
+            return Swal.fire('Error de Validación', validacion.mensaje, 'error');
         }
 
         try {
@@ -508,12 +564,39 @@ export default function Rubricas() {
                                                     <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>para el dia {new Date(r.fecha_evaluacion).toLocaleDateString('es-ES')}</div>
                                                 </td>
                                                 <td style={{ padding: '15px', textAlign: 'center' }}>
-                                                    <span className={`status-badge ${r.estado === 'Activa' ? 'active' : 'inactive'}`} style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '0.85em', background: r.estado === 'Activa' ? '#e2f5ec' : '#fee2e2', color: r.estado === 'Activa' ? '#10b981' : '#ef4444' }}>
-                                                        {r.estado}
+                                                    <span
+                                                        style={{
+                                                            padding: '4px 10px',
+                                                            borderRadius: '12px',
+                                                            fontSize: '0.85em',
+                                                            fontWeight: '600',
+                                                            background: r.estado === 'Aprobada' || r.estado === 'Activa' ? '#e2f5ec' : r.estado === 'Rechazada' || r.estado === 'Inactivo' ? '#fee2e2' : '#fef3c7',
+                                                            color: r.estado === 'Aprobada' || r.estado === 'Activa' ? '#10b981' : r.estado === 'Rechazada' || r.estado === 'Inactivo' ? '#ef4444' : '#d97706'
+                                                        }}
+                                                    >
+                                                        {r.estado || 'En Revision'}
                                                     </span>
                                                 </td>
                                                 <td style={{ padding: '15px', textAlign: 'center' }}>
-                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                                                        <button
+                                                            onClick={() => handleOpenAuditModal(r)}
+                                                            className="btns"
+                                                            style={{
+                                                                background: '#10b981',
+                                                                color: 'white',
+                                                                padding: '8px 12px',
+                                                                borderRadius: '8px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px',
+                                                                fontSize: '0.85rem',
+                                                                fontWeight: '500'
+                                                            }}
+                                                            title="Auditar Rúbrica"
+                                                        >
+                                                            <i className="fas fa-file-signature"></i>
+                                                        </button>
                                                         <button onClick={() => handleVerRubrica(r.id, r.id_evaluacion)} className="btns" style={{ background: '#94a3b8', color: 'white', padding: '8px', borderRadius: '8px' }} title="Ver">
                                                             <i className="fas fa-eye"></i>
                                                         </button>
@@ -798,6 +881,126 @@ export default function Rubricas() {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL DE AUDITORÍA */}
+                {modalMode === 'audit' && auditRubrica && (
+                    <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+                        <div className="modal-content" style={{ background: 'white', borderRadius: '15px', width: '90%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+                            <div className="modal-header" style={{ padding: '20px 25px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
+                                <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <i className="fas fa-file-signature" style={{ color: '#10b981' }}></i> Auditar Rúbrica
+                                </h2>
+                                <button onClick={() => { setModalMode(null); setAuditRubrica(null); }} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8' }}>&times;</button>
+                            </div>
+
+                            <div style={{ padding: '25px' }}>
+                                <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '25px' }}>
+                                    <div style={{ marginBottom: '14px' }}>
+                                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', display: 'block', letterSpacing: '0.5px' }}>Nombre de la Rúbrica</span>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b' }}>{auditRubrica.nombre_rubrica}</span>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '14px' }}>
+                                        <div>
+                                            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', display: 'block', letterSpacing: '0.5px' }}>Evaluación</span>
+                                            <span style={{ fontSize: '0.95rem', color: '#334155' }}>{auditRubrica.contenido} ({auditRubrica.porcentaje_evaluacion}%)</span>
+                                        </div>
+                                        <div>
+                                            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', display: 'block', letterSpacing: '0.5px' }}>Docente</span>
+                                            <span style={{ fontSize: '0.95rem', color: '#334155' }}>{auditRubrica.docente_nombre}</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                        <div>
+                                            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', display: 'block', letterSpacing: '0.5px' }}>Materia y Sección</span>
+                                            <span style={{ fontSize: '0.9rem', color: '#334155' }}>{auditRubrica.carrera_nombre} - {auditRubrica.materia_nombre} (Sec. {auditRubrica.seccion_letra})</span>
+                                        </div>
+                                        <div>
+                                            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', display: 'block', letterSpacing: '0.5px' }}>Estado Actual</span>
+                                            <span style={{
+                                                display: 'inline-block',
+                                                marginTop: '4px',
+                                                padding: '4px 10px',
+                                                borderRadius: '12px',
+                                                fontSize: '0.85em',
+                                                fontWeight: '600',
+                                                background: auditRubrica.estado === 'Aprobada' || auditRubrica.estado === 'Activa' ? '#e2f5ec' : auditRubrica.estado === 'Rechazada' || auditRubrica.estado === 'Inactivo' ? '#fee2e2' : '#fef3c7',
+                                                color: auditRubrica.estado === 'Aprobada' || auditRubrica.estado === 'Activa' ? '#10b981' : auditRubrica.estado === 'Rechazada' || auditRubrica.estado === 'Inactivo' ? '#ef4444' : '#d97706'
+                                            }}>
+                                                {auditRubrica.estado || 'En Revision'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: '25px', textAlign: 'center' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleVerRubrica(auditRubrica.id, auditRubrica.id_evaluacion)}
+                                        className="btns"
+                                        style={{
+                                            background: '#3b82f6',
+                                            color: 'white',
+                                            padding: '10px 22px',
+                                            borderRadius: '8px',
+                                            fontWeight: '600',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            fontSize: '0.95rem'
+                                        }}
+                                    >
+                                        <i className="fas fa-eye"></i> Ver Rúbrica
+                                    </button>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAuditarAccion('Aprobada')}
+                                        className="btns"
+                                        style={{
+                                            background: '#10b981',
+                                            color: 'white',
+                                            padding: '12px 20px',
+                                            borderRadius: '8px',
+                                            fontWeight: 'bold',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            fontSize: '0.95rem',
+                                            flex: 1,
+                                            justifyContent: 'center',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <i className="fas fa-check-circle"></i> Aprobar
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAuditarAccion('Rechazada')}
+                                        className="btns"
+                                        style={{
+                                            background: '#ef4444',
+                                            color: 'white',
+                                            padding: '12px 20px',
+                                            borderRadius: '8px',
+                                            fontWeight: 'bold',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            fontSize: '0.95rem',
+                                            flex: 1,
+                                            justifyContent: 'center',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <i className="fas fa-times-circle"></i> Rechazar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}

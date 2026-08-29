@@ -122,6 +122,15 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
 
         const calificacionFinal = puntajeRealObtenido();
 
+        if (calificacionFinal < 0.02499) {
+            Swal.fire(
+                'Atención',
+                'La calificación total obtenida no puede ser inferior a 0.025 puntos. Por favor, revise y ajuste los puntajes de los criterios.',
+                'warning'
+            );
+            return;
+        }
+
         const detalles = evalData.criterios.map(crit => {
             const sel = selecciones[crit.id];
             const nivel = crit.niveles.find(n => n.id === sel.nivel_id);

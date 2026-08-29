@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import { rubricasService } from '../services/rubricas.service';
+import { validarEstructuraRubrica } from '../utils/evaluacionUtils';
 import Swal from 'sweetalert2';
 import '../assets/css/home.css';
 import '../assets/css/crearRubrica.css';
@@ -51,10 +52,10 @@ export default function CrearRubricas() {
             puntaje_maximo: 10,
             orden: 1,
             niveles: [
-                { id: 5, nombre: 'Insuficiente', puntaje: 0, descripcion: '', orden: 4 },
-                { id: 4, nombre: 'Aprobado', puntaje: 0, descripcion: '', orden: 3 },
-                { id: 3, nombre: 'Notable', puntaje: 0, descripcion: '', orden: 2 },
-                { id: 2, nombre: 'Sobresaliente', puntaje: 0, descripcion: '', orden: 1 }
+                { id: 5, nombre: 'Insuficiente', puntaje: '0.025', descripcion: '', orden: 4 },
+                { id: 4, nombre: 'Aprobado', puntaje: '6.000', descripcion: '', orden: 3 },
+                { id: 3, nombre: 'Notable', puntaje: '8.000', descripcion: '', orden: 2 },
+                { id: 2, nombre: 'Sobresaliente', puntaje: '10.000', descripcion: '', orden: 1 }
             ]
         }
     ]);
@@ -144,21 +145,23 @@ export default function CrearRubricas() {
         const numCriterios = listaCriterios.length;
         const puntajeBase = Math.floor((porcentaje / numCriterios) * 1000) / 1000;
         const resto = parseFloat((porcentaje - (puntajeBase * numCriterios)).toFixed(3));
+        const minBase = Math.floor((0.025 / numCriterios) * 1000) / 1000;
+        const minResto = parseFloat((0.025 - (minBase * numCriterios)).toFixed(3));
 
         return listaCriterios.map((c, idx) => {
             const nuevoMax = idx === numCriterios - 1 ? parseFloat((puntajeBase + resto).toFixed(3)) : puntajeBase;
+            const minNivelCrit = idx === numCriterios - 1 ? parseFloat((minBase + minResto).toFixed(3)) : minBase;
             
             return {
                 ...c,
                 puntaje_maximo: nuevoMax.toFixed(3),
                 niveles: c.niveles.map((n) => {
                     let nuevoPuntaje = n.puntaje;
-                    if (n.nombre === 'Sobresaliente' || n.nombre === 'Excelente') nuevoPuntaje = nuevoMax;
-                    else if (n.nombre === 'Notable') nuevoPuntaje = parseFloat((nuevoMax * 0.8).toFixed(3));
-                    else if (n.nombre === 'Aprobado' || n.nombre === 'Regular') nuevoPuntaje = parseFloat((nuevoMax * 0.6).toFixed(3));
-                    else if (n.nombre === 'Insuficiente' || n.nombre === 'Deficiente') nuevoPuntaje = 0;
-                    
-                    if (n.nombre !== 'Insuficiente' && n.nombre !== 'Deficiente' && nuevoPuntaje < 0.025) nuevoPuntaje = 0.025;
+                    const nombre = (n.nombre_nivel || n.nombre || '').toLowerCase();
+                    if (nombre.includes('sobresaliente') || nombre.includes('excelente')) nuevoPuntaje = nuevoMax;
+                    else if (nombre.includes('notable')) nuevoPuntaje = parseFloat((nuevoMax * 0.8).toFixed(3));
+                    else if (nombre.includes('aprobado') || nombre.includes('regular') || nombre.includes('bueno')) nuevoPuntaje = parseFloat((nuevoMax * 0.6).toFixed(3));
+                    else if (nombre.includes('insuficiente') || nombre.includes('deficiente')) nuevoPuntaje = minNivelCrit;
                     
                     return { ...n, puntaje: parseFloat(nuevoPuntaje).toFixed(3) };
                 })
@@ -323,18 +326,17 @@ export default function CrearRubricas() {
         if (!formData.evaluacion_id) return Swal.fire('Error', 'Debe seleccionar una evaluación', 'error');
         if (criterios.length === 0) return Swal.fire('Error', 'Agregue al menos un criterio', 'error');
         
-        let sumaPuntajes = 0;
-        for (const crit of criterios) {
-            sumaPuntajes += parseFloat(crit.puntaje_maximo);
-            if (!crit.descripcion.trim()){
-                return Swal.fire('Error', 'Todos los criterios deben tener una descripción', 'error');
-            }
+        const validacion = validarEstructuraRubrica({
+            criterios,
+            porcentaje: formData.porcentaje_evaluacion,
+            esCreacion: true
+        });
+
+        if (!validacion.valido) {
+            return Swal.fire('Error de Validación', validacion.mensaje, 'error');
         }
 
         const porcentajeTotal = parseFloat(formData.porcentaje_evaluacion);
-        if (Math.abs(sumaPuntajes - porcentajeTotal) > 0.01) {
-            return Swal.fire('Error', `La suma de puntajes (${sumaPuntajes.toFixed(3)}) debe ser igual al porcentaje total (${porcentajeTotal}%)`, 'error');
-        }
 
         const rubricaData = {
             nombre_rubrica: formData.nombre_rubrica,

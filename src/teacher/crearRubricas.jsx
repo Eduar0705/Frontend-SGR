@@ -4,6 +4,7 @@ import Menu from '../components/menu';
 import Header from '../components/header';
 import Swal from 'sweetalert2';
 import { teacherRubricasService } from '../services/teacherRubricas.service';
+import { validarEstructuraRubrica } from '../utils/evaluacionUtils';
 import '../assets/css/home.css';
 
 import { useUI } from '../context/UIContext';
@@ -44,7 +45,7 @@ export default function TeacherCrearRubricas() {
                 descripcion: '',
                 puntaje_maximo: '',
                 niveles: [
-                    { id_local: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0 },
+                    { id_local: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: '0.025' },
                     { id_local: 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: '' },
                     { id_local: 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '' },
                     { id_local: 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '' }
@@ -181,23 +182,29 @@ export default function TeacherCrearRubricas() {
         const numCriterios = criterios.length;
         const puntajeBase = Math.floor((porcentaje / numCriterios) * 1000) / 1000;
         const resto = parseFloat((porcentaje - (puntajeBase * numCriterios)).toFixed(3));
+        const minBase = Math.floor((0.025 / numCriterios) * 1000) / 1000;
+        const minResto = parseFloat((0.025 - (minBase * numCriterios)).toFixed(3));
 
         return criterios.map((c, idx) => {
             const nuevoMax = idx === numCriterios - 1 ? parseFloat((puntajeBase + resto).toFixed(3)) : puntajeBase;
+            const minNivelCrit = idx === numCriterios - 1 ? parseFloat((minBase + minResto).toFixed(3)) : minBase;
 
             return {
                 ...c,
                 puntaje_maximo: nuevoMax.toFixed(3),
                 niveles: c.niveles.map((n) => {
                     let nuevoPuntaje = n.puntaje;
-                    const nombre = n.nombre_nivel;
+                    const nombre = (n.nombre_nivel || n.nombre || '').toLowerCase();
 
-                    if (nombre === 'Excelente' || nombre === 'Sobresaliente') nuevoPuntaje = nuevoMax;
-                    else if (nombre === 'Notable') nuevoPuntaje = parseFloat((nuevoMax * 0.8).toFixed(3));
-                    else if (nombre === 'Regular' || nombre === 'Aprobado') nuevoPuntaje = parseFloat((nuevoMax * 0.6).toFixed(3));
-                    else if (nombre === 'Deficiente' || nombre === 'Insuficiente') nuevoPuntaje = 0;
-
-                    if (nombre !== 'Deficiente' && nombre !== 'Insuficiente' && nuevoPuntaje < 0.025) nuevoPuntaje = 0.025;
+                    if (nombre.includes('excelente') || nombre.includes('sobresaliente')) {
+                        nuevoPuntaje = nuevoMax;
+                    } else if (nombre.includes('notable')) {
+                        nuevoPuntaje = parseFloat((nuevoMax * 0.8).toFixed(3));
+                    } else if (nombre.includes('regular') || nombre.includes('aprobado') || nombre.includes('bueno')) {
+                        nuevoPuntaje = parseFloat((nuevoMax * 0.6).toFixed(3));
+                    } else if (nombre.includes('deficiente') || nombre.includes('insuficiente')) {
+                        nuevoPuntaje = minNivelCrit;
+                    }
 
                     return { ...n, puntaje: parseFloat(nuevoPuntaje).toFixed(3) };
                 })
@@ -228,7 +235,7 @@ export default function TeacherCrearRubricas() {
             descripcion: '',
             puntaje_maximo: '',
             niveles: [
-                { id_local: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0 },
+                { id_local: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: '0.025' },
                 { id_local: 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: '' },
                 { id_local: 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '' },
                 { id_local: 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '' }
@@ -256,10 +263,12 @@ export default function TeacherCrearRubricas() {
             const val = parseFloat(value) || 0;
             newCriterios[idx][field] = val;
 
-            // Si el puntaje máximo cambia, el nivel "Excelente" toma ese valor automáticamente
-            const excelenteIdx = newCriterios[idx].niveles.findIndex(n => n.nombre_nivel === 'Excelente');
-            if (excelenteIdx !== -1) {
-                newCriterios[idx].niveles[excelenteIdx].puntaje = val;
+            // Si el puntaje máximo cambia, el nivel "Sobresaliente" o "Excelente" toma ese valor automáticamente
+            const sobresalienteIdx = newCriterios[idx].niveles.findIndex(n =>
+                n.nombre_nivel === 'Sobresaliente' || n.nombre_nivel === 'Excelente'
+            );
+            if (sobresalienteIdx !== -1) {
+                newCriterios[idx].niveles[sobresalienteIdx].puntaje = val;
             }
         } else {
             newCriterios[idx][field] = value;
@@ -298,21 +307,14 @@ export default function TeacherCrearRubricas() {
             return Swal.fire('Atención', 'Complete los campos obligatorios del encabezado', 'warning');
         }
 
-        const totalPuntos = formData.criterios.reduce((acc, c) => acc + parseFloat(c.puntaje_maximo || 0), 0);
-        if (Math.abs(totalPuntos - formData.porcentaje_evaluacion) > 0.01) {
-            return Swal.fire('Error de Puntos', `La suma de criterios (${totalPuntos}) debe ser igual al porcentaje de la evaluación (${formData.porcentaje_evaluacion}%)`, 'error');
-        }
+        const validacion = validarEstructuraRubrica({
+            criterios: formData.criterios,
+            porcentaje: formData.porcentaje_evaluacion,
+            esCreacion: true
+        });
 
-        // Validar mínimo de 0.025
-        for (const crit of formData.criterios) {
-            if (parseFloat(crit.puntaje_maximo) < 0.025) {
-                return Swal.fire('Error', `El puntaje del criterio "${crit.descripcion}" debe ser al menos 0.025`, 'error');
-            }
-            for (const nivel of crit.niveles) {
-                if (nivel.nombre_nivel !== 'Deficiente' && parseFloat(nivel.puntaje) < 0.025) {
-                    return Swal.fire('Error', `El nivel "${nivel.nombre_nivel}" del criterio "${crit.descripcion}" debe tener al menos 0.025 puntos`, 'error');
-                }
-            }
+        if (!validacion.valido) {
+            return Swal.fire('Error de Validación', validacion.mensaje, 'error');
         }
 
         try {

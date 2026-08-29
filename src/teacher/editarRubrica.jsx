@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import { teacherRubricasService } from '../services/teacherRubricas.service';
+import { validarEstructuraRubrica } from '../utils/evaluacionUtils';
 import '../assets/css/home.css';
 import '../assets/css/crearRubrica.css';
 
@@ -102,14 +103,14 @@ export default function TeacherEditarRubrica() {
                         id: n.id,
                         nombre_nivel: n.nombre_nivel || n.nombre || '',
                         descripcion: n.descripcion || '',
-                        puntaje: n.puntaje.toFixed(3),
+                        puntaje: parseFloat(n.puntaje).toFixed(3),
                         orden: n.orden || nIdx + 1
                     }))
                 })));
             } else {
                 setCriterios([
                     {
-                        id_local: 1,
+                        id_local: null,
                         descripcion: '',
                         puntaje_maximo: r.porcentaje_evaluacion || 10,
                         niveles: [
@@ -162,7 +163,33 @@ export default function TeacherEditarRubrica() {
     };
 
     // Manejo de Criterios y Niveles
-    const addCriterio = () => {
+    const addCriterio = async () => {
+        const confirm1 = await Swal.fire({
+            title: '¿Está seguro de agregar un criterio?',
+            text: 'Esta acción causará evaluaciones incompletas que tendrán que volverse a corregir.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f59e0b',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!confirm1.isConfirmed) return;
+
+        const confirm2 = await Swal.fire({
+            title: 'Confirmación definitiva',
+            text: '¿Realmente desea agregar un nuevo criterio a la rúbrica? Recuerde que deberá revisar las evaluaciones asociadas.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3b82f6',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, agregar criterio',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!confirm2.isConfirmed) return;
+
         const nuevoCriterio = {
             id: null,
             id_local: Date.now(),
@@ -180,10 +207,24 @@ export default function TeacherEditarRubrica() {
         setCriterios(nuevosCriterios);
     };
 
-    const removeCriterio = (idx) => {
+    const removeCriterio = async (idx) => {
         if (criterios.length <= 1) {
             return Swal.fire('Aviso', 'Debe haber al menos un criterio', 'info');
         }
+
+        const confirmDelete = await Swal.fire({
+            title: '¿Está seguro de eliminar este criterio?',
+            text: 'Las evaluaciones corregidas se adaptarán automáticamente a la nueva cantidad de criterios.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!confirmDelete.isConfirmed) return;
+
         const tempCriterios = [...criterios];
         tempCriterios.splice(idx, 1);
         const nuevosCriterios = redistribuirPuntajes(formData.porcentaje_evaluacion, tempCriterios);
@@ -238,31 +279,14 @@ export default function TeacherEditarRubrica() {
             return Swal.fire('Atención', 'Complete los campos obligatorios del encabezado', 'warning');
         }
 
-        const totalPuntos = criterios.reduce((acc, c) => acc + parseFloat(c.puntaje_maximo || 0), 0);
-        if (Math.abs(totalPuntos - formData.porcentaje_evaluacion) > 0.01) {
-            return Swal.fire('Error de Puntos', `La suma de criterios (${totalPuntos.toFixed(3)}) debe ser igual al porcentaje de la evaluación (${formData.porcentaje_evaluacion}%)`, 'error');
-        }
+        const validacion = validarEstructuraRubrica({
+            criterios: criterios,
+            porcentaje: formData.porcentaje_evaluacion,
+            esCreacion: false
+        });
 
-        // Validaciones de criterios y niveles
-        for (let i = 0; i < criterios.length; i++) {
-            const crit = criterios[i];
-            if (!crit.descripcion || !crit.descripcion.trim()) {
-                return Swal.fire('Error', `El criterio ${i + 1} necesita una descripción`, 'error');
-            }
-            if (parseFloat(crit.puntaje_maximo) < 0.025) {
-                return Swal.fire('Error', `El puntaje del criterio "${crit.descripcion}" debe ser al menos 0.025`, 'error');
-            }
-            for (const nivel of crit.niveles) {
-                if (!nivel.nombre_nivel || !nivel.nombre_nivel.trim()) {
-                    return Swal.fire('Error', `Todos los niveles del criterio "${crit.descripcion}" deben tener nombre`, 'error');
-                }
-                if (!nivel.descripcion || !nivel.descripcion.trim()) {
-                    return Swal.fire('Error', `El nivel "${nivel.nombre_nivel}" del criterio "${crit.descripcion}" necesita una descripción`, 'error');
-                }
-                if (nivel.nombre_nivel !== 'Deficiente' && nivel.nombre_nivel !== 'Insuficiente' && parseFloat(nivel.puntaje) < 0.025) {
-                    return Swal.fire('Error', `El nivel "${nivel.nombre_nivel}" del criterio "${crit.descripcion}" debe tener al menos 0.025 puntos`, 'error');
-                }
-            }
+        if (!validacion.valido) {
+            return Swal.fire('Error de Validación', validacion.mensaje, 'error');
         }
 
         const payload = {
@@ -279,7 +303,7 @@ export default function TeacherEditarRubrica() {
                     nombre_nivel: n.nombre_nivel.trim(),
                     descripcion: n.descripcion.trim(),
                     puntaje: parseFloat(n.puntaje).toFixed(3),
-                    orden: nIdx + 1
+                    orden: n.orden !== undefined ? parseInt(n.orden) : (nIdx + 1)
                 }))
             }))
         };

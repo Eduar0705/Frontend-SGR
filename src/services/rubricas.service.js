@@ -197,5 +197,13 @@ export const rubricasService = {
         return fetchJSON(`/teacher/rubricas/delete/${id}`, {
             method: 'DELETE'
         });
+    },
+
+    async auditarRubrica(id_rubrica, id_eval, estado) {
+        if (!id_rubrica || !estado) throw new Error('ID de rúbrica y estado requeridos');
+        return fetchJSON(`/rubricas/admin/rubricas/auditar`, {
+            method: 'PUT',
+            body: { id_rubrica, id_eval, estado }
+        });
     }
 };
