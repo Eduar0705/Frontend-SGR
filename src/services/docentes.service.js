@@ -3,11 +3,20 @@ import axios from "axios";
 // src/services/docentes.service.js
 const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/api';
 
+const getPeriodo = () => {
+    try {
+        const u = JSON.parse(localStorage.getItem('user'));
+        return u?.periodo_usuario || null;
+    } catch {
+        return null;
+    }
+};
+
 export const docentesService = {
     async getDocentes() {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/docentes`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response;

@@ -143,22 +143,25 @@ export const rubricasService = {
 
     async getSemestres(carrera) {
         if (!carrera) throw new Error('Código de carrera requerido');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
         return fetchJSON(`/rubricas/semestres/${carrera}`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario }
+            params: { periodo: user.periodo_usuario || null }
         });
     },
 
     async getMaterias(carrera, semestre) {
         if (!carrera || !semestre) throw new Error('Carrera y semestre son requeridos');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
         return fetchJSON(`/rubricas/materias/${carrera}/${semestre}`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario }
+            params: { periodo: user.periodo_usuario || null }
         });
     },
 
     async getSecciones(materia, carrera) {
         if (!materia || !carrera) throw new Error('Materia y carrera son requeridas');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
         return fetchJSON(`/rubricas/secciones/${materia}/${carrera}`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario }
+            params: { periodo: user.periodo_usuario || null }
         });
     },
 

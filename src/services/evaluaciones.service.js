@@ -2,11 +2,20 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/api';
 
+const getPeriodo = () => {
+    try {
+        const u = JSON.parse(localStorage.getItem('user'));
+        return u?.periodo_usuario || null;
+    } catch {
+        return null;
+    }
+};
+
 export const evaluacionesService = {
     async getEvaluaciones() {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/evaluaciones`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = response.data;
@@ -16,7 +25,7 @@ export const evaluacionesService = {
     async getAllSecciones() {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/evaluaciones/secciones`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = response.data;
@@ -36,7 +45,7 @@ export const evaluacionesService = {
     /*async getTeacherEvaluaciones() {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/teacher/evaluaciones`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.data;
@@ -46,7 +55,7 @@ export const evaluacionesService = {
     async getTeacherEvaluaciones() {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/teacher/evaluaciones`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.data;
@@ -67,7 +76,7 @@ export const evaluacionesService = {
     async getCarrerasByPeriodo() {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/evaluaciones/carreras`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.data
@@ -77,7 +86,7 @@ export const evaluacionesService = {
     async getMateriasByCarreraAndPeriodo(carreraCodigo) {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/evaluaciones/carrera/${carreraCodigo}/materias`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.data
@@ -91,7 +100,7 @@ export const evaluacionesService = {
             : `${API_URL}/evaluaciones/materia/${materiaCodigo}/secciones`;
 
         const response = await axios.get(url, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.data
@@ -101,7 +110,7 @@ export const evaluacionesService = {
     async getEstudiantes(seccionId) {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/evaluaciones/seccion/${seccionId}/estudiantes`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.data;
@@ -110,7 +119,7 @@ export const evaluacionesService = {
     async getRubricasActivas() {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/evaluaciones/rubricas-activas`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.data;
@@ -120,7 +129,7 @@ export const evaluacionesService = {
     async getTeacherCarreras() {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/teacher/evaluaciones/carreras`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.data;
@@ -129,7 +138,7 @@ export const evaluacionesService = {
     async getTeacherMateriasByCarrera(carreraCodigo) {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/teacher/evaluaciones/carrera/${carreraCodigo}/materias`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.data;
@@ -138,7 +147,7 @@ export const evaluacionesService = {
     async getTeacherSecciones(materiaCodigo) {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/teacher/evaluaciones/materia/${materiaCodigo}/secciones`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.data;
@@ -147,7 +156,7 @@ export const evaluacionesService = {
     async getTeacherEstudiantes(seccionId) {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/teacher/evaluaciones/seccion/${seccionId}/estudiantes`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.data;
@@ -156,7 +165,7 @@ export const evaluacionesService = {
     async getTeacherRubricasActivas() {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/teacher/evaluaciones/rubricas/activas`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return await response.data;
@@ -225,7 +234,7 @@ export const evaluacionesService = {
             url = `${API_URL}/evaluaciones/crear`;
             method = 'POST';
         }
-        formData.periodo = (JSON.parse(localStorage.getItem('user'))).periodo_usuario
+        formData.periodo = getPeriodo();
         const response = await fetch(url, {
             method: method,
             headers: {

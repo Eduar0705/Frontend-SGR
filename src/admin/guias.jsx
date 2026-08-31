@@ -391,13 +391,15 @@ export default function AdminGuias() {
                                         </section>
                                     )}
 
-                                    {/* Sección: Evaluación Docente */}
+                                    {/* Evaluacion docente (en proceso)
+
                                     {filterMatches('evaluacion docente supervision pedagogica control calidad desempeno') && (
                                         <section className="guide-section" id="evaluacion-docente">
                                             <div className="guide-section-header">
                                                 <div className="guide-section-icon">
                                                     <i className="fas fa-tasks"></i>
                                                 </div>
+
                                                 <div>
                                                     <h2>6. Evaluación y Desempeño Docente</h2>
                                                     <span className="guide-badge guide-badge-purple">Supervisión</span>
@@ -413,6 +415,8 @@ export default function AdminGuias() {
                                         </section>
                                     )}
 
+                                    */}
+
                                     {/* Sección: Reportes Consolidados */}
                                     {filterMatches('reportes consolidados estadisticas pdf excel exportar institucionales promedios') && (
                                         <section className="guide-section" id="reportes">
@@ -421,7 +425,7 @@ export default function AdminGuias() {
                                                     <i className="fas fa-chart-pie"></i>
                                                 </div>
                                                 <div>
-                                                    <h2>7. Reportes Consolidados e Inteligencia Académica</h2>
+                                                    <h2>6. Reportes Consolidados e Inteligencia Académica</h2>
                                                     <span className="guide-badge guide-badge-excel">Estadísticas</span>
                                                 </div>
                                             </div>
@@ -460,7 +464,7 @@ export default function AdminGuias() {
                                                     <i className="fas fa-lightbulb"></i>
                                                 </div>
                                                 <div>
-                                                    <h2>8. Recomendaciones para Administradores</h2>
+                                                    <h2>7. Recomendaciones para Administradores</h2>
                                                     <span className="guide-badge guide-badge-amber">Buenas Prácticas</span>
                                                 </div>
                                             </div>

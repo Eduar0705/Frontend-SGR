@@ -13,7 +13,7 @@ import '../assets/css/periodos.css';
 
 export default function Header({ title, user, onLogout }) {
     const navigate = useNavigate();
-    const storedUser = JSON.parse(localStorage.getItem('user'));
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
     const { toggleSidebar, periodoActual, updatePeriodo } = useUI();
     const [notificaciones, setNotificaciones] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);

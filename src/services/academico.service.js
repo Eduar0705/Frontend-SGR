@@ -2,6 +2,15 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/api';
 
+const getPeriodo = () => {
+    try {
+        const u = JSON.parse(localStorage.getItem('user'));
+        return u?.periodo_usuario || null;
+    } catch {
+        return null;
+    }
+};
+
 export const academicoService = {
     async getCarreras() {
         const token = localStorage.getItem('token');
@@ -15,7 +24,7 @@ export const academicoService = {
     async getSemestres(carreraCodigo) {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/admin/semestres/${carreraCodigo}`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = response.data;
@@ -25,7 +34,7 @@ export const academicoService = {
     async getMaterias(carreraCodigo, semestreId) {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/admin/materias/${carreraCodigo}/${semestreId}`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.data
@@ -35,7 +44,7 @@ export const academicoService = {
     async getSecciones(materiaCodigo, carreraCodigo) {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/admin/secciones/${materiaCodigo}/${carreraCodigo}`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo: getPeriodo() },
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.data;

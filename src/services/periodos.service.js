@@ -56,8 +56,13 @@ export const periodosService = {
     },
 
     getCortes: async () => {
+        let periodo = null;
+        try {
+            const user = JSON.parse(localStorage.getItem('user'));
+            periodo = user?.periodo_usuario || null;
+        } catch {}
         const response = await axios.get(`${API_URL}/periodos/cortes`, {
-            params: { periodo: (JSON.parse(localStorage.getItem('user'))).periodo_usuario },
+            params: { periodo },
             headers: getAuthHeaders()
         });
         return response.data;

@@ -72,17 +72,17 @@ export function initSessionInterceptors() {
     if (typeof window !== 'undefined' && window.fetch) {
         const originalFetch = window.fetch;
         window.fetch = async function (...args) {
-                const response = await originalFetch.apply(this, args);
-                if (response.status === 401 || response.status === 403) {
-                    const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
-                    const isAuthEndpoint = url.includes('/auth/login') || 
-                                           url.includes('/auth/request-recovery') || 
-                                           url.includes('/auth/reset-password');
-                    if (!isAuthEndpoint && localStorage.getItem('token')) {
-                        handleSessionExpired();
-                    }
-                return response;
+            const response = await originalFetch.apply(this, args);
+            if (response.status === 401 || response.status === 403) {
+                const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
+                const isAuthEndpoint = url.includes('/auth/login') || 
+                                       url.includes('/auth/request-recovery') || 
+                                       url.includes('/auth/reset-password');
+                if (!isAuthEndpoint && localStorage.getItem('token')) {
+                    handleSessionExpired();
+                }
+            }
+            return response;
         };
-    }
     }
 }

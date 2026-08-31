@@ -53,10 +53,12 @@ export default function Menu({ user }) {
                                 <i className="fas fa-chalkboard-teacher"></i>
                                 <span>Docentes</span>
                             </NavLink>
+                            {/* Evaluacion docente (en proceso) 
                             <NavLink to="/admin/evaluacion-docente" onClick={handleNavClick} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                 <i className="fas fa-tasks"></i>
                                 <span>Evaluacion Docente</span>
                             </NavLink>
+                            */}
                             <NavLink to="/admin/reportes" onClick={handleNavClick} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                 <i className="fas fa-file-alt"></i>
                                 <span>Reportes</span>

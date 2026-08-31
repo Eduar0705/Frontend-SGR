@@ -4,8 +4,13 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/a
 
 const getStats = async () => {
     const token = localStorage.getItem('token');
+    let periodo = null;
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        periodo = user?.periodo_usuario || null;
+    } catch {}
     const response = await axios.get(`${API_URL}/dashboard/stats`, {
-        params: { periodo: JSON.parse(localStorage.getItem('user')).periodo_usuario },
+        params: { periodo },
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data.data;
@@ -13,8 +18,12 @@ const getStats = async () => {
 
 const getAdvancedStats = async () => {
     const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user'));
-    const response = await axios.get(`${API_URL}/dashboard/advanced-stats?roleId=${user.id_rol}`, {
+    let roleId = null;
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        roleId = user?.id_rol || '';
+    } catch {}
+    const response = await axios.get(`${API_URL}/dashboard/advanced-stats?roleId=${roleId}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data.data;
