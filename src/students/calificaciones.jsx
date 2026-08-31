@@ -122,10 +122,10 @@ export default function StudentCalificaciones() {
                                                             style={{ cursor: 'pointer', background: mi % 2 === 0 ? '#fff' : '#f9f9f9' }}>
                                                         <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 'bold' }}>{materia.codigo}</td>
                                                         <td style={{ ...tdStyle, fontWeight: 'bold', textDecoration: 'underline', color: '#002e6d' }}>{materia.nombre}</td>
-                                                        <td style={tdCenter}>{materia.uc}</td>
-                                                        <td style={{ ...tdCenter, color: '#000080', fontWeight: 'bold' }}>{materia.nota_20}</td>
-                                                        <td style={{ ...tdCenter }}> {(materia.puntaje_acum_sobre_20)}</td>
-                                                        <td style={tdCenter}>{materia.porcentaje_acumulado}%</td>
+                                                        <td style={{...tdCenter, fontWeight: 'bold'}}>{materia.uc}</td>
+                                                        <td style={{ ...tdCenter, color: '#000080', fontWeight: 'bold' }}>{materia.nota_20.toFixed(3)}</td>
+                                                        <td style={{ ...tdCenter, color: '#000080', fontWeight: 'bold' }}> {(materia.puntaje_acum_sobre_20)}</td>
+                                                        <td style={{...tdCenter, color: '#000080', fontWeight: 'bold'}}>{materia.porcentaje_acumulado}%</td>
                                                         <td style={tdCenter}>{materia.seccion}</td>
                                                     </tr>
                                                 ))}
