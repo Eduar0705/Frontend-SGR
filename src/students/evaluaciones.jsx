@@ -600,7 +600,6 @@ function Section({ title, icon, children }) {
     );
 }
 
-// --- Estilos (sin cambios) ---
 const cardStyle = {
     background: '#fff', borderRadius: '12px', padding: '20px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'transform 0.2s, box-shadow 0.2s',
