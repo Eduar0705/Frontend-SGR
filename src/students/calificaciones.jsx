@@ -195,8 +195,20 @@ export default function StudentCalificaciones() {
                                             {rubrica.observaciones && (
                                                 <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#666' }}><strong>Observaciones:</strong> {rubrica.observaciones}</p>
                                             )}
-                                            {rubrica.fecha && (
-                                                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#999' }}>Fecha: {new Date(rubrica.fecha).toLocaleDateString()}</p>
+                                            {rubrica.fecha_fija && (
+                                                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#999' }}>
+                                                    Fecha: {new Date(rubrica.fecha_fija).toLocaleDateString()}
+                                                    {rubrica.fecha_eval ? (
+                                                        <>
+                                                            <span> - Evaluado: {new Date(rubrica.fecha_eval).toLocaleDateString()}</span>
+                                                            {rubrica.fecha_modif && (
+                                                                <span> - Modificada el: {new Date(rubrica.fecha_modif).toLocaleDateString()}</span>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <span style={{ fontWeight: 'bold' }}> - Pendiente</span>
+                                                    )}
+                                                </p>
                                             )}
                                         </div>
                                     );
