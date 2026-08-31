@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import { studentEvaluacionesService } from '../services/studentEvaluaciones.service';
+import { periodosService } from '../services/periodos.service'; // Asegúrate de que la ruta sea correcta
 import { imprimirRubricaFormal } from '../utils/printRubrica';
 import Swal from 'sweetalert2';
 import '../assets/css/home.css';
@@ -23,10 +24,13 @@ export default function StudentEvaluaciones() {
     const [selectedDetail, setSelectedDetail] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
     const [orderBy, setOrderBy] = useState('fecha_fija');
+    const [periodos, setPeriodos] = useState([]);
+    const [periodoActivo, setPeriodoActivo] = useState(null);
 
     useEffect(() => {
         if (!user) { navigate('/login'); return; }
-        loadEvaluaciones();
+        loadPeriodos();
+        loadEvaluaciones(null); // Carga inicial del periodo actual
     }, [user, navigate]);
 
     // Escuchar evento personalizado de redireccion de notificaciones
@@ -69,9 +73,9 @@ export default function StudentEvaluaciones() {
         }
     }, [loading, evaluaciones, location.state, location.search]);
 
-    const loadEvaluaciones = async () => {
+    const loadEvaluaciones = async (periodo = null) => {
         try {
-            const data = await studentEvaluacionesService.getEvaluaciones();
+            const data = await studentEvaluacionesService.getEvaluaciones(periodo);
             setEvaluaciones(data);
         } catch (error) {
             console.error('Error:', error);
@@ -80,6 +84,21 @@ export default function StudentEvaluaciones() {
             setGlobalLoading(false);
         }
     };
+    const loadPeriodos = async () => {
+    try {
+        const result = await periodosService.getPeriodosByEstudiante(); 
+        const periodosLista = (result.data || []).map(p => p.codigo || p).filter(Boolean);
+        
+        console.log('Periodos obtenidos:', periodosLista); // Ahora verás ["2026-1", "2025-1", ...]
+        setPeriodos(periodosLista);
+        
+        if (periodosLista.length > 0) {
+            setPeriodoActivo(periodosLista[0]);
+        }
+    } catch (error) {
+        console.error('Error al cargar periodos:', error);
+    }
+};
 
     const verDetalles = async (evaluacionId) => {
         setDetailLoading(true);
@@ -164,8 +183,34 @@ export default function StudentEvaluaciones() {
                                 </select>
                             </div>
                         </div>
+                        
                     </div>
-
+                    {periodos.length > 0 && (
+                    <div style={{ display: 'flex', gap: '5px', marginBottom: '20px', borderBottom: '1px solid #ddd' }}>
+                        {periodos.map((periodo, index) => (
+                            <button
+                                key={periodo}
+                                onClick={() => {
+                                    setPeriodoActivo(periodo);
+                                    loadEvaluaciones(index === 0 ? null : periodo);
+                                }}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: periodoActivo === periodo ? '#dc3545' : '#28a745',
+                                    color: '#fff',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    borderRadius: '4px 4px 0 0',
+                                    opacity: periodoActivo === periodo ? 1 : 0.7,
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
+                                {periodo}
+                            </button>
+                        ))}
+                    </div>
+                )}
                     {loading ? (
                         <p style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Cargando evaluaciones...</p>
                     ) : sortedEvaluaciones.length === 0 ? (
@@ -200,27 +245,33 @@ export default function StudentEvaluaciones() {
                                     }
                                     <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
                                         <button
-                                            type="button"
-                                            onClick={() => verRubricaCard(ev.evaluacion_id)}
-                                            style={{
-                                                flex: 1,
-                                                padding: '10px',
-                                                background: '#10b981',
-                                                color: '#fff',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                cursor: 'pointer',
-                                                fontWeight: 'bold',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px',
-                                                fontSize: '13px'
-                                            }}
-                                            title="Ver Rúbrica Formal"
-                                        >
-                                            <i className="fas fa-file-alt"></i> Ver Rúbrica
-                                        </button>
+                                        type="button"
+                                        onClick={() => {
+                                            if (ev.rubrica_id) {
+                                                verRubricaCard(ev.evaluacion_id);
+                                            } else {
+                                                Swal.fire('Aviso', 'El profesor no ha adjuntado la rúbrica para esta evaluación.', 'info');
+                                            }
+                                        }}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px',
+                                            background: ev.rubrica_id ? '#10b981' : '#94a3b8', // Verde si existe, gris si no
+                                            color: '#fff',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            fontWeight: 'bold',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px',
+                                            fontSize: '13px'
+                                        }}
+                                        title={ev.rubrica_id ? "Ver Rúbrica Formal" : "Rúbrica no disponible"}
+                                    >
+                                        <i className="fas fa-file-alt"></i> Ver Rúbrica
+                                    </button>
                                         <button
                                             type="button"
                                             onClick={() => verDetalles(ev.evaluacion_id)}

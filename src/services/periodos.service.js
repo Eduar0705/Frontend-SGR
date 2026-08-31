@@ -57,17 +57,27 @@ export const periodosService = {
 
     getCortes: async () => {
         let periodo = null;
-        try {
             const user = JSON.parse(localStorage.getItem('user'));
             periodo = user?.periodo_usuario || null;
-        } catch {}
         const response = await axios.get(`${API_URL}/periodos/cortes`, {
             params: { periodo },
             headers: getAuthHeaders()
         });
         return response.data;
     },
-
+    getPeriodosByEstudiante: async () => {
+        try {
+            const user = JSON.parse(localStorage.getItem('user'));
+            const response = await axios.get(`${API_URL}/periodos/${user.cedula}`, {
+                headers: getAuthHeaders()
+            });
+            console.log(response.data.data)
+            return { success: response.data.success, data: response.data.data };
+        } catch (error) {
+            console.error('Error fetching periodos:', error);
+            return { success: false, data: [] };
+        }
+    },
     getCortesByPeriodo: async (codigoPeriodo) => {
         try {
             const response = await axios.get(`${API_URL}/periodos/cortes/`, {
