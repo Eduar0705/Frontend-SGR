@@ -22,14 +22,14 @@ export default function StudentEvaluaciones() {
     const [loading, setLoading] = useState(true);
     const [selectedDetail, setSelectedDetail] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
-    const [orderBy, setOrderBy] = useState('fecha_fija'); // nuevo estado
+    const [orderBy, setOrderBy] = useState('fecha_fija');
 
     useEffect(() => {
         if (!user) { navigate('/login'); return; }
         loadEvaluaciones();
     }, [user, navigate]);
 
-    // Escuchar evento personalizado de notificación directa
+    // Escuchar evento personalizado de redireccion de notificaciones
     useEffect(() => {
         const handleOpenDirect = (e) => {
             const { evaluacion_id, rubrica_id } = e.detail || {};
@@ -354,7 +354,6 @@ export default function StudentEvaluaciones() {
     );
 }
 
-// --- Función para imprimir rúbrica formal ---
 function handleImprimirRubrica(data) {
     if (!data || !data.rubrica) return;
     const { rubrica, estudiante, evaluacion, criterios } = data;
@@ -387,7 +386,6 @@ function handleImprimirRubrica(data) {
     }
 }
 
-// --- Función para calcular el nivel de desempeño común promediado ---
 function calcularNivelComun(criterios) {
     if (!criterios || criterios.length === 0) return null;
 
@@ -401,12 +399,10 @@ function calcularNivelComun(criterios) {
 
     if (seleccionados.length === 0) return null;
 
-    // Promediar los órdenes numéricos y redondear hacia abajo (ej. 3.5 -> 3, 1.33 -> 1)
     const sum = seleccionados.reduce((acc, n) => acc + n.orden, 0);
     const avg = sum / seleccionados.length;
     const targetOrden = Math.max(1, Math.floor(avg));
 
-    // Buscar el nombre correspondiente al targetOrden
     let nombreNivel = null;
     for (const c of criterios) {
         const found = c.niveles?.find(n => n.orden === targetOrden);
@@ -427,7 +423,6 @@ function calcularNivelComun(criterios) {
     };
 }
 
-// --- Sub-componentes ---
 function InfoLine({ icon, label, value }) {
     return (
         <p style={{ margin: '6px 0', color: '#475569', fontSize: '14px' }}>

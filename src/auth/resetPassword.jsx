@@ -10,7 +10,6 @@ export default function ResetPassword() {
     const location = useLocation();
     const { setLoading } = useUI();
     
-    // Obtener cedula de la URL
     const query = new URLSearchParams(location.search);
     const initialCedula = query.get('cedula') || '';
 

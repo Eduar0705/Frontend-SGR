@@ -20,7 +20,6 @@ export default function Configuracion() {
     const [entriesPerPage, setEntriesPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Modales y Formularios
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [formData, setFormData] = useState({
@@ -48,12 +47,10 @@ export default function Configuracion() {
         if (!user) {
             navigate('/login');
         } else {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             loadUsuarios();
         }
     }, [user, navigate]);
 
-    // Lógica de Filtrado y Paginación
     const filteredUsuarios = useMemo(() => {
         return usuarios.filter(u => 
             u.cedula.toString().includes(searchTerm) ||
@@ -80,7 +77,6 @@ export default function Configuracion() {
         setCurrentPage(1);
     };
 
-    // Funciones CRUD
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };

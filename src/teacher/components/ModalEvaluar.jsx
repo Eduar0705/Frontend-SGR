@@ -113,7 +113,7 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
             if (puntajeAsignado > maxPermitido) {
                 Swal.fire(
                     'Atención',
-                    `El puntaje asignado al criterio "${crit.nombre}" (${puntajeAsignado}) no puede exceder el nivel por más de 0.10 centésimas (Máximo permitido: ${(basePuntaje + 0.10).toFixed(2)} pts).`,
+                    `El puntaje asignado al criterio "${crit.nombre}" (${puntajeAsignado}) no puede exceder el nivel (Máximo permitido: ${(basePuntaje).toFixed(3)} pts).`,
                     'warning'
                 );
                 return;
@@ -278,8 +278,8 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                                                         <input 
                                                             type="number"
                                                             step="0.001"
-                                                            min={minPuntaje}    
-                                                            max={maxPuntaje}    
+                                                            min={minPermitido}    
+                                                            max={maxPermitido}    
                                                             value={selecciones[crit.id]?.puntaje !== undefined ? parseFloat(selecciones[crit.id].puntaje).toFixed(3) : parseFloat(nivel.puntaje).toFixed(3)}
                                                             onChange={(e) => {
                                                                 const val = e.target.value;
@@ -289,7 +289,6 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                                                                 }
                                                                 const num = parseFloat(val);
                                                                 if (!isNaN(num)) {
-                                                                    // ✅ Ajustar si supera el máximo o es inferior al mínimo
                                                                     let newVal = num;
                                                                     if (num > maxPuntaje) {
                                                                         newVal = maxPuntaje;

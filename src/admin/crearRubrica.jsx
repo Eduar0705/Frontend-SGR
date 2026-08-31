@@ -20,7 +20,6 @@ export default function CrearRubricas() {
         return storedUser ? JSON.parse(storedUser) : null;
     });
 
-    // Estados para datos dinámicos
     const [tiposRubrica, setTiposRubrica] = useState([]);
     const [carreras, setCarreras] = useState([]);
     const [semestres, setSemestres] = useState([]);
@@ -29,7 +28,6 @@ export default function CrearRubricas() {
     const [evaluaciones, setEvaluaciones] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // Estado del formulario
     const [formData, setFormData] = useState({
         nombre_rubrica: '',
         tipo_rubrica: '',
@@ -77,7 +75,6 @@ export default function CrearRubricas() {
         }
     }, [setGlobalLoading]);
 
-    // --- MANEJO DE DATOS PRECARGADOS (DESDE EVALUACIONES) ---
     useEffect(() => {
         const preData = location.state?.preloaded;
         if (preData && user) {

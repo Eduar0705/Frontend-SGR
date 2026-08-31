@@ -50,9 +50,6 @@ export function getJwtExpirationTime(token) {
     }
 }
 
-/**
- * Inicializa interceptores globales para Axios y Fetch
- */
 export function initSessionInterceptors() {
     // 1. Interceptor de Axios
     axios.interceptors.response.use(
@@ -75,7 +72,6 @@ export function initSessionInterceptors() {
     if (typeof window !== 'undefined' && window.fetch) {
         const originalFetch = window.fetch;
         window.fetch = async function (...args) {
-            try {
                 const response = await originalFetch.apply(this, args);
                 if (response.status === 401 || response.status === 403) {
                     const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
@@ -85,11 +81,8 @@ export function initSessionInterceptors() {
                     if (!isAuthEndpoint && localStorage.getItem('token')) {
                         handleSessionExpired();
                     }
-                }
                 return response;
-            } catch (error) {
-                throw error;
-            }
         };
+    }
     }
 }

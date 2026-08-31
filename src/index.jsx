@@ -8,12 +8,10 @@ export default function Index() {
     const [showScrollTop, setShowScrollTop] = useState(false);
     const [currentYear] = useState(new Date().getFullYear());
 
-    // Referencias para los Intersection Observers 
     const featuresRef = useRef(null);
     const servicesRef = useRef(null);
 
     useEffect(() => {
-        // Manejador de Scroll
         const handleScroll = () => {
             const scrollPos = window.scrollY;
 
@@ -55,7 +53,6 @@ export default function Index() {
         if (featuresRef.current) scrollObserver.observe(featuresRef.current);
         if (servicesRef.current) scrollObserver.observe(servicesRef.current);
 
-        // Limpiar eventos al desmontar
         return () => {
             window.removeEventListener('scroll', handleScroll);
             scrollObserver.disconnect();

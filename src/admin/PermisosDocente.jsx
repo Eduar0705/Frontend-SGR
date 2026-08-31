@@ -24,7 +24,6 @@ export default function PermisosDocente() {
     const [permisos, setPermisos] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Estados para la cascada de selección
     const [carreras, setCarreras] = useState([]);
     const [semestres, setSemestres] = useState([]);
     const [materias, setMaterias] = useState([]);
@@ -44,7 +43,6 @@ export default function PermisosDocente() {
 
     const cargarDatosDocente = useCallback(async () => {
         try {
-            // Obtener info del docente (usamos getDocentes y filtramos por ahora, o podrías agregar getDocenteByCedula)
             const todos = await docentesService.getDocentes();
             const found = todos.find(d => d.cedula.toString() === cedula);
             if (!found) {
@@ -53,7 +51,6 @@ export default function PermisosDocente() {
             }
             setDocente(found);
 
-            // Obtener permisos
             const resPermisos = await permisosService.getPermisosByDocente(cedula);
             if (resPermisos.success) {
                 setPermisos(resPermisos.data);
@@ -73,7 +70,6 @@ export default function PermisosDocente() {
             const res = await permisosService.getCarreras();
             console.log('Response from getCarreras:', res);
             
-            // Manejar diferentes estructuras de respuesta
             let carrerasData = [];
             if (res.success && Array.isArray(res.data)) {
                 carrerasData = res.data;
@@ -102,7 +98,6 @@ export default function PermisosDocente() {
         }
     }, [periodoActual, user, navigate, cargarDatosDocente, cargarCarreras]);
 
-    // Handlers de Cascada
     const handleCarreraSelect = async (carrera) => {
         setSelectedCarrera(carrera);
         setSelectedSemestre(null);
@@ -116,7 +111,6 @@ export default function PermisosDocente() {
         try {
             const res = await permisosService.getSemestres(carrera.codigo);
             console.log('Response from getSemestres:', res);
-            // El backend devuelve un array simple [1, 2, 3...]
             const data = Array.isArray(res) ? res : (res?.data || []);
             setSemestres(data);
         } catch (error) {

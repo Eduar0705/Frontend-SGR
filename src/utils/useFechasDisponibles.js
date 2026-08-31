@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { useState, useCallback } from 'react';
 const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/api';
-// ── Utilidades ─────────────────────────────────────────────────────────────────
 export function formatearFechaParaInput(fecha) {
     const year  = fecha.getFullYear();
     const month = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -30,7 +29,6 @@ export function agruparFechasPorMes(fechas) {
     return agrupadas;
 }
 
-// ── Hook principal ─────────────────────────────────────────────────────────────
 export function useFechasDisponibles() {
     const [fechasSistema,       setFechasSistema]       = useState([]);
     const [configuracionFechas, setConfiguracionFechas] = useState(null);
@@ -96,7 +94,6 @@ export function useFechasDisponibles() {
 
             while (fechaActual <= fechaFin) {
                 const diaSemana      = fechaActual.getDay();
-                // JS: 0=Dom,1=Lun... → tu formato: 0=Lun,...,6=Dom
                 const diaEnTuFormato = diaSemana === 0 ? 6 : diaSemana - 1;
 
                 if (config.diasPermitidos.includes(diaEnTuFormato)) {

@@ -5,10 +5,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/a
 export const academicoService = {
     async getCarreras() {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/carreras`, {
+        const response = await axios.get(`${API_URL}/carreras`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await response.json();
+        const data = await response.data;
         return data.data || [];
     },
     //migrado a axios

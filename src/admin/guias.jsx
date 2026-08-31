@@ -49,7 +49,6 @@ export default function AdminGuias() {
 
     if (!user) return null;
 
-    // Secciones por pestaña
     const adminSections = [
         { id: 'periodos', title: 'Periodos Académicos', icon: 'fas fa-calendar-alt' },
         { id: 'docentes', title: 'Directorio Docente', icon: 'fas fa-chalkboard-teacher' },

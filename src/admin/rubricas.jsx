@@ -20,17 +20,14 @@ export default function Rubricas() {
         return storedUser ? JSON.parse(storedUser) : null;
     });
 
-    // Estados de datos
     const [rubricas, setRubricas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [professorFilter, setProfessorFilter] = useState('');
 
-    // Estados de paginación
     const [entriesPerPage, setEntriesPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Estado del Modal de Edición y Auditoría
     const [modalMode, setModalMode] = useState(null);
     const [currentRubricaId, setCurrentRubricaId] = useState(null);
     const [auditRubrica, setAuditRubrica] = useState(null);
@@ -51,7 +48,6 @@ export default function Rubricas() {
         criterios: []
     });
 
-    // Estados para selects en el modal
     const [tiposRubrica, setTiposRubrica] = useState([]);
     const [carreras, setCarreras] = useState([]);
     const [semestres, setSemestres] = useState([]);
@@ -80,7 +76,6 @@ export default function Rubricas() {
         }
     }, [periodoActual, user, navigate, loadInitialData]);
 
-    // Filtrado y Paginación
     const filteredRubricas = useMemo(() => {
         return rubricas.filter(rubrica => {
             const matchesSearch =
@@ -107,7 +102,6 @@ export default function Rubricas() {
         return Math.ceil(filteredRubricas.length / parseInt(entriesPerPage)) || 1;
     }, [filteredRubricas, entriesPerPage]);
 
-    // Ver / Imprimir rúbrica
     const handleVerRubrica = async (id, id_eval) => {
         try {
             Swal.fire({ title: 'Cargando rúbrica...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -123,7 +117,6 @@ export default function Rubricas() {
         }
     };
 
-    // Manejadores de Cascada
     const handleCarreraChange = async (codigo) => {
         if (!codigo) { setSemestres([]); return; }
         const data = await academicoService.getSemestres(codigo);
@@ -148,7 +141,6 @@ export default function Rubricas() {
         setEvaluaciones(data);
     };
 
-    // FIX #2: usar 'valor' que es el campo real del objeto retornado por el backend
     const handleEvaluacionChange = (evalId) => {
         const evaluacion = evaluaciones.find(e => e.evaluacion_id == evalId);
         if (!evaluacion) return;
@@ -185,7 +177,6 @@ export default function Rubricas() {
 
                 const jerarquia = await rubricasService.getCarreraXSeccion(r.id_seccion);
 
-                // Cargar selects en cascada secuencialmente para garantizar estado correcto
                 await handleCarreraChange(jerarquia.carrera_codigo);
                 await handleSemestreChange(jerarquia.carrera_codigo, jerarquia.semestre);
                 await handleMateriaChange(r.materia_codigo, jerarquia.carrera_codigo);
@@ -430,9 +421,6 @@ export default function Rubricas() {
     const totalPuntosCriterios = formData.criterios.reduce(
         (acc, c) => acc + (parseFloat(c.puntaje_maximo) || 0), 0
     );
-
-    // FIX #1: NO hacer JSON.stringify a criterios — ya se serializa en el service
-    // FIX #2: el payload usa los nombres exactos que espera el backend
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -453,14 +441,14 @@ export default function Rubricas() {
         try {
             Swal.fire({ title: 'Actualizando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // Payload con nombres exactos que espera el backend y criterios como array (NO string)
+            // Payload con nombres exactos que espera el backend y criterios como array
             const payload = {
                 nombre_rubrica: formData.nombre_rubrica,
                 id_evaluacion: formData.evaluacion_id,
                 tipo_rubrica: formData.id_tipo,
                 instrucciones: formData.instrucciones,
                 porcentaje: formData.porcentaje_evaluacion,
-                criterios: formData.criterios   // ← array directo, sin JSON.stringify
+                criterios: formData.criterios
             };
 
             const res = await rubricasService.updateRubrica(currentRubricaId, payload);

@@ -19,7 +19,6 @@ export default function TeacherEditarRubrica() {
         return storedUser ? JSON.parse(storedUser) : null;
     });
 
-    // Form data arrays
     const [carreras, setCarreras] = useState([]);
     const [tiposRubrica, setTiposRubrica] = useState([]);
     const [semestres, setSemestres] = useState([]);
@@ -27,7 +26,6 @@ export default function TeacherEditarRubrica() {
     const [secciones, setSecciones] = useState([]);
     const [evaluaciones, setEvaluaciones] = useState([]);
 
-    // Form states
     const [formData, setFormData] = useState({
         nombre_rubrica: '',
         tipo_rubrica: '',
@@ -42,7 +40,6 @@ export default function TeacherEditarRubrica() {
         instrucciones: ''
     });
 
-    // Criterios & Niveles
     const [criterios, setCriterios] = useState([]);
     const [loading, setLoading] = useState(true);
 

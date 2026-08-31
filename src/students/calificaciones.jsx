@@ -215,7 +215,6 @@ export default function StudentCalificaciones() {
     );
 }
 
-// --- Componente auxiliar para las stat cards ---
 function StatCard({ icon, color, value, label }) {
     return (
         <div style={{ background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -230,7 +229,6 @@ function StatCard({ icon, color, value, label }) {
     );
 }
 
-// --- Estilos ---
 const thStyle = { background: '#fff', color: '#000', fontWeight: 'bold', padding: '10px', textAlign: 'center', border: '1px solid #000' };
 const tdStyle = { padding: '8px 12px', border: '1px solid #000', color: '#333' };
 const tdCenter = { ...tdStyle, textAlign: 'center' };

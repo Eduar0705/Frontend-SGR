@@ -33,7 +33,6 @@ export const permisosService = {
         return await response.json();
     },
 
-    // Auxiliares académicos para el formulario de permisos
     async getCarreras() {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_URL}/carreras`, {

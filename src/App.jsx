@@ -99,7 +99,6 @@ const UserProfile = lazy(() => import('./components/UserProfile'));
 function AppContent() {
     const { loading } = useUI();
     
-    // Función auxiliar para obtener el usuario de forma segura
     const getUser = () => {
         try {
             return JSON.parse(localStorage.getItem('user')) || {};

@@ -56,14 +56,13 @@ export default function Login() {
             const nombreUsuario = response.user.nombre || response.user.cedula || 'Usuario';
             showSuccess(`¡Bienvenido(a), ${nombreUsuario}!`);
             
-            // Redirigir según el rol
             const idRol = response.user.id_rol;
             if (idRol === 1) {
                 navigate('/home'); // Administrador
             } else if (idRol === 2) {
-                navigate('/teacher'); // Docente
+                navigate('/teacher');
             } else if (idRol === 3) {
-                navigate('/student'); // Estudiante
+                navigate('/student');
             } else {
                 navigate('/');
             }

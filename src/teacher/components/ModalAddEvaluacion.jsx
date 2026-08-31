@@ -7,14 +7,12 @@ import { useFechasDisponibles, agruparFechasPorMes } from '../../utils/useFechas
 export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', currentEvalId = null, preloadedData = null }) {
     const [submitting, setSubmitting] = useState(false);
 
-    // Catalogos
     const [carreras, setCarreras] = useState([]);
     const [materias, setMaterias] = useState([]);
     const [secciones, setSecciones] = useState([]);
     const [estrategias, setEstrategias] = useState([]);
     const [cortes, setCortes] = useState([]);
 
-    // Hook de fechas dinámicas
     const { fechasSistema, configuracionFechas, loadingFechas, errorFechas, cargarFechas, resetFechas } = useFechasDisponibles();
 
     const [formData, setFormData] = useState({
@@ -36,11 +34,9 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
         instrumentos: ''
     });
 
-    // Carga de catálogos iniciales (específicos de docente)
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                // Primero cargar catálogos básicos
                 const [resCarreras, resEstrategias, resCortes] = await Promise.all([
                     evaluacionesService.getTeacherCarreras(),
                     evaluacionesService.getEstrategias(),
@@ -56,7 +52,6 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
                     setCortes(filtered);
                 }
                 
-                // --- MANEJO DE DATOS PRECARGADOS (NUEVA EVALUACIÓN DESDE SECCIÓN) ---
                 if (mode === 'create' && preloadedData) {
                     const { carrera_codigo, materia_codigo, id_seccion } = preloadedData;
                     
@@ -87,20 +82,16 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
                         const data = resEval.evaluacion;
                         
                         // Cargar cascada secuencialmente para que los selects se llenen
-                        // 1. Materias de la carrera
                         const resMat = await evaluacionesService.getTeacherMateriasByCarrera(data.carrera_codigo);
                         if (resMat.success) setMaterias(resMat.materias);
 
-                        // 2. Secciones de la materia
                         const resSec = await evaluacionesService.getTeacherSecciones(data.materia_codigo);
                         if (resSec.success) setSecciones(resSec.secciones);
 
-                        // 3. Fechas de la sección
                         await cargarFechas(data.id_seccion, []);
 
                         const fechaStr = data.fecha_evaluacion ? data.fecha_evaluacion.split('T')[0] : '';
 
-                        // Reconstruir JSON de fecha_horario
                         let fecha_horario_json = '';
                         if (data.tipo_horario === 'Sección' && data.id_horario) {
                             fecha_horario_json = JSON.stringify({
@@ -141,7 +132,6 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
         }).replace(/\//g, '-');
         return fechaFormateada;
     }
-    // ── Carga jerárquica ───────────────────────────────────────────────────────
     const handleCarreraChange = async (codigo) => {
         setFormData(prev => ({ ...prev, carrera_codigo: codigo, materia_codigo: '', id_seccion: '', id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
         resetFechas();
@@ -203,7 +193,6 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validaciones preventivas
         if (formData.estrategias_eval.length === 0) {
             Swal.fire('Atención', 'Debe seleccionar al menos una estrategia de evaluación.', 'warning');
             return;

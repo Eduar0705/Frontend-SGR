@@ -33,7 +33,7 @@ export function aplicarRedondeoPuntaje(puntaje, porcentajeEvaluacion) {
  * @param {boolean} [params.esCreacion=false] - Indica si es creación o edición
  * @returns {{ valido: boolean, mensaje?: string }}
  */
-export function validarEstructuraRubrica({ criterios, porcentaje, esCreacion = false }) {
+export function validarEstructuraRubrica({ criterios, porcentaje }) {
     if (!criterios || !Array.isArray(criterios) || criterios.length === 0) {
         return { valido: false, mensaje: 'Debe agregar al menos un criterio de evaluación.' };
     }

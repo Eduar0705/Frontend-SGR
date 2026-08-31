@@ -19,7 +19,6 @@ export default function TeacherCrearRubricas() {
         return storedUser ? JSON.parse(storedUser) : null;
     });
 
-    // Estados de datos
     const [loading, setLoading] = useState(false);
     const [tiposRubrica, setTiposRubrica] = useState([]);
     const [carreras, setCarreras] = useState([]);
@@ -28,10 +27,9 @@ export default function TeacherCrearRubricas() {
     const [secciones, setSecciones] = useState([]);
     const [evaluaciones, setEvaluaciones] = useState([]);
 
-    // Estado del Formulario
     const [formData, setFormData] = useState({
         nombre_rubrica: '',
-        tipo_rubrica: '', // ID del tipo
+        tipo_rubrica: '', 
         carrera_codigo: '',
         semestre: '',
         materia_codigo: '',
@@ -54,7 +52,6 @@ export default function TeacherCrearRubricas() {
         ]
     });
 
-    // Cargar datos iniciales
     useEffect(() => {
         if (!user) {
             navigate('/login');
@@ -65,14 +62,12 @@ export default function TeacherCrearRubricas() {
 
     const loadInitialData = async () => {
         try {
-            setGlobalLoading(true); // Encender el overlay
+            setGlobalLoading(true); // Encender pantalla ed carga
             
-            // Cargar tipos de rúbrica y otros datos del formulario usando el servicio
             const dataForm = await teacherRubricasService.getFormData();
             setTiposRubrica(dataForm.tipos || []);
             setCarreras(dataForm.carreras || []);
 
-            // Si hay datos pre-cargados en el estado de navegación, ejecutarlos secuencialmente
             if (location.state?.preloaded) {
                 await handlePreloading(location.state.preloaded, dataForm.carreras || []);
             }
@@ -108,11 +103,10 @@ export default function TeacherCrearRubricas() {
             if (dataEval && dataEval.length > 0) {
                 setEvaluaciones(dataEval);
                 
-                // Encontrar la evaluación específica para obtener su porcentaje
                 const targetEval = dataEval.find(ev => String(ev.id) === String(preData.evaluacion_id));
                 const finalPorcentaje = targetEval?.ponderacion || 0;
 
-                // 6. Actualizar formData (con conversión explícita a String para los selects)
+                // 6. Actualizar formData
                 setFormData(prev => ({
                     ...prev,
                     carrera_codigo: String(preData.carrera),
@@ -130,7 +124,6 @@ export default function TeacherCrearRubricas() {
         }
     };
 
-    // Manejadores de Cascada (Usando Service)
     const handleCarreraChange = async (codigo) => {
         setFormData(prev => ({ ...prev, carrera_codigo: codigo, semestre: '', materia_codigo: '', seccion_id: '', evaluacion_id: '' }));
         setSemestres([]); setMaterias([]); setSecciones([]); setEvaluaciones([]);
@@ -227,7 +220,6 @@ export default function TeacherCrearRubricas() {
         }));
     };
 
-    // Manejo de Criterios y Niveles
     const addCriterio = () => {
         const nuevoCriterio = {
             id: null,

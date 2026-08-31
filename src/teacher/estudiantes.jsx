@@ -72,7 +72,6 @@ export default function TeacherEstudiantes() {
         }
     };
 
-    // Filtros dinámicos
     const filteredEstudiantes = estudiantes.filter(est => {
         const fullName = `${est.nombre} ${est.apellido}`.toLowerCase();
         const matchesSearch = fullName.includes(searchTerm.toLowerCase()) || 
@@ -83,7 +82,6 @@ export default function TeacherEstudiantes() {
         return matchesSearch && matchesCarrera && matchesSeccion;
     });
 
-    // Paginación
     const totalEntries = filteredEstudiantes.length;
     const finalItemsPerPage = itemsPerPage === 'all' ? totalEntries : parseInt(itemsPerPage);
     const totalPages = Math.ceil(totalEntries / finalItemsPerPage) || 1;

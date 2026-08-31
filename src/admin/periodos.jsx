@@ -39,17 +39,14 @@ export default function Periodos() {
     const [entriesPerPage, setEntriesPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Periodo seleccionado y sus cortes
     const [selectedPeriodo, setSelectedPeriodo] = useState(null);
     const [cortes, setCortes] = useState([]);
     const [loadingCortes, setLoadingCortes] = useState(false);
 
-    // Modal corte
     const [showCorteModal, setShowCorteModal] = useState(false);
     const [editingCorte, setEditingCorte] = useState(null); // null = agregar, object = editar
     const [corteForm, setCorteForm] = useState(EMPTY_CORTE);
 
-    // Lapsos de Correcciones
     const [lapsos, setLapsos] = useState([]);
     const [loadingLapsos, setLoadingLapsos] = useState(false);
     const [showLapsoModal, setShowLapsoModal] = useState(false);
@@ -66,7 +63,6 @@ export default function Periodos() {
         id_pensum: ''
     });
 
-    // Helper Semanas
     const [useWeeksForCortes, setUseWeeksForCortes] = useState(false);
     const [useWeeksForLapsos, setUseWeeksForLapsos] = useState(false);
 
@@ -113,7 +109,6 @@ export default function Periodos() {
         return weeks;
     }, [selectedPeriodo]);
 
-    // Auth guard
     useEffect(() => {
         if (!user || user.id_rol !== 1) {
             navigate('/login');
@@ -189,8 +184,6 @@ export default function Periodos() {
         loadLapsos(periodo.codigo);
         setActiveTab('cortes');
     };
-
-    // Filtrado y paginación de periodos
     const filteredPeriodos = useMemo(() =>
         periodos.filter(p =>
             p.codigo.toLowerCase().includes(searchTerm.toLowerCase())
@@ -247,8 +240,6 @@ export default function Periodos() {
             Swal.fire('Error', 'La fecha de inicio no puede ser mayor a la fecha de fin.', 'error');
             return;
         }
-
-        // Generar código
         const currentYear = new Date().getFullYear();
         const yearPeriodos = periodos.filter(p => p.codigo && p.codigo.startsWith(`${currentYear}-`));
         let maxSuffix = 0;
@@ -265,7 +256,7 @@ export default function Periodos() {
             codigo: nuevoCodigo,
             fecha_inicio: periodoForm.fecha_inicio,
             fecha_fin: periodoForm.fecha_fin,
-            id_pensum: periodoForm.id_pensum // id_pensum se manda tal cual, el backend decide formato (num/string)
+            id_pensum: periodoForm.id_pensum
         };
 
         const result = await periodosService.createPeriodo(payload);
@@ -277,9 +268,6 @@ export default function Periodos() {
             Swal.fire('Error', result.mensaje || 'No se pudo crear el periodo.', 'error');
         }
     };
-
-    // ────────── CRUD Cortes ──────────
-
     const validateCorteDates = (form, periodo) => {
         const pInicio = new Date(periodo.fecha_inicio);
         const pFin = new Date(periodo.fecha_fin);
@@ -312,7 +300,6 @@ export default function Periodos() {
         const corteConflicto = cortesAComparar.find(c => {
             const eInicio = new Date(c.fecha_inicio);
             const eFin = new Date(c.fecha_fin);
-            // Hay intersección si: cInicio <= eFin && cFin >= eInicio
             return cInicio <= eFin && cFin >= eInicio;
         });
 
@@ -429,7 +416,6 @@ export default function Periodos() {
         });
     };
 
-    // ────────── CRUD Lapsos ──────────
     const openAddLapsoModal = () => {
         setEditingLapso(null);
         setLapsoForm({ ...EMPTY_LAPSO, codigo_periodo: selectedPeriodo.codigo });
@@ -495,7 +481,6 @@ export default function Periodos() {
             return;
         }
 
-        // Se envía codigo_periodo y fechas. El backend se encarga de guardarlo.
         const payload = { ...lapsoForm };
         let result;
         if (editingLapso) {

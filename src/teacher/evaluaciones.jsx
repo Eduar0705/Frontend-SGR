@@ -23,12 +23,11 @@ export default function TeacherEvaluaciones() {
     });
 
     const [evaluacionesAgrupadas, setEvaluacionesAgrupadas] = useState({});
-    const [estudiantesPorEvaluacion, setEstudiantesPorEvaluacion] = useState({}); // { id_evaluacion: estudiantes[] }
-    const [loadingEvaluados, setLoadingEvaluados] = useState({}); // { id_evaluacion: boolean }
+    const [estudiantesPorEvaluacion, setEstudiantesPorEvaluacion] = useState({});
+    const [loadingEvaluados, setLoadingEvaluados] = useState({});
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Un estado de expansión por nivel jerárquico
     const [expandedCarreras,  setExpandedCarreras]  = useState({});
     const [expandedSemestres, setExpandedSemestres] = useState({});
     const [expandedMaterias,  setExpandedMaterias]  = useState({});
@@ -122,7 +121,6 @@ export default function TeacherEvaluaciones() {
         const now = new Date('2025-08-21'); //FECHA PERSONALIZADA
 
         lista.forEach(ev => {
-            // Normalizar nombres de campos
             ev.carrera_codigo = ev.carrera_codigo || ev.codigo_carrera;
             ev.materia_codigo = ev.materia_codigo || ev.codigo_materia;
 
@@ -132,7 +130,6 @@ export default function TeacherEvaluaciones() {
             const sc = `Sección ${ev.seccion_codigo}`;
             const r  = `${ev.contenido} (${ev.nombre_rubrica})`;
 
-            // Pre-calcular canModify (entidad evaluacion)
             let canModify = false;
             let canEvaluate = false;
 
@@ -142,21 +139,18 @@ export default function TeacherEvaluaciones() {
                     const start = new Date(matchingCorte.fecha_inicio);
                     const end = new Date(matchingCorte.fecha_fin);
                     
-                    // Lógica para canModify
                     if (now < start) {
                         canModify = true;
                     } else if (now >= start && now <= end) {
                         canModify = ev.existe_evaluado === 0;
                     }
 
-                    // Lógica para canEvaluate (Condicion 1: dentro del corte)
                     if (now >= start && now <= end) {
                         canEvaluate = true;
                     }
                 }
             }
 
-            // Lógica para canEvaluate (Condicion 2: dentro de cualquier lapso de correciones)
             if (!canEvaluate && lapsos && lapsos.length > 0) {
                 canEvaluate = lapsos.some(lp => {
                     const lStart = new Date(lp.fecha_inicio);
@@ -189,7 +183,6 @@ export default function TeacherEvaluaciones() {
 
         setEvaluacionesAgrupadas(agrupadas);
 
-        // Si no se solicita preservar (carga inicial), expandir los niveles base por defecto
         if (!preserveExpanded) {
             const newCarreras = {};
             const newSem = {};
@@ -215,7 +208,6 @@ export default function TeacherEvaluaciones() {
         }
     };
 
-    // Handlers para el modal de evaluación
     const handleOpenEdit = (e, id) => {
         e.stopPropagation();
         setSelectedEvalId(id);
@@ -259,7 +251,6 @@ export default function TeacherEvaluaciones() {
         });
     };
 
-    // Helper genérico para toggles
     const tog = (setter) => (key) => setter(prev => ({ ...prev, [key]: !prev[key] }));
     const toggleCarrera  = tog(setExpandedCarreras);
     const toggleSemestre = tog(setExpandedSemestres);
@@ -273,7 +264,6 @@ export default function TeacherEvaluaciones() {
         });
     };
 
-    // Chevron reutilizable
     const Chevron = ({ open }) => (
         <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} style={{ color: '#64748b', fontSize: '0.82em', flexShrink: 0 }} />
     );

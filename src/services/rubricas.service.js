@@ -1,13 +1,11 @@
 import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/api';
 
-// Crear una instancia de axios con configuración base
 const api = axios.create({
     baseURL: API_URL,
     timeout: 30000, // 30 segundos
 });
 
-// Interceptor para agregar token a todas las peticiones
 api.interceptors.request.use(config => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -16,7 +14,6 @@ api.interceptors.request.use(config => {
     return config;
 });
 
-// Interceptor para manejar respuestas
 api.interceptors.response.use(
     response => response,
     error => {
@@ -34,40 +31,33 @@ api.interceptors.response.use(
 async function fetchJSON(url, options = {}) {
     const token = localStorage.getItem('token');
     
-    // FIX #2: Verificar token primero
     if (!token) {
         throw new Error('No hay sesión activa. Por favor inicie sesión.');
     }
 
     try {
-        // Extraer método y otros parámetros de options
         const { method = 'GET', params = {}, body, headers = {} } = options;
         
-        // Configurar la petición
         const config = {
             method,
             url,
-            params, // Axios maneja los query params automáticamente
+            params, 
             headers: {
                 'Content-Type': 'application/json',
                 ...headers
             }
         };
 
-        // Si hay body, agregarlo (para POST, PUT, etc)
         if (body) {
             config.data = typeof body === 'string' ? JSON.parse(body) : body;
         }
-
-        // Hacer la petición con axios
         const response = await api(config);
         
-        // Verificar si la respuesta indica éxito
         if (response.data && response.data.success === false) {
             throw new Error(response.data.message || 'Error en la operación');
         }
         
-        return response.data; // Axios ya parsea el JSON automáticamente
+        return response.data;
         
     } catch (error) {
         // Manejar errores de axios

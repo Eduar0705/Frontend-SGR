@@ -47,7 +47,6 @@ export default function Recovery() {
         try {
             const response = await authService.requestRecovery(cedula, email);
             showSuccess(response.message);
-            // Redirigir a la vista de reset pasándole la cédula
             navigate(`/reset-password?cedula=${cedula}`);
         } catch (err) {
             showError(err.message || 'Error al solicitar recuperación');

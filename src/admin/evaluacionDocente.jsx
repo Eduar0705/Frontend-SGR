@@ -15,22 +15,18 @@ export default function EvaluacionDocente() {
         return storedUser ? JSON.parse(storedUser) : null;
     });
 
-    // Estados de datos
     const [evaluaciones, setEvaluaciones] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
 
-    // Estados de paginación
     const [entriesPerPage] = useState(5);
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Estado del Modal
     const [modalMode, setModalMode] = useState(null); // 'create', 'edit', 'view'
     const [selectedDocente, setSelectedDocente] = useState(null);
     const [permisosDocente, setPermisosDocente] = useState(null);
     const [currentEvalId, setCurrentEvalId] = useState(null);
 
-    // Estado del Formulario de Evaluación
     const [formData, setFormData] = useState({
         unidad_curricular: '',
         semestre: '',
@@ -62,7 +58,6 @@ export default function EvaluacionDocente() {
         }
     }, [user, navigate, loadEvaluaciones]);
 
-    // Filtrado y Paginación
     const filteredEvaluaciones = useMemo(() => {
         return evaluaciones.filter(evalu => 
             evalu.docente_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -77,7 +72,6 @@ export default function EvaluacionDocente() {
 
     const totalPages = Math.ceil(filteredEvaluaciones.length / entriesPerPage);
 
-    // Manejadores del Modal
     const openCreateModal = async (docente) => {
         setSelectedDocente(docente);
         resetForm();
@@ -102,11 +96,9 @@ export default function EvaluacionDocente() {
                 setCurrentEvalId(evalu.evaluacion_id);
                 setSelectedDocente({ cedula: evalu.cedula, docente_nombre: ev.docente_nombre });
                 
-                // Cargar permisos primero para que los selects tengan opciones
                 const permisos = await academicoService.getPermisosDocente(evalu.cedula);
                 setPermisosDocente(permisos);
 
-                // Mapear criterios
                 const mappedCriterios = [];
                 for (let i = 1; i <= 7; i++) {
                     mappedCriterios.push({
@@ -209,7 +201,6 @@ export default function EvaluacionDocente() {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         
-        // Validaciones
         if (!formData.unidad_curricular || !formData.seccion_id) {
             return Swal.fire('Atención', 'Seleccione la materia y sección', 'warning');
         }
@@ -228,7 +219,6 @@ export default function EvaluacionDocente() {
             sugerencias: formData.sugerencias
         };
 
-        // Agregar criterios al payload
         formData.criterios.forEach((c, idx) => {
             payload[`criterio${idx + 1}_calificacion`] = c.calificacion;
             payload[`criterio${idx + 1}_observaciones`] = c.observaciones;

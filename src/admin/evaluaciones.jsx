@@ -37,7 +37,6 @@ export default function Evaluaciones() {
         return storedUser ? JSON.parse(storedUser) : null;
     });
 
-    // Estados Principal
     const [seccionesData, setSeccionesData] = useState([]);
     const [evaluacionesPorSeccion, setEvaluacionesPorSeccion] = useState({}); // { id_seccion: evaluaciones[] }
     const [loadingSeccionesDetalle, setLoadingSeccionesDetalle] = useState({}); // { id_seccion: boolean }
@@ -46,7 +45,6 @@ export default function Evaluaciones() {
     const [docenteFilter, setDocenteFilter] = useState('');
     const [estadoFilter, setEstadoFilter] = useState('');
 
-    // Estados de Detalle de Evaluación (Progresivo)
     const [estudiantesPorEvaluacion, setEstudiantesPorEvaluacion] = useState({});
     const [loadingEvaluados, setLoadingEvaluados] = useState({});
     const [showDetalles, setShowDetalles] = useState(false);
@@ -54,10 +52,7 @@ export default function Evaluaciones() {
     const [showEvaluar, setShowEvaluar] = useState(false);
     const [selectedEstudianteEvaluar, setSelectedEstudianteEvaluar] = useState(null);
     const [isActionLoading, setIsActionLoading] = useState(false);
-
-
-
-    // Estados del Modal
+    
     const [showModal, setShowModal] = useState(false);
     const [modalMode, setModalMode] = useState('create');
     const [currentEvalId, setCurrentEvalId] = useState(null);
@@ -65,14 +60,12 @@ export default function Evaluaciones() {
     const [submitting, setSubmitting] = useState(false);
     const { setLoading: setGlobalLoading } = useUI();
 
-    // Catalogos Modal
     const [carreras, setCarreras] = useState([]);
     const [materias, setMaterias] = useState([]);
     const [secciones, setSecciones] = useState([]);
     const [estrategias, setEstrategias] = useState([]);
     const [cortes, setCortes] = useState([]);
 
-    // Hook de fechas dinámicas
     const { fechasSistema, configuracionFechas, loadingFechas, errorFechas, cargarFechas, resetFechas } = useFechasDisponibles();
 
     const [formData, setFormData] = useState({
@@ -85,9 +78,7 @@ export default function Evaluaciones() {
         materia_codigo: '',
         id_seccion: '',
         tipo_horario: 'Sección',
-        // Para tipo Sección: guardamos el JSON completo como string (igual que el JS original)
         fecha_horario_json: '',
-        // Campos derivados del JSON seleccionado (o ingresados manualmente en tipo Otro)
         fecha_evaluacion: '',
         id_horario: '',
         hora_inicio: '',
@@ -96,7 +87,6 @@ export default function Evaluaciones() {
         instrumentos: ''
     });
 
-    // ── Cargar Secciones Iniciales ─────────────────────────────────────────────
     const loadEvaluaciones = useCallback(async () => {
         try {
             setLoading(true);
@@ -111,7 +101,6 @@ export default function Evaluaciones() {
         }
     }, [setGlobalLoading]);
 
-    // ── Cargar Evaluaciones de una Sección bajo demanda ────────────────────────
     const fetchEvaluacionesDeSeccion = async (idSeccion, force = false) => {
         if (!force && (evaluacionesPorSeccion[idSeccion] || loadingSeccionesDetalle[idSeccion])) return;
 
@@ -150,7 +139,6 @@ export default function Evaluaciones() {
         else loadEvaluaciones();
     }, [periodoActual, user, navigate, loadEvaluaciones]);
 
-    // ── Carga de catálogos al abrir modal ──────────────────────────────────────
     useEffect(() => {
         if (showModal) {
             evaluacionesService.getCarrerasByPeriodo().then(res => res.success && setCarreras(res.carreras));
@@ -159,7 +147,6 @@ export default function Evaluaciones() {
         }
     }, [showModal]);
 
-    // ── Carga jerárquica ───────────────────────────────────────────────────────
     const handleCarreraChange = async (codigo) => {
         setFormData(prev => ({ ...prev, carrera_codigo: codigo, materia_codigo: '', id_seccion: '', id_horario: '', fecha_horario_json: '', fecha_evaluacion: '' }));
         resetFechas();
@@ -190,7 +177,6 @@ export default function Evaluaciones() {
         }
     };
 
-    // ── Cambio en el select de fecha+horario (tipo Sección) ───────────────────
     const handleFechaHorarioChange = (jsonString) => {
         if (!jsonString) {
             setFormData(prev => ({ ...prev, fecha_horario_json: '', id_horario: '', fecha_evaluacion: '', hora_inicio: '', hora_fin: '' }));
@@ -207,7 +193,6 @@ export default function Evaluaciones() {
         }));
     };
 
-    // ── Cambio de tipo de horario ──────────────────────────────────────────────
     const handleTipoHorarioChange = (tipo) => {
         setFormData(prev => ({
             ...prev,
@@ -220,13 +205,12 @@ export default function Evaluaciones() {
         }));
     };
 
-    // ── Filtrado de Secciones ────────────────────────────────────────────────
     const filteredSecciones = useMemo(() => {
         return seccionesData.filter(sec => {
             const matchesSearch = !searchTerm ||
                 `${sec.materia_nombre} ${sec.docente_nombre} ${sec.docente_apellido}`.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesDocente = !docenteFilter || `${sec.docente_nombre} ${sec.docente_apellido}` === docenteFilter;
-            const matchesEstado = !estadoFilter || true; // El estado total de la sección no se tiene fácilmente sin evaluaciones
+            const matchesEstado = !estadoFilter || true;
             return matchesSearch && matchesDocente && matchesEstado;
         });
     }, [seccionesData, searchTerm, docenteFilter, estadoFilter]);
@@ -236,7 +220,6 @@ export default function Evaluaciones() {
         return Array.from(set).sort();
     }, [seccionesData]);
 
-    // ── Agrupación de Secciones (Niveles Jerárquicos) ──────────────────────────
     const seccionesAgrupadas = useMemo(() => {
         const agrupadas = {};
         filteredSecciones.forEach(sec => {
@@ -254,7 +237,6 @@ export default function Evaluaciones() {
         return agrupadas;
     }, [filteredSecciones]);
 
-    // Estados de expansión por cada nivel
     const [expandedCarreras,  setExpandedCarreras]  = useState({});
     const [expandedSemestres, setExpandedSemestres] = useState({});
     const [expandedMaterias,  setExpandedMaterias]  = useState({});
@@ -285,9 +267,7 @@ export default function Evaluaciones() {
         <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} style={{ color: '#64748b', fontSize: '0.82em', flexShrink: 0 }} />
     );
 
-    // ── CRUD ───────────────────────────────────────────────────────────────────
     const handleOpenCreate = async (preDataArg = null) => {
-        // Ignorar eventos de click si se pasa como primer argumento
         const isEvent = preDataArg && (preDataArg.nativeEvent || preDataArg.target);
         const preData = isEvent ? null : preDataArg;
 
@@ -298,7 +278,6 @@ export default function Evaluaciones() {
         if (preData) {
             setGlobalLoading(true);
             try {
-                // Pre-cargar catálogos necesarios para los selects bloqueados
                 await handleCarreraChange(preData.carrera_codigo);
                 await handleMateriaChange(preData.materia_codigo, preData.carrera_codigo);
                 
@@ -343,12 +322,10 @@ export default function Evaluaciones() {
                 setModalMode('edit');
                 setCurrentEvalId(ev.evaluacion_id);
 
-                // Pre-cargar catálogos
                 await handleCarreraChange(data.carrera_codigo);
                 await handleMateriaChange(data.materia_codigo, data.carrera_codigo);
 
                 // Cargar fechas disponibles para esta sección
-                // (la evaluación que se está editando NO debe bloquearse a sí misma)
                 const evaluationsForSection = evaluacionesPorSeccion[data.id_seccion] || [];
                 const evaluacionesSinEstaEdit = evaluationsForSection.filter(e => e.evaluacion_id !== ev.evaluacion_id);
                 await cargarFechas(data.id_seccion, evaluacionesSinEstaEdit);
@@ -453,7 +430,6 @@ export default function Evaluaciones() {
 
     const esDiagnostico = estrategias.filter(est => formData.estrategias_eval.includes(est.id))
         .some(est => est.ponderable === 0);
-    // ── Render ─────────────────────────────────────────────────────────────────
     return (
         <div className="home-container">
             <Menu user={user} />
@@ -687,7 +663,7 @@ export default function Evaluaciones() {
                                                                                                                                                         carrera: secInfo.carrera_codigo,
                                                                                                                                                         semestre: secInfo.semestre,
                                                                                                                                                         materia_codigo: secInfo.materia_codigo,
-                                                                                                                                                        seccion_id: secInfo.id_seccion, // o secInfo.id
+                                                                                                                                                        seccion_id: secInfo.id_seccion,
                                                                                                                                                         evaluacion_id: ev.evaluacion_id
                                                                                                                                                     }
                                                                                                                                                 }
@@ -1022,7 +998,6 @@ export default function Evaluaciones() {
                                     </div>
                                 </div>
 
-                                {/* ── Sección: Estrategias ──────────────────── */}
                                 <div className="form-section-premium">
                                     <h4><i className="fas fa-list-ul"></i> Estrategias, Competencias e Instrumentos</h4>
                                     <div className="form-field full-width">
@@ -1048,7 +1023,7 @@ export default function Evaluaciones() {
 
                                                             const porcentaje = tieneNoPonderable
                                                                 ? 0
-                                                                : (esDiagnostico ? 5 : formData.porcentaje); // si venía bloqueado, restaurar a 5
+                                                                : (esDiagnostico ? 5 : formData.porcentaje);
 
                                                             setFormData({ ...formData, estrategias_eval: newEst, porcentaje });
                                                         }}

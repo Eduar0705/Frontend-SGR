@@ -2,9 +2,6 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
     const ventanaImpresion = window.open('', '_blank', 'width=1200,height=900');
     if (!ventanaImpresion) return false;
 
-    // ─── FIX #1: Recopilar TODOS los nombres de niveles únicos de TODOS los
-    // criterios, no solo del primero. Si un criterio tiene niveles distintos
-    // al primero, antes quedaban celdas vacías.
     const nivelesMap = new Map();
     criterios.forEach(c => {
         if (c.niveles && c.niveles.length > 0) {
@@ -16,19 +13,16 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
         }
     });
 
-    // FIX #2: Si no hay niveles en ningún criterio, usar nombres por defecto
     const nombresNiveles = nivelesMap.size > 0
         ? [...nivelesMap.entries()]
             .sort((a, b) => a[1] - b[1])   // mayor puntaje primero
             .map(([nombre]) => nombre)
         : ['Sobresaliente', 'Notable', 'Aprobado', 'Insuficiente'];
 
-    // FIX #3: Formato de fecha con timeZone UTC para evitar desfase de 1 día
     const fechaFormat = rubrica.fecha_evaluacion
         ? new Date(rubrica.fecha_evaluacion).toLocaleDateString('es-ES', { timeZone: 'UTC' })
         : '';
 
-    // FIX #4: Fallback para docente cuando viene null o "Docente no encontrado"
     const docenteNombre = (rubrica.docente_nombre && rubrica.docente_nombre !== 'Docente no encontrado')
         ? rubrica.docente_nombre
         : (rubrica.docente_cedula ? `Cédula: ${rubrica.docente_cedula}` : 'No asignado');
@@ -168,8 +162,6 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
                                 <span class="puntaje">(${c.puntaje_maximo} pts)</span>
                             </td>
                             ${nombresNiveles.map(nivelNombre => {
-                                // FIX #5: comparación case-insensitive y sin espacios
-                                // para evitar que "insuficiente" != "Insuficiente" cause celda vacía
                                 const nivel = (c.niveles || []).find(
                                     n => n.nombre_nivel?.toLowerCase().trim() === nivelNombre?.toLowerCase().trim()
                                 );

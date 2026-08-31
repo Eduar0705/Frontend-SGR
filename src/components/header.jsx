@@ -50,8 +50,8 @@ export default function Header({ title, user, onLogout }) {
     };
 
     useEffect(() => {
-        loadNotifications();
-        loadPeriodos();
+        loadNotifications(); //posiblemente lo remueva
+        loadPeriodos(); //posiblemente lo remueva
         const interval = setInterval(loadNotifications, 60000);
         return () => clearInterval(interval);
     }, []);
@@ -70,8 +70,6 @@ export default function Header({ title, user, onLogout }) {
     const handlePeriodoChange = (e) => {
         const nuevoPeriodo = e.target.value;
         updatePeriodo(nuevoPeriodo);
-        // Recargar la página actual para que los datos se filtren por el nuevo periodo
-        //window.location.reload();
     };
 
     const handleMarkAsRead = async (id) => {

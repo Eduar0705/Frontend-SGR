@@ -20,7 +20,6 @@ import {
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import '../assets/css/home.css';
 
-// Registro de componentes de Chart.js
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -71,7 +70,6 @@ export default function Reportes() {
 
     if (!user) return null;
 
-    // Configuración de Colores
     const colors = {
         primary: 'rgba(54, 162, 235, 0.8)',
         success: 'rgba(75, 192, 192, 0.8)',
@@ -81,7 +79,6 @@ export default function Reportes() {
         orange: 'rgba(255, 159, 64, 0.8)'
     };
 
-    // Datos para Gráficas
     const topRubricasChartData = stats?.topProfesoresPorRubricas ? {
         labels: stats.topProfesoresPorRubricas.map(p => p.nombre_completo),
         datasets: [{

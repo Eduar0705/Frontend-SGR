@@ -19,17 +19,14 @@ export default function Docentes() {
     const [profesores, setProfesores] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // --- ESTADOS DE CONTROL ---
     const [searchTerm, setSearchTerm] = useState('');
     const [entriesPerPage, setEntriesPerPage] = useState(5);
     const [currentPage, setCurrentPage] = useState(1);
 
-    // --- ESTADOS DE MODALES ---
     const [showFormModal, setShowFormModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
 
-    // --- ESTADO DEL FORMULARIO ---
     const [formData, setFormData] = useState({
         cedula: '', nombre: '', apellido: '', email: '', 
         telefono: '', especialidad: '', notas: '', activo: '1', cedula_og: ''
@@ -53,12 +50,10 @@ export default function Docentes() {
         if (!user || !token) {
             navigate('/login');
         } else {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             cargarProfesores();
         }
     }, [periodoActual, navigate, user]);
 
-    // --- VALIDACIONES EN TIEMPO REAL ---
     const handleChange = (e) => {
         const { name, value } = e.target;
         // Validación: Solo números para Cédula y Teléfono
@@ -99,7 +94,6 @@ export default function Docentes() {
         }
     };
 
-    // --- MANEJO DE ACCIONES ---
     const openAddModal = () => {
         setIsEditMode(false);
         setFormData({ cedula: '', nombre: '', apellido: '', email: '', telefono: '', especialidad: '', notas: '', activo: '1', cedula_og: '' });
@@ -153,7 +147,6 @@ export default function Docentes() {
         });
     };
 
-    // --- LÓGICA DE FILTRADO Y PAGINACIÓN ---
     const filtrados = profesores.filter(p => 
         p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
         p.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
