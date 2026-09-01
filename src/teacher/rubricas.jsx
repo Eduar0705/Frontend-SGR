@@ -51,8 +51,8 @@ export default function TeacherRubrica() {
 
     const handleDelete = async (id, id_eval) => {
         const result = await Swal.fire({
-            title: '¿Estás seguro de desvincular esta evaluación de la rúbrica?',
-            text: "Dejarás de usar esta rúbrica en esta evaluación, y tendrás que volver a corregir si ya habías comenzado a evaluar.",
+            title: '¿Estás seguro de desvincular esta evaluación de su rúbrica?',
+            text: "Dejarás de usar esta rúbrica en esta evaluación, y tendrás que volver a corregir si ya habías comenzado a evaluar. Recomendamos editarla mejor",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
@@ -96,6 +96,7 @@ export default function TeacherRubrica() {
             }
         } catch (error) {
             Swal.fire('Error', 'Error de red', 'error');
+            console.error(error)
         }
     };
 
@@ -147,7 +148,7 @@ export default function TeacherRubrica() {
                                 value={'professorFilter'}
                                 style={{ padding: '10px 15px', borderRadius: '10px', border: '1px solid #e2e8f0', minWidth: '180px' }}
                             >
-                                <option value="">Todas las rúbricas</option>
+                                <option value="">Mis rúbricas</option>
                             </select>
                             <button
                             onClick={() => navigate('/teacher/crear-rubricas')}
@@ -207,7 +208,7 @@ export default function TeacherRubrica() {
                                                         <button onClick={() => handleEdit(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#3b82f6', color: 'white', padding: '8px', borderRadius: '8px' }} title="Editar">
                                                             <i className="fas fa-edit"></i>
                                                         </button>
-                                                        <button onClick={() => handleDelete(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#ef4444', color: 'white', padding: '8px', borderRadius: '8px' }} title="Eliminar">
+                                                        <button onClick={() => handleDelete(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#ef4444', color: 'white', padding: '8px', borderRadius: '8px' }} title="Desvincular">
                                                             <i className="fas fa-chain-broken"></i>
                                                         </button>
                                                     </div>
