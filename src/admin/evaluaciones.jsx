@@ -830,7 +830,7 @@ export default function Evaluaciones() {
                                                 required
                                             >
                                                 <option value="">Seleccione el corte...</option>
-                                                {cortes.map(c => (
+                                                {(cortes || []).map(c => (
                                                     <option key={c.orden} value={c.orden}>Corte {c.orden} ({formatearFecha(c.fecha_inicio)} - {formatearFecha(c.fecha_fin)})</option>
                                                 ))}
                                             </select>

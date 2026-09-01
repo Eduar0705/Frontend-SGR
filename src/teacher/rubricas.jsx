@@ -49,29 +49,29 @@ export default function TeacherRubrica() {
         }
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (id, id_eval) => {
         const result = await Swal.fire({
-            title: '¿Estás seguro?',
-            text: "No podrás revertir esto. La rúbrica pasará a inactiva.",
+            title: '¿Estás seguro de desvincular esta evaluación de la rúbrica?',
+            text: "Dejarás de usar esta rúbrica en esta evaluación, y tendrás que volver a corregir si ya habías comenzado a evaluar.",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Sí, eliminar',
+            confirmButtonText: 'Sí, desvincular',
             cancelButtonText: 'Cancelar'
         });
 
         if (result.isConfirmed) {
             try {
-                const data = await teacherRubricasService.deleteRubrica(id);
+                const data = await teacherRubricasService.desvincularRubrica(id, id_eval);
                 if (data.success) {
-                    Swal.fire('Eliminada', 'La rúbrica ha sido eliminada.', 'success');
+                    Swal.fire('Desvinculada', 'La evaluación se desvinculó de la rúbrica.', 'success');
                     fetchRubricas();
                 } else {
-                    Swal.fire('Error', data.message || 'Error al eliminar la rúbrica', 'error');
+                    Swal.fire('Error', data.message || 'Error al desvincular la rúbrica', 'error');
                 }
             } catch (error) {
-                console.error('Error deleteRubrica:', error);
+                console.error('Error desvincularRubrica:', error);
                 Swal.fire('Error', 'Error de red', 'error');
             }
         }
@@ -189,8 +189,14 @@ export default function TeacherRubrica() {
                                                 <div style={{ fontSize: '0.75rem', color: '#64748b'}}>el día {rubrica.fecha_evaluacion ? new Date(rubrica.fecha_evaluacion).toLocaleDateString() : 'N/A'}</div>
                                             </td>
                                             <td style={{ padding: '12px' }}>
-                                                <span className={`status-badge ${rubrica.estado === 'Activa' ? 'active' : 'inactive'}`} style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '0.85em', background: rubrica.estado === 'Activa' ? '#e2f5ec' : '#fee2e2', color: rubrica.estado === 'Activa' ? '#10b981' : '#ef4444' }}>
-                                                    {rubrica.estado}
+                                                <span className={`status-badge ${rubrica.estado === 'Aprobado' ? 'active' : 'inactive'}`} 
+                                                                                style={{ padding: '4px 8px', 
+                                                                                        borderRadius: '12px', 
+                                                                                        fontSize: '0.85em', 
+                                                                                        background: rubrica.estado === 'Aprobado' || rubrica.estado === 'Activa' ? '#e2f5ec' : rubrica.estado === 'Rechazado' || rubrica.estado === 'Inactivo' ? '#fee2e2' : '#fef3c7',
+                                                                                        color: rubrica.estado === 'Aprobado' || rubrica.estado === 'Activa' ? '#10b981' : rubrica.estado === 'Rechazado' || rubrica.estado === 'Inactivo' ? '#ef4444' : '#d97706'
+ }}>
+                                                    {rubrica.estado || "En Revision"}
                                                 </span>
                                             </td>
                                             <td style={{ padding: '12px', textAlign: 'center' }}>
@@ -201,8 +207,8 @@ export default function TeacherRubrica() {
                                                         <button onClick={() => handleEdit(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#3b82f6', color: 'white', padding: '8px', borderRadius: '8px' }} title="Editar">
                                                             <i className="fas fa-edit"></i>
                                                         </button>
-                                                        <button onClick={() => handleDelete(rubrica.id)} className="btns" style={{ background: '#ef4444', color: 'white', padding: '8px', borderRadius: '8px' }} title="Eliminar">
-                                                            <i className="fas fa-trash"></i>
+                                                        <button onClick={() => handleDelete(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#ef4444', color: 'white', padding: '8px', borderRadius: '8px' }} title="Eliminar">
+                                                            <i className="fas fa-chain-broken"></i>
                                                         </button>
                                                     </div>
                                             </td>

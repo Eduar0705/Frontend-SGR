@@ -1,3 +1,4 @@
+
 const API_URL = import.meta.env.VITE_API_URL || 'https://bacsgr.up.railway.app/api';
 
 export const teacherRubricasService = {
@@ -92,9 +93,9 @@ export const teacherRubricasService = {
         return await res.json();
     },
 
-    async deleteRubrica(id) {
+    async desvincularRubrica(id, id_eval) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/teacher/rubricas/delete/${id}`, {
+        const res = await fetch(`${API_URL}/teacher/rubricas/unlink/${id}/${id_eval}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });

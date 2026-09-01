@@ -49,7 +49,7 @@ export default function TeacherEvaluaciones() {
     const [cortesPeriodo, setCortesPeriodo] = useState([]);
 
     const hasAvailableCortes = React.useMemo(() => {
-        const now = new Date('2026-03-16'); // FECHA PERSONALIZADA
+        const now = new Date(); // FECHA PERSONALIZADA
         now.setHours(0, 0, 0, 0);
         return cortesPeriodo.some(c => new Date(c.fecha_fin) >= now);
     }, [cortesPeriodo]);
@@ -75,8 +75,8 @@ export default function TeacherEvaluaciones() {
         try {
             const [evals, resCortes, resLapsos] = await Promise.all([
                 evaluacionesService.getTeacherEvaluaciones(),
-                periodosService.getCortesByPeriodo('2025-1'), //FECHA PERSONALIZADA
-                periodosService.getLapsosByPeriodo('2025-1') //FECHA PERSONALIZADA
+                periodosService.getCortesByPeriodo('2026-1'), //FECHA PERSONALIZADA
+                periodosService.getLapsosByPeriodo('2026-1') //FECHA PERSONALIZADA
             ]);
 
             if (resCortes.success) {
@@ -118,7 +118,7 @@ export default function TeacherEvaluaciones() {
 
     const agruparEvaluaciones = (lista, cortes = [], lapsos = [], preserveExpanded = false) => {
         const agrupadas = {};
-        const now = new Date('2025-08-21'); //FECHA PERSONALIZADA
+        const now = new Date(); //FECHA PERSONALIZADA
 
         lista.forEach(ev => {
             ev.carrera_codigo = ev.carrera_codigo || ev.codigo_carrera;

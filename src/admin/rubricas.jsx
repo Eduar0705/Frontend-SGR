@@ -558,8 +558,8 @@ export default function Rubricas() {
                                                             borderRadius: '12px',
                                                             fontSize: '0.85em',
                                                             fontWeight: '600',
-                                                            background: r.estado === 'Aprobada' || r.estado === 'Activa' ? '#e2f5ec' : r.estado === 'Rechazada' || r.estado === 'Inactivo' ? '#fee2e2' : '#fef3c7',
-                                                            color: r.estado === 'Aprobada' || r.estado === 'Activa' ? '#10b981' : r.estado === 'Rechazada' || r.estado === 'Inactivo' ? '#ef4444' : '#d97706'
+                                                            background: r.estado === 'Aprobado' || r.estado === 'Activa' ? '#e2f5ec' : r.estado === 'Rechazado' || r.estado === 'Inactivo' ? '#fee2e2' : '#fef3c7',
+                                                            color: r.estado === 'Aprobado' || r.estado === 'Activa' ? '#10b981' : r.estado === 'Rechazado' || r.estado === 'Inactivo' ? '#ef4444' : '#d97706'
                                                         }}
                                                     >
                                                         {r.estado || 'En Revision'}
@@ -914,8 +914,8 @@ export default function Rubricas() {
                                                 borderRadius: '12px',
                                                 fontSize: '0.85em',
                                                 fontWeight: '600',
-                                                background: auditRubrica.estado === 'Aprobada' || auditRubrica.estado === 'Activa' ? '#e2f5ec' : auditRubrica.estado === 'Rechazada' || auditRubrica.estado === 'Inactivo' ? '#fee2e2' : '#fef3c7',
-                                                color: auditRubrica.estado === 'Aprobada' || auditRubrica.estado === 'Activa' ? '#10b981' : auditRubrica.estado === 'Rechazada' || auditRubrica.estado === 'Inactivo' ? '#ef4444' : '#d97706'
+                                                background: auditRubrica.estado === 'Aprobado' || auditRubrica.estado === 'Activa' ? '#e2f5ec' : auditRubrica.estado === 'Rechazado' || auditRubrica.estado === 'Inactivo' ? '#fee2e2' : '#fef3c7',
+                                                color: auditRubrica.estado === 'Aprobado' || auditRubrica.estado === 'Activa' ? '#10b981' : auditRubrica.estado === 'Rechazado' || auditRubrica.estado === 'Inactivo' ? '#ef4444' : '#d97706'
                                             }}>
                                                 {auditRubrica.estado || 'En Revision'}
                                             </span>
@@ -947,7 +947,7 @@ export default function Rubricas() {
                                 <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
                                     <button
                                         type="button"
-                                        onClick={() => handleAuditarAccion('Aprobada')}
+                                        onClick={() => handleAuditarAccion('Aprobado')}
                                         className="btns"
                                         style={{
                                             background: '#10b981',
@@ -968,7 +968,7 @@ export default function Rubricas() {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => handleAuditarAccion('Rechazada')}
+                                        onClick={() => handleAuditarAccion('Rechazado')}
                                         className="btns"
                                         style={{
                                             background: '#ef4444',

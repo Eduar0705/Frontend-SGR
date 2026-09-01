@@ -56,14 +56,22 @@ export const periodosService = {
     },
 
     getCortes: async () => {
-        let periodo = null;
+        try {
             const user = JSON.parse(localStorage.getItem('user'));
-            periodo = user?.periodo_usuario || null;
-        const response = await axios.get(`${API_URL}/periodos/cortes`, {
-            params: { periodo },
-            headers: getAuthHeaders()
-        });
-        return response.data;
+            const periodo = user?.periodo_usuario || null;
+            const response = await axios.get(`${API_URL}/periodos/cortes`, {
+                params: { periodo },
+                headers: getAuthHeaders()
+            });
+            console.log(response.data);
+            const cortes = Array.isArray(response.data)
+                ? response.data
+                : (response.data?.cortes ?? []);
+            return { success: true, cortes };
+        } catch (error) {
+            console.error('Error fetching cortes:', error);
+            return { success: false, cortes: [] };
+        }
     },
     getPeriodosByEstudiante: async () => {
         try {
@@ -84,6 +92,7 @@ export const periodosService = {
                 params: { periodo: codigoPeriodo },
                 headers: getAuthHeaders()
             });
+            console.log(response.data)
             return { success: true, data: response.data };
         } catch (error) {
             console.error('Error fetching cortes:', error);

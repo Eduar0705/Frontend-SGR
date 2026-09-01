@@ -187,7 +187,7 @@ export const rubricasService = {
 
     async deleteRubrica(id) {
         if (!id) throw new Error('ID de rúbrica requerido');
-        return fetchJSON(`/teacher/rubricas/delete/${id}`, {
+        return fetchJSON(`/teacher/rubricas/unlink/${id}`, {
             method: 'DELETE'
         });
     },
