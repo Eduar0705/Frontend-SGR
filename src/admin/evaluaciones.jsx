@@ -53,13 +53,13 @@ export default function Evaluaciones() {
     const [showEvaluar, setShowEvaluar] = useState(false);
     const [selectedEstudianteEvaluar, setSelectedEstudianteEvaluar] = useState(null);
     const [isActionLoading, setIsActionLoading] = useState(false);
-    
+
     const [showModal, setShowModal] = useState(false);
     const [modalMode, setModalMode] = useState('create');
     const [currentEvalId, setCurrentEvalId] = useState(null);
     const [preloadedData, setPreloadedData] = useState(null);
     const [submitting, setSubmitting] = useState(false);
-    
+
     // Modal para reutilizar rúbrica
     const [showReutilizarModal, setShowReutilizarModal] = useState(false);
     const [selectedEvalForRubrica, setSelectedEvalForRubrica] = useState(null);
@@ -125,8 +125,8 @@ export default function Evaluaciones() {
         }
     };
 
-    const fetchEstudiantesDeEvaluacion = async (idEval) => {
-        if (loadingEvaluados[idEval]) return;
+    const fetchEstudiantesDeEvaluacion = async (idEval, force = false) => {
+        if (!force && loadingEvaluados[idEval]) return;
         try {
             setLoadingEvaluados(prev => ({ ...prev, [idEval]: true }));
             const data = await evaluacionesService.getEvaluadasByEval(idEval);
@@ -230,38 +230,38 @@ export default function Evaluaciones() {
     const seccionesAgrupadas = useMemo(() => {
         const agrupadas = {};
         filteredSecciones.forEach(sec => {
-            const c  = sec.carrera_nombre || `Carrera ${sec.carrera_codigo || 'Desconocida'}`;
-            const s  = `Semestre ${sec.semestre || 'N/A'}`;
-            const m  = sec.materia_nombre || `Materia ${sec.materia_codigo || 'Desconocida'}`;
+            const c = sec.carrera_nombre || `Carrera ${sec.carrera_codigo || 'Desconocida'}`;
+            const s = `Semestre ${sec.semestre || 'N/A'}`;
+            const m = sec.materia_nombre || `Materia ${sec.materia_codigo || 'Desconocida'}`;
             const sc = `Sección ${sec.seccion_codigo ? sec.seccion_codigo.slice(-1) : 'N/A'}`;
 
-            if (!agrupadas[c])              agrupadas[c] = {};
-            if (!agrupadas[c][s])           agrupadas[c][s] = {};
-            if (!agrupadas[c][s][m])        agrupadas[c][s][m] = {};
+            if (!agrupadas[c]) agrupadas[c] = {};
+            if (!agrupadas[c][s]) agrupadas[c][s] = {};
+            if (!agrupadas[c][s][m]) agrupadas[c][s][m] = {};
             // Guardamos el id_seccion para poder pedir sus evaluaciones luego
             agrupadas[c][s][m][sc] = { id: sec.id_seccion, ...sec };
         });
         return agrupadas;
     }, [filteredSecciones]);
 
-    const [expandedCarreras,  setExpandedCarreras]  = useState({});
+    const [expandedCarreras, setExpandedCarreras] = useState({});
     const [expandedSemestres, setExpandedSemestres] = useState({});
-    const [expandedMaterias,  setExpandedMaterias]  = useState({});
+    const [expandedMaterias, setExpandedMaterias] = useState({});
     const [expandedSecciones, setExpandedSecciones] = useState({});
-    const [expandedRubricas,  setExpandedRubricas]  = useState({});
+    const [expandedRubricas, setExpandedRubricas] = useState({});
 
     const tog = (setter) => (key) => setter(prev => ({ ...prev, [key]: !prev[key] }));
-    const toggleCarrera  = tog(setExpandedCarreras);
+    const toggleCarrera = tog(setExpandedCarreras);
     const toggleSemestre = tog(setExpandedSemestres);
-    const toggleMateria  = tog(setExpandedMaterias);
-    const toggleSeccion  = (key, idSeccion) => {
+    const toggleMateria = tog(setExpandedMaterias);
+    const toggleSeccion = (key, idSeccion) => {
         setExpandedSecciones(prev => {
             const newState = !prev[key];
             if (newState && idSeccion) fetchEvaluacionesDeSeccion(idSeccion);
             return { ...prev, [key]: newState };
         });
     };
-    const toggleRubrica  = (key, idEval) => {
+    const toggleRubrica = (key, idEval) => {
         setExpandedRubricas(prev => {
             const newState = !prev[key];
             if (newState && idEval) fetchEstudiantesDeEvaluacion(idEval);
@@ -287,12 +287,12 @@ export default function Evaluaciones() {
             try {
                 await handleCarreraChange(preData.carrera_codigo);
                 await handleMateriaChange(preData.materia_codigo, preData.carrera_codigo);
-                
+
                 setFormData({
                     contenido: '', corte: '', estrategias_eval: [], porcentaje: 5, cant_personas: 1,
                     carrera_codigo: preData.carrera_codigo,
                     materia_codigo: preData.materia_codigo,
-                    id_seccion:     preData.id_seccion,
+                    id_seccion: preData.id_seccion,
                     tipo_horario: 'Sección',
                     fecha_horario_json: '', fecha_evaluacion: '', id_horario: '', hora_inicio: '', hora_fin: '',
                     competencias: '', instrumentos: ''
@@ -300,7 +300,7 @@ export default function Evaluaciones() {
 
                 // Cargar fechas disponibles inmediatamente para la sección precargada
                 await handleSeccionChange(preData.id_seccion);
-                
+
                 setShowModal(true);
             } catch (error) {
                 console.error(error);
@@ -393,6 +393,9 @@ export default function Evaluaciones() {
                 loadEvaluaciones();
                 if (formData.id_seccion) {
                     fetchEvaluacionesDeSeccion(formData.id_seccion, true);
+                }
+                if (currentEvalId) {
+                    fetchEstudiantesDeEvaluacion(currentEvalId, true);
                 }
             } else {
                 Swal.fire('Error', res.message, 'error');
@@ -509,8 +512,8 @@ export default function Evaluaciones() {
                                                                 <Chevron open={openS} />
                                                             </h3>
 
-                                                            {openS && Object.keys(seccionesAgrupadas[carrera][semestre]).sort((a,b) => a.localeCompare(b)).map(materia => {
-                                                                const mKey  = `${sKey}|${materia}`;
+                                                            {openS && Object.keys(seccionesAgrupadas[carrera][semestre]).sort((a, b) => a.localeCompare(b)).map(materia => {
+                                                                const mKey = `${sKey}|${materia}`;
                                                                 const openM = expandedMaterias[mKey];
                                                                 return (
                                                                     <div key={materia} style={{ marginLeft: '15px', marginBottom: '15px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
@@ -522,7 +525,7 @@ export default function Evaluaciones() {
 
                                                                         {openM && (
                                                                             <div style={{ padding: '12px 15px', background: '#f8fafc' }}>
-                                                                                {Object.keys(seccionesAgrupadas[carrera][semestre][materia]).sort((a,b) => a.localeCompare(b)).map(seccion => {
+                                                                                {Object.keys(seccionesAgrupadas[carrera][semestre][materia]).sort((a, b) => a.localeCompare(b)).map(seccion => {
                                                                                     const secInfo = seccionesAgrupadas[carrera][semestre][materia][seccion];
                                                                                     const scKey = `${mKey}|${seccion}`;
                                                                                     const openSc = expandedSecciones[scKey];
@@ -548,7 +551,7 @@ export default function Evaluaciones() {
                                                                                                             handleOpenCreate({
                                                                                                                 carrera_codigo: secInfo.carrera_codigo,
                                                                                                                 materia_codigo: secInfo.materia_codigo,
-                                                                                                                id_seccion:     secInfo.id_seccion
+                                                                                                                id_seccion: secInfo.id_seccion
                                                                                                             });
                                                                                                         }}
                                                                                                         style={{
@@ -583,14 +586,14 @@ export default function Evaluaciones() {
                                                                                                         <div style={{ textAlign: 'center', padding: '30px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #e2e8f0', margin: '10px' }}>
                                                                                                             <i className="fas fa-clipboard-list" style={{ fontSize: '2.5em', color: '#cbd5e1', marginBottom: '15px' }} />
                                                                                                             <h4 style={{ color: '#64748b', margin: '0 0 15px 0' }}>No hay evaluaciones registradas en esta sección</h4>
-                                                                                                            <button 
-                                                                                                                className="btn-add-premium" 
+                                                                                                            <button
+                                                                                                                className="btn-add-premium"
                                                                                                                 style={{ margin: '0 auto' }}
-                                                                                                                onClick={() => { 
+                                                                                                                onClick={() => {
                                                                                                                     handleOpenCreate({
                                                                                                                         carrera_codigo: secInfo.carrera_codigo,
                                                                                                                         materia_codigo: secInfo.materia_codigo,
-                                                                                                                        id_seccion:     secInfo.id_seccion
+                                                                                                                        id_seccion: secInfo.id_seccion
                                                                                                                     });
                                                                                                                 }}
                                                                                                             >
@@ -598,30 +601,30 @@ export default function Evaluaciones() {
                                                                                                             </button>
                                                                                                         </div>
                                                                                                     ) : (
-                                                                                                        evaluations.sort((a,b) => {
+                                                                                                        evaluations.sort((a, b) => {
                                                                                                             const dA = new Date(a.fecha_fija || a.fecha_evaluacion);
                                                                                                             const dB = new Date(b.fecha_fija || b.fecha_evaluacion);
                                                                                                             return dB - dA;
                                                                                                         }).map(ev => {
-                                                                                                            const rKey  = `${scKey}|${ev.evaluacion_id}`;
+                                                                                                            const rKey = `${scKey}|${ev.evaluacion_id}`;
                                                                                                             const openR = expandedRubricas[rKey];
                                                                                                             const fecha_mostrar = ev.fecha_fija || ev.fecha_evaluacion;
                                                                                                             const isLoadingEval = loadingEvaluados[ev.evaluacion_id];
-                                                                                                            const evalRecords   = estudiantesPorEvaluacion[ev.evaluacion_id] || [];
+                                                                                                            const evalRecords = estudiantesPorEvaluacion[ev.evaluacion_id] || [];
 
                                                                                                             return (
                                                                                                                 <div key={ev.evaluacion_id} style={{ marginBottom: '15px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                                                                                                                     {/* NIVEL 5: RÚBRICA / EVALUACIÓN (Admin View) */}
-                                                                                                                    <div 
-                                                                                                                        onClick={() => toggleRubrica(rKey, ev.evaluacion_id)} 
-                                                                                                                        style={{ 
-                                                                                                                            cursor: 'pointer', 
-                                                                                                                            display: 'flex', 
-                                                                                                                            justifyContent: 'space-between', 
-                                                                                                                            alignItems: 'center', 
-                                                                                                                            padding: '12px 18px', 
-                                                                                                                            background: ev.rubrica_id ? '#f0fdf4' : '#fffbeb', 
-                                                                                                                            borderBottom: openR ? (ev.rubrica_id ? '1px solid #a7f3d0' : '1px solid #fde68a') : 'none' 
+                                                                                                                    <div
+                                                                                                                        onClick={() => toggleRubrica(rKey, ev.evaluacion_id)}
+                                                                                                                        style={{
+                                                                                                                            cursor: 'pointer',
+                                                                                                                            display: 'flex',
+                                                                                                                            justifyContent: 'space-between',
+                                                                                                                            alignItems: 'center',
+                                                                                                                            padding: '12px 18px',
+                                                                                                                            background: ev.rubrica_id ? '#f0fdf4' : '#fffbeb',
+                                                                                                                            borderBottom: openR ? (ev.rubrica_id ? '1px solid #a7f3d0' : '1px solid #fde68a') : 'none'
                                                                                                                         }}
                                                                                                                     >
                                                                                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -630,20 +633,23 @@ export default function Evaluaciones() {
                                                                                                                             </div>
                                                                                                                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                                                                                                 <span style={{ fontWeight: '600', color: ev.rubrica_id ? '#065f46' : '#92400e', fontSize: '1.05em' }}>{ev.contenido_evaluacion}</span>
-                                                                                                                                <span style={{ fontSize: '0.82em', color: ev.rubrica_id ? '#059669' : '#b45309' }}>{ev.rubrica_id ? ev.nombre_rubrica : 'Sin Rúbrica Asociada'} • {ev.valor}%</span>
+                                                                                                                                <span style={{ fontSize: '0.82em', color: ev.rubrica_id ? '#059669' : '#b45309' }}>{ev.rubrica_id ? ev.nombre_rubrica : 'Sin Rúbrica Asociada'}</span>
                                                                                                                             </div>
                                                                                                                         </div>
-                                                                                                                        
+
                                                                                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                                                                                                                             <span style={{ fontSize: '0.85em', color: ev.rubrica_id ? '#059669' : '#b45309', background: ev.rubrica_id ? 'rgba(5, 150, 105, 0.08)' : 'rgba(180, 83, 9, 0.08)', padding: '4px 10px', borderRadius: '6px', fontWeight: '500' }}>
                                                                                                                                 <i className="fas fa-calendar-alt" style={{ marginRight: '6px' }} />
                                                                                                                                 {formatearFecha(fecha_mostrar)}
+                                                                                                                            </span>                                                                                                                 <span style={{ fontSize: '0.85em', color: ev.rubrica_id ? '#059669' : '#b45309', background: ev.rubrica_id ? 'rgba(5, 150, 105, 0.08)' : 'rgba(180, 83, 9, 0.08)', padding: '4px 10px', borderRadius: '6px', fontWeight: '500' }}>
+                                                                                                                                <i className="fas fa-percentage" style={{ marginRight: '6px' }} />
+                                                                                                                                {ev.valor}
                                                                                                                             </span>
-                                                                                                                            
+
                                                                                                                             <div className="evaluacion-actions" style={{ display: 'flex', gap: '8px' }}>
-                                                                                                                               <button className="action-btn-mini view" title="Ver Detalles" onClick={(e) => { e.stopPropagation(); handleOpenView(ev); }}>
-                                                                                                                                   <i className="fas fa-eye"></i>
-                                                                                                                               </button>
+                                                                                                                                <button className="action-btn-mini view" title="Ver Detalles" onClick={(e) => { e.stopPropagation(); handleOpenView(ev); }}>
+                                                                                                                                    <i className="fas fa-eye"></i>
+                                                                                                                                </button>
                                                                                                                                 <button className="action-btn-mini edit" title="Editar" onClick={(e) => { e.stopPropagation(); handleOpenEdit(ev); }}>
                                                                                                                                     <i className="fas fa-edit"></i>
                                                                                                                                 </button>
@@ -663,9 +669,9 @@ export default function Evaluaciones() {
                                                                                                                                     <h4 style={{ margin: '0 0 10px 0', color: '#92400e' }}>Se debe asociar una rúbrica a esta evaluación</h4>
                                                                                                                                     <p style={{ color: '#b45309', fontSize: '0.9em', marginBottom: '20px' }}>No hay una rúbrica asociada para calificar esta evaluación. Por favor, crea una nueva o elige una existente.</p>
                                                                                                                                     <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
-                                                                                                                                        <button 
-                                                                                                                                            onClick={() => navigate('/admin/crear-rubricas', { 
-                                                                                                                                                state: { 
+                                                                                                                                        <button
+                                                                                                                                            onClick={() => navigate('/admin/crear-rubricas', {
+                                                                                                                                                state: {
                                                                                                                                                     preloaded: {
                                                                                                                                                         carrera: secInfo.carrera_codigo,
                                                                                                                                                         semestre: secInfo.semestre,
@@ -674,19 +680,19 @@ export default function Evaluaciones() {
                                                                                                                                                         evaluacion_id: ev.evaluacion_id
                                                                                                                                                     }
                                                                                                                                                 }
-                                                                                                                                            })} 
+                                                                                                                                            })}
                                                                                                                                             style={{ padding: '10px 20px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
                                                                                                                                         >
                                                                                                                                             <i className="fas fa-plus" /> Crear Rúbrica
                                                                                                                                         </button>
-                                                                                                                                        <button 
-                                                                                                                                             onClick={() => {
+                                                                                                                                        <button
+                                                                                                                                            onClick={() => {
                                                                                                                                                 setRubricaKeyToClose(rKey);
-                                                                                                                                                 setSelectedEvalForRubrica(ev.evaluacion_id);
-                                                                                                                                                 setTargetSeccionId(secInfo.id_seccion);
-                                                                                                                                                 setShowReutilizarModal(true);
-                                                                                                                                             }} 
-                                                                                                                                             style={{ padding: '10px 20px', background: 'white', color: '#f59e0b', border: '1px solid #f59e0b', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                                                                                                                                setSelectedEvalForRubrica(ev.evaluacion_id);
+                                                                                                                                                setTargetSeccionId(secInfo.id_seccion);
+                                                                                                                                                setShowReutilizarModal(true);
+                                                                                                                                            }}
+                                                                                                                                            style={{ padding: '10px 20px', background: 'white', color: '#f59e0b', border: '1px solid #f59e0b', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
                                                                                                                                         >
                                                                                                                                             <i className="fas fa-sync" /> Seleccionar Existente
                                                                                                                                         </button>
@@ -702,49 +708,49 @@ export default function Evaluaciones() {
                                                                                                                                     <i className="fas fa-users-slash" style={{ fontSize: '2em', marginBottom: '10px', display: 'block' }}></i>
                                                                                                                                     No hay estudiantes para mostrar.
                                                                                                                                 </div>
-                                                                                                                             ) : (
-                                                                                                                                 <div className="evaluados-list-premium">
-                                                                                                                                     {evalRecords.map(record => {
-                                                                                                                                         const initials = `${record.estudiante_nombre?.charAt(0) || ''}${record.estudiante_apellido?.charAt(0) || ''}`.toUpperCase();
-                                                                                                                                         return (
-                                                                                                                                             <div key={record.estudiante_cedula} className="evaluacion-row-premium">
-                                                                                                                                                 <div className="row-student-info">
-                                                                                                                                                     <div className="row-student-avatar">{initials}</div>
-                                                                                                                                                     <div className="row-student-details">
-                                                                                                                                                         <span className="row-student-name">{record.estudiante_nombre} {record.estudiante_apellido}</span>
-                                                                                                                                                         <span className="row-student-id">CI: {record.estudiante_cedula}</span>
-                                                                                                                                                     </div>
-                                                                                                                                                 </div>
-                                                                                                                                                 <div className="row-status-center">
-                                                                                                                                                     <span className={`status-badge-premium ${record.estado === 'Completada' ? 'completada' : 'pendiente'}`}>
-                                                                                                                                                         {record.estado}
-                                                                                                                                                     </span>
-                                                                                                                                                 </div>
-                                                                                                                                                 <div className="row-score-section">
-                                                                                                                                                     <span className="score-main">{!isNaN(record.puntaje_total) ? (parseFloat(record.puntaje_total)).toFixed(3) : '0.00'}</span>
-                                                                                                                                                     <span className="score-label">Nota / %</span>
-                                                                                                                                                 </div>
-                                                                                                                                                 <div className="row-actions">
-                                                                                                                                                     {record.estado === 'Completada' ? (
-                                                                                                                                                         <>
-                                                                                                                                                             <button className="btn-row-action eval" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.evaluacion_id, cedula: record.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} title="Editar Evaluacion">
-                                                                                                                                                                 <i className="fas fa-edit"></i> <span> Editar </span>
-                                                                                                                                                             </button>
-                                                                                                                                                             <button className="btn-row-action view" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteDetalles({ idEvaluacion: ev.evaluacion_id, cedula: record.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowDetalles(true); }, 800); }} title="Ver Detalles">
-                                                                                                                                                                 <i className="fas fa-eye"></i> <span> Ver</span>
-                                                                                                                                                             </button>
-                                                                                                                                                         </>
-                                                                                                                                                     ) : (
-                                                                                                                                                         <button className="btn-row-action eval" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.evaluacion_id, cedula: record.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }}>
-                                                                                                                                                             <i className="fas fa-clipboard-check"></i> <span> Evaluar</span>
-                                                                                                                                                         </button>
-                                                                                                                                                     )}
-                                                                                                                                                 </div>
-                                                                                                                                             </div>
-                                                                                                                                         );
-                                                                                                                                     })}
-                                                                                                                                 </div>
-                                                                                                                             )}
+                                                                                                                            ) : (
+                                                                                                                                <div className="evaluados-list-premium">
+                                                                                                                                    {evalRecords.map(record => {
+                                                                                                                                        const initials = `${record.estudiante_nombre?.charAt(0) || ''}${record.estudiante_apellido?.charAt(0) || ''}`.toUpperCase();
+                                                                                                                                        return (
+                                                                                                                                            <div key={record.estudiante_cedula} className="evaluacion-row-premium">
+                                                                                                                                                <div className="row-student-info">
+                                                                                                                                                    <div className="row-student-avatar">{initials}</div>
+                                                                                                                                                    <div className="row-student-details">
+                                                                                                                                                        <span className="row-student-name">{record.estudiante_nombre} {record.estudiante_apellido}</span>
+                                                                                                                                                        <span className="row-student-id">CI: {record.estudiante_cedula}</span>
+                                                                                                                                                    </div>
+                                                                                                                                                </div>
+                                                                                                                                                <div className="row-status-center">
+                                                                                                                                                    <span className={`status-badge-premium ${record.estado === 'Completada' ? 'completada' : 'pendiente'}`}>
+                                                                                                                                                        {record.estado}
+                                                                                                                                                    </span>
+                                                                                                                                                </div>
+                                                                                                                                                <div className="row-score-section">
+                                                                                                                                                    <span className="score-main">{!isNaN(record.puntaje_total) ? (parseFloat(record.puntaje_total)).toFixed(3) : '0.00'}</span>
+                                                                                                                                                    <span className="score-label">Nota / %</span>
+                                                                                                                                                </div>
+                                                                                                                                                <div className="row-actions">
+                                                                                                                                                    {record.estado === 'Completada' ? (
+                                                                                                                                                        <>
+                                                                                                                                                            <button className="btn-row-action eval" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.evaluacion_id, cedula: record.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }} title="Editar Evaluacion">
+                                                                                                                                                                <i className="fas fa-edit"></i> <span> Editar </span>
+                                                                                                                                                            </button>
+                                                                                                                                                            <button className="btn-row-action view" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteDetalles({ idEvaluacion: ev.evaluacion_id, cedula: record.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowDetalles(true); }, 800); }} title="Ver Detalles">
+                                                                                                                                                                <i className="fas fa-eye"></i> <span> Ver</span>
+                                                                                                                                                            </button>
+                                                                                                                                                        </>
+                                                                                                                                                    ) : (
+                                                                                                                                                        <button className="btn-row-action eval" onClick={(e) => { e.stopPropagation(); setIsActionLoading(true); setSelectedEstudianteEvaluar({ idEvaluacion: ev.evaluacion_id, cedula: record.estudiante_cedula }); setTimeout(() => { setIsActionLoading(false); setShowEvaluar(true); }, 800); }}>
+                                                                                                                                                            <i className="fas fa-clipboard-check"></i> <span> Evaluar</span>
+                                                                                                                                                        </button>
+                                                                                                                                                    )}
+                                                                                                                                                </div>
+                                                                                                                                            </div>
+                                                                                                                                        );
+                                                                                                                                    })}
+                                                                                                                                </div>
+                                                                                                                            )}
                                                                                                                         </div>
                                                                                                                     )}
                                                                                                                 </div>

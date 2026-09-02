@@ -89,7 +89,7 @@ export default function StudentEvaluaciones() {
         const result = await periodosService.getPeriodosByEstudiante(); 
         const periodosLista = (result.data || []).map(p => p.codigo || p).filter(Boolean);
         
-        console.log('Periodos obtenidos:', periodosLista); // Ahora verás ["2026-1", "2025-1", ...]
+        console.log('Periodos obtenidos:', periodosLista);
         setPeriodos(periodosLista);
         
         if (periodosLista.length > 0) {
