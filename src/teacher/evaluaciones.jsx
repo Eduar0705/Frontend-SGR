@@ -11,6 +11,7 @@ import '../assets/css/evaluacion.css';
 import ModalEvaluar from './components/ModalEvaluar';
 import ModalVerDetalles from './components/ModalVerDetalles';
 import ModalAddEvaluacion from './components/ModalAddEvaluacion';
+import ModalReutilizarRubrica from '../components/ModalReutilizarRubrica';
 
 import { useUI } from '../context/UIContext';
 
@@ -41,12 +42,18 @@ export default function TeacherEvaluaciones() {
     const [showDetalles,              setShowDetalles]              = useState(false);
     const [selectedEstudianteDetalles,setSelectedEstudianteDetalles]= useState(null);
 
+    const [rubricaKeyToClose, setRubricaKeyToClose] = useState(null);
+
     // Modal para agregar/editar/ver evaluación
     const [showAddModal, setShowAddModal] = useState(false);
     const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
     const [selectedEvalId, setSelectedEvalId] = useState(null);
     const [preloadedData, setPreloadedData] = useState(null);
     const [cortesPeriodo, setCortesPeriodo] = useState([]);
+
+    // Modal para reutilizar rúbrica
+    const [showReutilizarModal, setShowReutilizarModal] = useState(false);
+    const [selectedEvalForRubrica, setSelectedEvalForRubrica] = useState(null);
 
     const hasAvailableCortes = React.useMemo(() => {
         const now = new Date(); // FECHA PERSONALIZADA
@@ -413,10 +420,11 @@ export default function TeacherEvaluaciones() {
                                                                                             })
                                                                                             .map(rubrica => {
                                                                                                 const evalInfo = secData.rubricas[rubrica];
-                                                                                                const rKey     = `${sKey}|${rubrica}`;
-                                                                                                const openR    = expandedRubricas[rKey];
+                                                                                                const rKey = `eval_${evalInfo.id_evaluacion}`;
+                                                                                                const openR = expandedRubricas[rKey];
                                                                                                 const students = estudiantesPorEvaluacion[evalInfo.id_evaluacion] || [];
                                                                                                 const loadingS = loadingEvaluados[evalInfo.id_evaluacion];
+                                                                                                
                                                                                                 
                                                                                                 const filtrados = students.filter(ev => {
                                                                                                     if (!searchTerm) return true;
@@ -505,7 +513,11 @@ export default function TeacherEvaluaciones() {
                                                                                                                              </button>
                                                                                                                              <button 
                                                                                                                                 className="action-btn-rubrica reuse"
-                                                                                                                                onClick={() => navigate('/teacher/rubricas')} 
+                                                                                                                                onClick={() => {
+                                                                                                                                    setRubricaKeyToClose(rKey);
+                                                                                                                                    setSelectedEvalForRubrica(evalInfo.id_evaluacion);
+                                                                                                                                    setShowReutilizarModal(true);
+                                                                                                                                }} 
                                                                                                                                 disabled={!evalInfo.canModify}
                                                                                                                                 style={{ padding: '10px 20px', background: 'white', color: !evalInfo.canModify ? '#94a3b8' : '#f59e0b', border: !evalInfo.canModify ? '1px solid #cbd5e1' : '1px solid #f59e0b', borderRadius: '8px', cursor: !evalInfo.canModify ? 'not-allowed' : 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', opacity: !evalInfo.canModify ? 0.7 : 1 }}
                                                                                                                              >
@@ -662,6 +674,27 @@ export default function TeacherEvaluaciones() {
                     mode={modalMode}
                     currentEvalId={selectedEvalId}
                     preloadedData={preloadedData}
+                />
+            )}
+            {showReutilizarModal && selectedEvalForRubrica && (
+                <ModalReutilizarRubrica
+                    isOpen={showReutilizarModal}
+                    evaluacionId={selectedEvalForRubrica}
+                    role="teacher"
+                    onClose={() => {
+                        setShowReutilizarModal(false);
+                        setSelectedEvalForRubrica(null);
+                        setRubricaKeyToClose(null);
+                    }}
+                    onRubricaVinculada={() => {
+                        setShowReutilizarModal(false);
+                        setSelectedEvalForRubrica(null);
+                        if (rubricaKeyToClose) {
+                            setExpandedRubricas(prev => ({ ...prev, [rubricaKeyToClose]: false }));
+                            setRubricaKeyToClose(null);
+                        }
+                        fetchEvaluaciones(true);
+                    }}
                 />
             )}
 

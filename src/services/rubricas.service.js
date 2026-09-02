@@ -198,7 +198,7 @@ export const rubricasService = {
     },
     async vincularRubrica(id, id_eval) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/admin/rubricas/link/${id}/${id_eval}`, {
+        const res = await fetch(`${API_URL}/rubricas/admin/rubricas/link/${id}/${id_eval}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -206,7 +206,7 @@ export const rubricasService = {
     },
     async desvincularRubrica(id, id_eval) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/admin/rubricas/unlink/${id}/${id_eval}`, {
+        const res = await fetch(`${API_URL}/rubricas/admin/rubricas/unlink/${id}/${id_eval}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });

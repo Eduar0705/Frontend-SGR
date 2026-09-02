@@ -11,6 +11,7 @@ import '../assets/css/home.css';
 import '../assets/css/evaluacion.css';
 import ModalEvaluar from '../teacher/components/ModalEvaluar';
 import ModalVerDetalles from '../teacher/components/ModalVerDetalles';
+import ModalReutilizarRubrica from '../components/ModalReutilizarRubrica';
 
 const transformDateJSON = (formData) => {
     const fecha_data = JSON.parse(formData.fecha_horario_json)
@@ -58,7 +59,13 @@ export default function Evaluaciones() {
     const [currentEvalId, setCurrentEvalId] = useState(null);
     const [preloadedData, setPreloadedData] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    
+    // Modal para reutilizar rúbrica
+    const [showReutilizarModal, setShowReutilizarModal] = useState(false);
+    const [selectedEvalForRubrica, setSelectedEvalForRubrica] = useState(null);
+    const [targetSeccionId, setTargetSeccionId] = useState(null);
     const { setLoading: setGlobalLoading } = useUI();
+    const [rubricaKeyToClose, setRubricaKeyToClose] = useState(null);
 
     const [carreras, setCarreras] = useState([]);
     const [materias, setMaterias] = useState([]);
@@ -673,8 +680,13 @@ export default function Evaluaciones() {
                                                                                                                                             <i className="fas fa-plus" /> Crear Rúbrica
                                                                                                                                         </button>
                                                                                                                                         <button 
-                                                                                                                                            onClick={() => navigate('/admin/rubricas')} 
-                                                                                                                                            style={{ padding: '10px 20px', background: 'white', color: '#f59e0b', border: '1px solid #f59e0b', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                                                                                                                             onClick={() => {
+                                                                                                                                                setRubricaKeyToClose(rKey);
+                                                                                                                                                 setSelectedEvalForRubrica(ev.evaluacion_id);
+                                                                                                                                                 setTargetSeccionId(secInfo.id_seccion);
+                                                                                                                                                 setShowReutilizarModal(true);
+                                                                                                                                             }} 
+                                                                                                                                             style={{ padding: '10px 20px', background: 'white', color: '#f59e0b', border: '1px solid #f59e0b', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
                                                                                                                                         >
                                                                                                                                             <i className="fas fa-sync" /> Seleccionar Existente
                                                                                                                                         </button>
@@ -1089,6 +1101,38 @@ export default function Evaluaciones() {
                     <ModalVerDetalles
                         data={selectedEstudianteDetalles}
                         onClose={() => setShowDetalles(false)}
+                    />
+                )}
+
+                {showReutilizarModal && selectedEvalForRubrica && (
+                    <ModalReutilizarRubrica
+                        isOpen={showReutilizarModal}
+                        evaluacionId={selectedEvalForRubrica}
+                        role="admin"
+                        onClose={() => {
+                            setShowReutilizarModal(false);
+                            setSelectedEvalForRubrica(null);
+                            setTargetSeccionId(null);
+                            setRubricaKeyToClose(null);
+                        }}
+                        onRubricaVinculada={() => {
+                            const secId = targetSeccionId;
+                            const keyToClose = rubricaKeyToClose;
+
+                            setShowReutilizarModal(false);
+                            setSelectedEvalForRubrica(null);
+                            setTargetSeccionId(null);
+                            setRubricaKeyToClose(null);
+
+                            if (keyToClose) {
+                                setExpandedRubricas(prev => ({ ...prev, [keyToClose]: false }));
+                            }
+                            if (secId) {
+                                fetchEvaluacionesDeSeccion(secId, true);
+                            } else {
+                                loadEvaluaciones();
+                            }
+                        }}
                     />
                 )}
 
