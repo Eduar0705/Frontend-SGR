@@ -79,17 +79,22 @@ async function fetchJSON(url, options = {}) {
 
 export const rubricasService = {
     
-    async getRubricas() {
+    async getRubricas({ search = '', page = 1, limit = 10 } = {}) {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         if (!user.periodo_usuario) {
             console.error('No hay período de usuario disponible');
         }
         
         const response = await fetchJSON(`/rubricas/admin/rubricas`, {
-            params: { periodo: user.periodo_usuario }
+            params: { periodo: user.periodo_usuario, search, page, limit }
         });
         
-        return Array.isArray(response?.rubricas) ? response.rubricas : [];
+        return {
+            rubricas: Array.isArray(response?.rubricas) ? response.rubricas : [],
+            total: response?.total || 0,
+            page: response?.page || 1,
+            totalPages: response?.totalPages || 1
+        };
     },
 
     async getHierarchicalData() {

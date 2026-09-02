@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Menu from '../components/menu';
 import Header from '../components/header';
@@ -24,9 +24,14 @@ export default function Rubricas() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [professorFilter, setProfessorFilter] = useState('');
+    const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
 
     const [entriesPerPage, setEntriesPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
+
+    // Debounce ref: evita fetch en cada tecla
+    const debounceRef = useRef(null);
 
     const [modalMode, setModalMode] = useState(null);
     const [currentRubricaId, setCurrentRubricaId] = useState(null);
@@ -55,52 +60,50 @@ export default function Rubricas() {
     const [secciones, setSecciones] = useState([]);
     const [evaluaciones, setEvaluaciones] = useState([]);
 
-    const loadInitialData = useCallback(async () => {
+    const loadInitialData = useCallback(async ({ page = 1, search = '', limit = entriesPerPage } = {}) => {
         try {
             setLoading(true);
-            const data = await rubricasService.getRubricas();
-            setRubricas(data);
+            const result = await rubricasService.getRubricas({ search, page, limit: limit === 'todos' ? 9999 : parseInt(limit) });
+            setRubricas(result.rubricas);
+            setTotal(result.total);
+            setTotalPages(result.totalPages);
         } catch {
             Swal.fire('Error', 'No se pudieron cargar las rúbricas', 'error');
         } finally {
             setLoading(false);
             setGlobalLoading(false);
         }
-    }, [setGlobalLoading]);
+    }, [setGlobalLoading, entriesPerPage]);
 
     useEffect(() => {
         if (!user) {
             navigate('/login');
         } else {
-            loadInitialData();
+            loadInitialData({ page: 1, search: '', limit: entriesPerPage });
         }
-    }, [periodoActual, user, navigate, loadInitialData]);
+    }, [periodoActual, user, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const filteredRubricas = useMemo(() => {
-        return rubricas.filter(rubrica => {
-            const matchesSearch =
-                rubrica.nombre_rubrica?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                rubrica.materia_nombre?.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesProfessor = professorFilter === '' || rubrica.docente_nombre === professorFilter;
-            return matchesSearch && matchesProfessor;
-        });
-    }, [rubricas, searchTerm, professorFilter]);
+    // Ref para evitar fetch en el primer render (ya lo hace el useEffect de periodoActual)
+    const mountedRef = useRef(false);
 
+    // Fetch unificado: se dispara cuando cambia página o límite (pero no en el primer render)
+    useEffect(() => {
+        if (!user) return;
+        if (!mountedRef.current) { mountedRef.current = true; return; }
+        loadInitialData({ page: currentPage, search: searchTerm, limit: entriesPerPage });
+    }, [currentPage, entriesPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Profesores únicos calculados desde los registros actuales de la página
     const profesoresUnicos = useMemo(() => {
         const names = rubricas.map(r => r.docente_nombre);
         return [...new Set(names)].filter(Boolean).sort();
     }, [rubricas]);
 
+    // Filtro de profesor sigue siendo en frontend sobre la página actual
     const paginatedRubricas = useMemo(() => {
-        if (entriesPerPage === 'todos') return filteredRubricas;
-        const start = (currentPage - 1) * parseInt(entriesPerPage);
-        return filteredRubricas.slice(start, start + parseInt(entriesPerPage));
-    }, [filteredRubricas, currentPage, entriesPerPage]);
-
-    const totalPages = useMemo(() => {
-        if (entriesPerPage === 'todos') return 1;
-        return Math.ceil(filteredRubricas.length / parseInt(entriesPerPage)) || 1;
-    }, [filteredRubricas, entriesPerPage]);
+        if (!professorFilter) return rubricas;
+        return rubricas.filter(r => r.docente_nombre === professorFilter);
+    }, [rubricas, professorFilter]);
 
     const handleVerRubrica = async (id, id_eval) => {
         try {
@@ -280,7 +283,7 @@ export default function Rubricas() {
                 Swal.fire('Éxito', res.message || `Rúbrica ${nuevoEstado.toLowerCase()} exitosamente`, 'success');
                 setModalMode(null);
                 setAuditRubrica(null);
-                loadInitialData();
+                loadInitialData({ page: currentPage, search: searchTerm, limit: entriesPerPage });
             } else {
                 Swal.fire('Error', res.message || 'No se pudo actualizar el estado', 'error');
             }
@@ -410,7 +413,7 @@ export default function Rubricas() {
                 const res = await rubricasService.deleteRubrica(id);
                 if (res.success) {
                     Swal.fire('Eliminado', 'La rúbrica ha sido eliminada', 'success');
-                    loadInitialData();
+                    loadInitialData({ page: currentPage, search: searchTerm, limit: entriesPerPage });
                 }
             } catch {
                 Swal.fire('Error', 'No se pudo eliminar', 'error');
@@ -455,7 +458,7 @@ export default function Rubricas() {
             if (res.success) {
                 Swal.fire('Éxito', 'Rúbrica actualizada correctamente', 'success');
                 setModalMode(null);
-                loadInitialData();
+                loadInitialData({ page: currentPage, search: searchTerm, limit: entriesPerPage });
             } else {
                 Swal.fire('Error', res.mensaje || 'Error al actualizar', 'error');
             }
@@ -478,7 +481,13 @@ export default function Rubricas() {
                             <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Mostrar:</span>
                             <select
                                 value={entriesPerPage}
-                                onChange={(e) => { setEntriesPerPage(e.target.value); setCurrentPage(1); }}
+                                onChange={(e) => {
+                                    const newLimit = e.target.value;
+                                    setEntriesPerPage(newLimit);
+                                    setCurrentPage(1);
+                                    // Fuerza el fetch inmediato si currentPage ya era 1 (el effect no dispara)
+                                    loadInitialData({ page: 1, search: searchTerm, limit: newLimit });
+                                }}
                                 style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                             >
                                 <option value="5">5</option>
@@ -493,9 +502,18 @@ export default function Rubricas() {
                                 <i className="fas fa-search" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}></i>
                                 <input
                                     type="text"
-                                    placeholder="Buscar por nombre o materia..."
+                                    placeholder="Buscar por nombre de rúbrica o evaluación..."
                                     value={searchTerm}
-                                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setSearchTerm(val);
+                                        setCurrentPage(1);
+                                        // Debounce: espera 300ms antes de hacer fetch
+                                        clearTimeout(debounceRef.current);
+                                        debounceRef.current = setTimeout(() => {
+                                            loadInitialData({ page: 1, search: val, limit: entriesPerPage });
+                                        }, 300);
+                                    }}
                                     style={{ width: '100%', padding: '10px 15px 10px 45px', borderRadius: '10px', border: '1px solid #e2e8f0' }}
                                 />
                             </div>

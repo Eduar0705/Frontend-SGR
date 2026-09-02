@@ -57,11 +57,20 @@ export const teacherRubricasService = {
         return await res.json();
     },
 
-    async getRubricas() {
+    async getRubricas({ search = '', page = 1, limit = 10, modo = 'mis' } = {}) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/teacher/rubricas`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const params = new URLSearchParams({ search, page, limit, modo });
+        const res = await fetch(`${API_URL}/teacher/rubricas?${params.toString()}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!res.ok) throw new Error('Error al obtener rúbricas');
-        return await res.json();
+        const data = await res.json();
+        return {
+            rubricas: Array.isArray(data?.rubricas) ? data.rubricas : [],
+            total: data?.total || 0,
+            page: data?.page || 1,
+            totalPages: data?.totalPages || 1
+        };
     },
 
     async getRubricaDetalle(id, id_eval) {
