@@ -196,7 +196,22 @@ export const rubricasService = {
             method: 'DELETE'
         });
     },
-
+    async vincularRubrica(id, id_eval) {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/admin/rubricas/link/${id}/${id_eval}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await res.json();
+    },
+    async desvincularRubrica(id, id_eval) {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/admin/rubricas/unlink/${id}/${id_eval}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await res.json();
+    },
     async auditarRubrica(id_rubrica, id_eval, estado) {
         if (!id_rubrica || !estado) throw new Error('ID de rúbrica y estado requeridos');
         return fetchJSON(`/rubricas/admin/rubricas/auditar`, {

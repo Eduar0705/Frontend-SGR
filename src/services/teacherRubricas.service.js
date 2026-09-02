@@ -99,7 +99,14 @@ export const teacherRubricasService = {
         });
         return await res.json();
     },
-
+    async vincularRubrica(id, id_eval) {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/teacher/rubricas/link/${id}/${id_eval}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return await res.json();
+    },
     async desvincularRubrica(id, id_eval) {
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_URL}/teacher/rubricas/unlink/${id}/${id_eval}`, {
