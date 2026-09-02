@@ -179,7 +179,7 @@ export default function TeacherRubrica() {
                                 className="btns"
                                 style={{ background: '#1e3a8a', color: 'white', padding: '10px 25px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}
                             >
-                                <i className="fas fa-plus"></i> Nueva RÃºbrica
+                                <i className="fas fa-plus"></i> Nueva Rúbrica
                             </button>
                         </div>
                     </div>
@@ -191,8 +191,8 @@ export default function TeacherRubrica() {
                             <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                                     <tr>
-                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>RÃºbrica</th>
-                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>EvaluaciÃ³n</th>
+                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Rúbrica</th>
+                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Evaluación</th>
                                         <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Usada por</th>
                                         <th style={{ padding: '15px', textAlign: 'center', color: '#64748b' }}>Estado</th>
                                         <th style={{ padding: '15px', textAlign: 'center', color: '#64748b' }}>Acciones</th>
@@ -211,7 +211,7 @@ export default function TeacherRubrica() {
                                             </td>
                                             <td style={{ padding: '12px' }}>
                                                 <div style={{ fontSize: '0.9rem' }}>{rubrica.docente_nombre}</div>
-                                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>el dÃ­a {rubrica.fecha_evaluacion ? new Date(rubrica.fecha_evaluacion).toLocaleDateString('es-ES') : 'N/A'}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>el dí­a {rubrica.fecha_evaluacion ? new Date(rubrica.fecha_evaluacion).toLocaleDateString('es-ES') : 'N/A'}</div>
                                             </td>
                                             <td style={{ padding: '12px', textAlign: 'center' }}>
                                                 <span style={{
@@ -242,8 +242,8 @@ export default function TeacherRubrica() {
                                         <tr>
                                             <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
                                                 {modo === 'materias'
-                                                    ? 'No se encontraron rÃºbricas en tus secciones.'
-                                                    : 'No se encontraron rÃºbricas.'}
+                                                    ? 'No se encontraron rúbricas en tus materias.'
+                                                    : 'No se encontraron rúbricas.'}
                                             </td>
                                         </tr>
                                     )}
