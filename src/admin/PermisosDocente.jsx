@@ -253,7 +253,7 @@ export default function PermisosDocente() {
                                             <div className="permiso-info">
                                                 <h4>{p.materia_nombre}</h4>
                                                 <p>{p.carrera_nombre} | Semestre {p.semestre} | Sección {p.seccion_codigo}</p>
-                                                <p style={{fontSize: '0.7rem', color: '#94a3b8'}}>Lapso: {p.lapso_academico}</p>
+                                                <p style={{fontSize: '0.8rem', color: '#66707e'}}>Lapso: {p.lapso_academico}</p>
                                             </div>
                                             <button 
                                                 className="btn-delete-permiso" 
