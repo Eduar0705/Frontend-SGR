@@ -124,7 +124,7 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
                     <span style="font-size:10px;color:#000;">Instituto Universitario<br>Jesús Obrero</span>
                 </div>
                 <div class="header-text">
-                    <div class="title">RÚBRICA DE EVALUACIÓN ${rubrica.nombre_rubrica}</div>
+                    <div class="title">${rubrica.nombre_rubrica}</div>
                     <div class="subtitle">CALIFICACIÓN ${rubrica.porcentaje_evaluacion}%</div>
                 </div>
             </div>

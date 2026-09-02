@@ -29,6 +29,8 @@ export default function TeacherRubrica() {
 
     const debounceRef = useRef(null);
     const mountedRef = useRef(false);
+    const userData = localStorage.getItem('user');
+    const currentUser = userData ? JSON.parse(userData) : null;
 
     const fetchRubricas = useCallback(async ({ page = 1, search = '', limit = itemsPerPage, modoParam = modo } = {}) => {
         try {
@@ -66,13 +68,13 @@ export default function TeacherRubrica() {
 
     const handleDelete = async (id, id_eval) => {
         const result = await Swal.fire({
-            title: 'Â¿EstÃ¡s seguro de desvincular esta evaluaciÃ³n de su rÃºbrica?',
-            text: "DejarÃ¡s de usar esta rÃºbrica en esta evaluaciÃ³n, y tendrÃ¡s que volver a corregir si ya habÃ­as comenzado a evaluar. Recomendamos editarla mejor",
+            title: '¿Estás seguro de desvincular esta evaluación de su rúbrica?',
+            text: "Dejarás de usar esta rúbrica en esta evaluación, y tendrás que volver a corregir si ya habí­as comenzado a evaluar. Recomendamos más bien editarla.",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'SÃ­, desvincular',
+            confirmButtonText: 'Sí, desvincular',
             cancelButtonText: 'Cancelar'
         });
 
@@ -80,10 +82,10 @@ export default function TeacherRubrica() {
             try {
                 const data = await teacherRubricasService.desvincularRubrica(id, id_eval);
                 if (data.success) {
-                    Swal.fire('Desvinculada', 'La evaluaciÃ³n se desvinculÃ³ de la rÃºbrica.', 'success');
+                    Swal.fire('Desvinculada', 'La evaluación se desvinculó de la rúbrica.', 'success');
                     fetchRubricas({ page: currentPage, search: searchTerm, limit: itemsPerPage, modoParam: modo });
                 } else {
-                    Swal.fire('Error', data.message || 'Error al desvincular la rÃºbrica', 'error');
+                    Swal.fire('Error', data.message || 'Error al desvincular la rúbrica', 'error');
                 }
             } catch (error) {
                 console.error('Error desvincularRubrica:', error);
@@ -96,14 +98,14 @@ export default function TeacherRubrica() {
 
     const handleView = async (id, id_eval) => {
         try {
-            Swal.fire({ title: 'Cargando rÃºbrica...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'Cargando rúbrica...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             const data = await teacherRubricasService.getRubricaDetalle(id, id_eval);
             if (data.success) {
                 Swal.close();
                 const opened = imprimirRubricaFormal(data.rubrica, data.criterios);
-                if (!opened) Swal.fire('AtenciÃ³n', 'Por favor habilite las ventanas emergentes (pop-ups) para ver la rÃºbrica.', 'warning');
+                if (!opened) Swal.fire('Atención', 'Por favor habilite las ventanas emergentes (pop-ups) para ver la rúbrica.', 'warning');
             } else {
-                Swal.fire('Error', data.message || 'Error al obtener rÃºbrica', 'error');
+                Swal.fire('Error', data.message || 'Error al obtener rúbrica', 'error');
             }
         } catch (error) {
             Swal.fire('Error', 'Error de red', 'error');
@@ -226,15 +228,34 @@ export default function TeacherRubrica() {
                                             </td>
                                             <td style={{ padding: '12px', textAlign: 'center' }}>
                                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                                    <button onClick={() => handleView(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#94a3b8', color: 'white', padding: '8px', borderRadius: '8px' }} title="Ver">
+                                                    <button onClick={() => handleView(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#1264d6', color: 'white', padding: '8px', borderRadius: '8px' }} title="Ver">
                                                         <i className="fas fa-eye"></i>
                                                     </button>
-                                                    <button onClick={() => handleEdit(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#3b82f6', color: 'white', padding: '8px', borderRadius: '8px' }} title="Editar">
-                                                        <i className="fas fa-edit"></i>
-                                                    </button>
-                                                    <button onClick={() => handleDelete(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#ef4444', color: 'white', padding: '8px', borderRadius: '8px' }} title="Desvincular">
-                                                        <i className="fas fa-chain-broken"></i>
-                                                    </button>
+                                                    {/* solo si el usuario actual es el docente dueño de la rúbrica */}
+                                                    {(() => {
+                                                        if (!(currentUser?.cedula === rubrica.docente_cedula)) 
+                                                            return null;
+                                                        return (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => handleEdit(rubrica.id, rubrica.id_evaluacion)}
+                                                                    className="btns"
+                                                                    style={{ background: '#3b82f6', color: 'white', padding: '8px', borderRadius: '8px' }}
+                                                                    title="Editar"
+                                                                >
+                                                                    <i className="fas fa-edit"></i>
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDelete(rubrica.id, rubrica.id_evaluacion)}
+                                                                    className="btns"
+                                                                    style={{ background: '#ef4444', color: 'white', padding: '8px', borderRadius: '8px' }}
+                                                                    title="Desvincular"
+                                                                >
+                                                                    <i className="fas fa-chain-broken"></i>
+                                                                </button>
+                                                            </>
+                                                        );
+                                                    })()}
                                                 </div>
                                             </td>
                                         </tr>
