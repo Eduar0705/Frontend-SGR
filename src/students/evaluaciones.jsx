@@ -520,7 +520,7 @@ function StatusMessage({ icon, color, text }) {
     );
 }
 
-function DetailContent({ data, onPrint }) {
+function DetailContent({ data }) {
     const { evaluacion, estudiante, rubrica, criterios } = data;
     const nivelComun = calcularNivelComun(criterios);
 
@@ -673,12 +673,6 @@ function Section({ title, icon, children }) {
         </div>
     );
 }
-
-const cardStyle = {
-    background: '#fff', borderRadius: '12px', padding: '20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'transform 0.2s, box-shadow 0.2s',
-    border: '1px solid #f1f5f9'
-};
 const modalOverlayStyle = {
     position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
     background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex',
