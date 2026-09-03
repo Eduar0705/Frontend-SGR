@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 // Componentes comunes
 import { UIProvider, useUI } from './context/UIContext';
 import Loader from './components/Loader';
+import ProtectedRoute from './components/ProtectedRoute';
 import { handleSessionExpired, getJwtExpirationTime } from './utils/sessionHandler';
 
 // Componente para vigilar cambios de ruta y resetear loaders residuales
@@ -59,14 +60,14 @@ function SessionWatcher() {
     return null;
 }
 
-// ── Vistas Públicas y Auth (Carga Diferida) ─────────────────────────
+// ── Vistas Públicas y Auth ─────────────────────────
 const Index = lazy(() => import('./index'));
 const Login = lazy(() => import('./auth/login'));
 const Register = lazy(() => import('./auth/register'));
 const Recovery = lazy(() => import('./auth/recovery'));
 const ResetPassword = lazy(() => import('./auth/resetPassword'));
 
-// ── Vistas de Administrador (Carga Diferida) ────────────────────────
+// ── Vistas de Administrador ────────────────────────
 const Home = lazy(() => import('./admin/home'));
 const Docentes = lazy(() => import('./admin/docentes'));
 const Configuracion = lazy(() => import('./admin/configuracion'));
@@ -79,7 +80,7 @@ const PermisosDocente = lazy(() => import('./admin/PermisosDocente'));
 const Periodos = lazy(() => import('./admin/periodos'));
 const AdminGuias = lazy(() => import('./admin/guias'));
 
-// ── Vistas de Docentes (Carga Diferida) ─────────────────────────────
+// ── Vistas de Docentes ─────────────────────────────
 const Teacher = lazy(() => import('./teacher/teacher'));
 const TeacherEvaluaciones = lazy(() => import('./teacher/evaluaciones'));
 const TeacherCrearRubricas = lazy(() => import('./teacher/crearRubricas'));
@@ -109,13 +110,8 @@ function AppContent() {
 
     return (
         <BrowserRouter>
-            {/* Resetea loaders al cambiar de ruta */}
             <RouteChangeWatcher />
-
-            {/* Vigila expiración de sesión por inactividad / token */}
             <SessionWatcher />
-
-            {/* Loader global para peticiones asíncronas de la API */}
             <Loader show={loading} />
             
             {/* Suspense muestra el Loader mientras se descarga el chunk JS de la vista */}
@@ -131,36 +127,42 @@ function AppContent() {
                     <Route path="/recovery" element={<Recovery />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     
-                    {/* Rutas de Administrador */}
-                    <Route path='/home' element={<Home />} />
-                    <Route path='/admin/profesores' element={<Docentes />} />
-                    <Route path='/admin/configuracion' element={<Configuracion />} />
-                    <Route path='/admin/reportes' element={<Reportes />} />
-                    <Route path='/admin/crear-rubricas' element={<CrearRubricas />} />
-                    <Route path='/admin/evaluacion-docente' element={<EvaluacionDocente />} />
-                    <Route path='/admin/evaluaciones' element={<Evaluaciones />} />
-                    <Route path='/admin/rubricas' element={<Rubricas />} />
-                    <Route path='/admin/permisos/:cedula' element={<PermisosDocente />} />
-                    <Route path='/admin/periodos' element={<Periodos />} />
-                    <Route path='/admin/guias' element={<AdminGuias />} />
+                    {/* Rutas de Administrador (Rol 1) */}
+                    <Route element={<ProtectedRoute allowedRoles={[1]} />}>
+                        <Route path='/home' element={<Home />} />
+                        <Route path='/admin/profesores' element={<Docentes />} />
+                        <Route path='/admin/configuracion' element={<Configuracion />} />
+                        <Route path='/admin/reportes' element={<Reportes />} />
+                        <Route path='/admin/crear-rubricas' element={<CrearRubricas />} />
+                        <Route path='/admin/evaluacion-docente' element={<EvaluacionDocente />} />
+                        <Route path='/admin/evaluaciones' element={<Evaluaciones />} />
+                        <Route path='/admin/rubricas' element={<Rubricas />} />
+                        <Route path='/admin/permisos/:cedula' element={<PermisosDocente />} />
+                        <Route path='/admin/periodos' element={<Periodos />} />
+                        <Route path='/admin/guias' element={<AdminGuias />} />
+                    </Route>
 
-                    {/* Rutas para Docentes */}
-                    <Route path="/teacher" element={<Teacher />} />
-                    <Route path="/teacher/evaluaciones" element={<TeacherEvaluaciones />} />
-                    <Route path="/teacher/crear-rubricas" element={<TeacherCrearRubricas />} />
-                    <Route path="/teacher/estudiantes" element={<TeacherEstudiantes />} />
-                    <Route path="/teacher/reportes" element={<TeacherReportes />} />
-                    <Route path="/teacher/rubricas" element={<TeacherRubrica />} />
-                    <Route path="/teacher/rubricas/editar/:id/:id_eval" element={<TeacherEditarRubrica />} />
-                    <Route path="/teacher/guias" element={<TeacherGuias />} />
-                    <Route path="/teacher/config" element={<UserProfile user={getUser()} onLogout={() => window.location.href = '/login'} />} />
+                    {/* Rutas para Docentes (Rol 2) */}
+                    <Route element={<ProtectedRoute allowedRoles={[2]} />}>
+                        <Route path="/teacher" element={<Teacher />} />
+                        <Route path="/teacher/evaluaciones" element={<TeacherEvaluaciones />} />
+                        <Route path="/teacher/crear-rubricas" element={<TeacherCrearRubricas />} />
+                        <Route path="/teacher/estudiantes" element={<TeacherEstudiantes />} />
+                        <Route path="/teacher/reportes" element={<TeacherReportes />} />
+                        <Route path="/teacher/rubricas" element={<TeacherRubrica />} />
+                        <Route path="/teacher/rubricas/editar/:id/:id_eval" element={<TeacherEditarRubrica />} />
+                        <Route path="/teacher/guias" element={<TeacherGuias />} />
+                        <Route path="/teacher/config" element={<UserProfile user={getUser()} onLogout={() => window.location.href = '/login'} />} />
+                    </Route>
 
-                    {/* Rutas para Estudiantes */}
-                    <Route path="/student" element={<Student />} />
-                    <Route path="/student/calificaciones" element={<StudentCalificaciones />} />
-                    <Route path="/student/evaluaciones" element={<StudentEvaluaciones />} />
-                    <Route path="/student/guias" element={<StudentGuias />} />
-                    <Route path="/student/config" element={<UserProfile user={getUser()} onLogout={() => window.location.href = '/login'} />} />
+                    {/* Rutas para Estudiantes (Rol 3) */}
+                    <Route element={<ProtectedRoute allowedRoles={[3]} />}>
+                        <Route path="/student" element={<Student />} />
+                        <Route path="/student/calificaciones" element={<StudentCalificaciones />} />
+                        <Route path="/student/evaluaciones" element={<StudentEvaluaciones />} />
+                        <Route path="/student/guias" element={<StudentGuias />} />
+                        <Route path="/student/config" element={<UserProfile user={getUser()} onLogout={() => window.location.href = '/login'} />} />
+                    </Route>
                     
                     {/* Ruta por defecto */}
                     <Route path="*" element={<Navigate to="/" replace />} />

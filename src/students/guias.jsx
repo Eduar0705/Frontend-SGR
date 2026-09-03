@@ -425,7 +425,7 @@ export default function StudentGuias() {
                                             </button>
                                             {openFaq[2] && (
                                                 <div className="guide-faq-answer">
-                                                    Sí, desde el módulo <strong>Mis Calificaciones</strong> puedes utilizar la opción de exportar o imprimir tu resumen académico en cualquier momento.
+                                                    Proximamente, desde el módulo <strong>Mis Calificaciones</strong> podras utilizar la opción de exportar o imprimir tu resumen académico en cualquier momento.
                                                 </div>
                                             )}
                                         </div>

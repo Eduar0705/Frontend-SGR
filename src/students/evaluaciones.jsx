@@ -69,9 +69,12 @@ export default function StudentEvaluaciones() {
                 } else if (targetEvalId) {
                     verDetalles(targetEvalId);
                 }
+
+                // Limpiar el state y query params para evitar que se reabra al cambiar de periodo o recargar evaluaciones
+                navigate(location.pathname, { replace: true, state: {} });
             }
         }
-    }, [loading, evaluaciones, location.state, location.search]);
+    }, [loading, evaluaciones, location.state, location.search, location.pathname, navigate]);
 
     const loadEvaluaciones = async (periodo = null) => {
         try {
@@ -191,6 +194,7 @@ export default function StudentEvaluaciones() {
                             <button
                                 key={periodo}
                                 onClick={() => {
+                                    setSelectedDetail(null);
                                     setPeriodoActivo(periodo);
                                     loadEvaluaciones(index === 0 ? null : periodo);
                                 }}
@@ -278,7 +282,7 @@ export default function StudentEvaluaciones() {
                                             style={{
                                                 flex: 1,
                                                 padding: '10px',
-                                                background: ev.fecha_evaluacion ? '#3b82f6' : '#94a3b8',
+                                                background: (ev.fecha_evaluacion && ev.rubrica_id) ? '#3b82f6' : '#94a3b8',
                                                 color: '#fff',
                                                 border: 'none',
                                                 borderRadius: '8px',
