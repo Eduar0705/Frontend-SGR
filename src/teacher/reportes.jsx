@@ -28,7 +28,7 @@ export default function TeacherReportes() {
         const loadStats = async () => {
             try {
                 const [basic, advanced] = await Promise.all([
-                    dashboardService.getStats(),
+                    dashboardService.getTeacherStats(),
                     dashboardService.getAdvancedStats()
                 ]);
                 setStats(basic);
