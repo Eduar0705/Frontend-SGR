@@ -15,7 +15,7 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
 
     const nombresNiveles = nivelesMap.size > 0
         ? [...nivelesMap.entries()]
-            .sort((a, b) => a[1] - b[1])   // mayor puntaje primero
+            .sort((a, b) => b[1] - a[1])   // mayor puntaje primero
             .map(([nombre]) => nombre)
         : ['Sobresaliente', 'Notable', 'Aprobado', 'Insuficiente'];
 
@@ -34,32 +34,58 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
             <meta charset="UTF-8">
             <title>${rubrica.nombre_rubrica}</title>
             <style>
+                @page {
+                    size: letter;
+                    margin: 1.5cm;
+                }
                 body { 
                     font-family: Arial, sans-serif; 
-                    padding: 40px; 
+                    padding: 20px;
+                    margin: 0;
                     font-size: 12px; 
                     color: #000;
                 }
                 .header-container {
+                    position: relative;
                     display: flex;
+                    justify-content: center;
                     align-items: center;
                     margin-bottom: 20px;
+                    min-height: 80px; /* Ajusta según el tamaño del logo */
                 }
                 .logo {
+                    position: absolute;
+                    left: 0;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
                     width: 150px;
+                }
+                .logo img {
+                    max-width: 100%;
+                    height: auto;
+                }
+                .logo .fallback-text {
                     font-weight: bold;
                     font-size: 24px;
                     color: #cc0000;
                 }
+                .logo .subtitle {
+                    font-size: 10px;
+                    color: #000;
+                    margin-top: 2px;
+                }
                 .header-text {
-                    flex: 1;
                     text-align: center;
                 }
                 .title {
                     font-weight: bold;
                     font-size: 14px;
                     text-transform: uppercase;
-                    margin-bottom: 5px;
+                    margin-bottom: 2px;
                 }
                 .subtitle {
                     font-weight: bold;
@@ -107,8 +133,16 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
                     font-style: italic;
                     text-align: center;
                 }
+                .no-print {
+                    display: block;
+                }
                 @media print {
-                    .no-print { display: none; }
+                    .no-print {
+                        display: none !important;
+                    }
+                    body {
+                        padding: 0;
+                    }
                 }
             </style>
         </head>
@@ -120,8 +154,9 @@ export const imprimirRubricaFormal = (rubrica, criterios) => {
 
             <div class="header-container">
                 <div class="logo">
-                    IUJO<br>
-                    <span style="font-size:10px;color:#000;">Instituto Universitario<br>Jesús Obrero</span>
+                    <img src="/img/logoiujo.jpg" alt="IUJO - Instituto Universitario Jesús Obrero"
+                         onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='block';">
+                    <div id="fallback-logo" class="fallback-text" style="display:none;">IUJO</div>
                 </div>
                 <div class="header-text">
                     <div class="title">${rubrica.nombre_rubrica}</div>

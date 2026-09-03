@@ -342,7 +342,6 @@ export default function ModalEditarRubrica({
                 porcentaje_evaluacion: formData.porcentaje_evaluacion,
                 criterios: formData.criterios
             };
-
             const res = esDuplicado
                         ? await rubricasService.saveRubrica(payload)
                         : await rubricasService.updateRubrica(currentRubricaId, payload);
