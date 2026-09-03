@@ -7,7 +7,7 @@ const getStats = async () => {
     let periodo = null;
         const user = JSON.parse(localStorage.getItem('user'));
         periodo = user?.periodo_usuario || null;
-    const response = await axios.get(`${API_URL}/dashboard/stats`, {
+    const response = await axios.get(`${API_URL}/dashboard/teacher`, {
         params: { periodo },
         headers: { Authorization: `Bearer ${token}` }
     });
