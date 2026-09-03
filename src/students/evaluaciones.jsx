@@ -23,7 +23,6 @@ export default function StudentEvaluaciones() {
     const [evaluaciones, setEvaluaciones] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedDetail, setSelectedDetail] = useState(null);
-    const [detailLoading, setDetailLoading] = useState(false);
     const [orderBy, setOrderBy] = useState('fecha_fija');
     const [periodos, setPeriodos] = useState([]);
     const [periodoActivo, setPeriodoActivo] = useState(null);
@@ -105,7 +104,6 @@ export default function StudentEvaluaciones() {
 };
 
     const verDetalles = async (evaluacionId) => {
-        setDetailLoading(true);
         setSelectedDetail({ loading: true });
         try {
             const data = await studentEvaluacionesService.getDetalleEvaluacion(evaluacionId);
@@ -114,9 +112,7 @@ export default function StudentEvaluaciones() {
             Swal.fire('Error', 'No se pudieron cargar los detalles', 'error');
             console.error(error)
             setSelectedDetail(null);
-        } finally {
-            setDetailLoading(false);
-        }
+        } 
     };
 
     const verRubricaCard = async (evaluacionId) => {
