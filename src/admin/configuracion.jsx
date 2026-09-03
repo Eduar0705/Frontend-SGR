@@ -4,6 +4,7 @@ import Menu from '../components/menu';
 import Header from '../components/header';
 import Swal from 'sweetalert2';
 import { usuariosService } from '../services/usuarios.service';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../assets/css/home.css';
 import '../assets/css/modalConfig.css';
 
@@ -208,7 +209,21 @@ export default function Configuracion() {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '30px' }}>Cargando usuarios...</td></tr>
+                                    [1, 2, 3, 4, 5].map(i => (
+                                        <tr key={i} style={{ borderTop: '1px solid #eee' }}>
+                                            <td style={{ padding: '15px' }}><span className="skeleton skeleton-text" style={{ width: '85px' }} /></td>
+                                            <td style={{ padding: '15px' }}><span className="skeleton skeleton-text" style={{ width: '110px' }} /></td>
+                                            <td style={{ padding: '15px' }}><span className="skeleton skeleton-text" style={{ width: '110px' }} /></td>
+                                            <td style={{ padding: '15px' }}><span className="skeleton skeleton-text" style={{ width: '160px' }} /></td>
+                                            <td style={{ padding: '15px' }}><span className="skeleton skeleton-badge" style={{ width: '90px' }} /></td>
+                                            <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                                                    <span className="skeleton skeleton-button" style={{ width: '32px', height: '32px' }} />
+                                                    <span className="skeleton skeleton-button" style={{ width: '32px', height: '32px' }} />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
                                 ) : currentEntries.length === 0 ? (
                                     <tr><td colSpan="6" style={{ textAlign: 'center', padding: '30px' }}>No se encontraron usuarios.</td></tr>
                                 ) : currentEntries.map(u => (

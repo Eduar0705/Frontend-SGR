@@ -479,9 +479,18 @@ export default function Evaluaciones() {
 
                     {/* Acordeón de Evaluaciones */}
                     {loading ? (
-                        <div className="loading-state-premium">
-                            <div className="spinner"></div>
-                            <p>Cargando evaluaciones...</p>
+                        <div className="hierarchy-container">
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} style={{ marginBottom: '15px', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', padding: '15px 20px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: `${35 + (i % 3) * 10}%` }}>
+                                            <span className="skeleton skeleton-circle" style={{ width: '22px', height: '22px' }} />
+                                            <span className="skeleton skeleton-title" style={{ width: '80%' }} />
+                                        </div>
+                                        <span className="skeleton" style={{ width: '16px', height: '16px', borderRadius: '4px' }} />
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     ) : Object.keys(seccionesAgrupadas).length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: '12px' }}>
@@ -580,9 +589,23 @@ export default function Evaluaciones() {
                                                                                             {openSc && (
                                                                                                 <div style={{ padding: '12px 15px', background: 'white' }}>
                                                                                                     {isLoadingSec ? (
-                                                                                                        <div style={{ textAlign: 'center', padding: '20px' }}>
-                                                                                                            <i className="fas fa-spinner fa-spin" style={{ color: '#f59e0b' }} />
-                                                                                                            <p style={{ fontSize: '0.9em', color: '#92400e', marginTop: '8px' }}>Cargando detalles...</p>
+                                                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '10px 0' }}>
+                                                                                                            {[1, 2].map(k => (
+                                                                                                                <div key={k} style={{ background: '#f8fafc', borderRadius: '10px', padding: '12px 18px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '50%' }}>
+                                                                                                                        <span className="skeleton skeleton-circle" style={{ width: '32px', height: '32px' }} />
+                                                                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '70%' }}>
+                                                                                                                            <span className="skeleton skeleton-text" style={{ width: '80%' }} />
+                                                                                                                            <span className="skeleton skeleton-text" style={{ width: '50%' }} />
+                                                                                                                        </div>
+                                                                                                                    </div>
+                                                                                                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                                                                                        <span className="skeleton skeleton-badge" style={{ width: '70px' }} />
+                                                                                                                        <span className="skeleton skeleton-button" style={{ width: '28px', height: '28px' }} />
+                                                                                                                        <span className="skeleton skeleton-button" style={{ width: '28px', height: '28px' }} />
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                            ))}
                                                                                                         </div>
                                                                                                     ) : evaluations.length === 0 ? (
                                                                                                         <div style={{ textAlign: 'center', padding: '30px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #e2e8f0', margin: '10px' }}>
@@ -701,9 +724,22 @@ export default function Evaluaciones() {
                                                                                                                                     </div>
                                                                                                                                 </div>
                                                                                                                             ) : isLoadingEval ? (
-                                                                                                                                <div style={{ padding: '30px', textAlign: 'center' }}>
-                                                                                                                                    <div className="spinner-mini" style={{ margin: '0 auto 10px' }}></div>
-                                                                                                                                    <p style={{ fontSize: '0.9em', color: '#64748b' }}>Cargando estudiantes...</p>
+                                                                                                                                <div className="evaluados-list-premium" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '15px' }}>
+                                                                                                                                    {[1, 2, 3].map(sIdx => (
+                                                                                                                                        <div key={sIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                                                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                                                                                                <span className="skeleton skeleton-circle" style={{ width: '36px', height: '36px' }} />
+                                                                                                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                                                                                                                    <span className="skeleton skeleton-text" style={{ width: '140px' }} />
+                                                                                                                                                    <span className="skeleton skeleton-text" style={{ width: '90px' }} />
+                                                                                                                                                </div>
+                                                                                                                                            </div>
+                                                                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                                                                                                                                <span className="skeleton skeleton-badge" style={{ width: '70px' }} />
+                                                                                                                                                <span className="skeleton skeleton-button" style={{ width: '80px', height: '32px' }} />
+                                                                                                                                            </div>
+                                                                                                                                        </div>
+                                                                                                                                    ))}
                                                                                                                                 </div>
                                                                                                                             ) : evalRecords.length === 0 ? (
                                                                                                                                 <div style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>

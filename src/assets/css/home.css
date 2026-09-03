@@ -1810,3 +1810,61 @@ body {
     font-style: italic;
     font-size: 0.9rem;
 }
+
+/* ==========================================================================
+   Skeleton Loading Utilities (Perceived Performance & Zero Layout Shift)
+   ========================================================================== */
+@keyframes skeleton-pulse {
+    0% {
+        background-color: #e2e8f0;
+        opacity: 0.6;
+    }
+    50% {
+        background-color: #cbd5e1;
+        opacity: 0.9;
+    }
+    100% {
+        background-color: #e2e8f0;
+        opacity: 0.6;
+    }
+}
+
+.skeleton {
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+    background-color: #e2e8f0;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.skeleton-text {
+    height: 14px;
+    border-radius: 4px;
+}
+
+.skeleton-title {
+    height: 22px;
+    border-radius: 6px;
+}
+
+.skeleton-circle {
+    border-radius: 50%;
+}
+
+.skeleton-badge {
+    height: 20px;
+    border-radius: 12px;
+}
+
+.skeleton-button {
+    height: 36px;
+    border-radius: 8px;
+}
+
+.skeleton-card {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+

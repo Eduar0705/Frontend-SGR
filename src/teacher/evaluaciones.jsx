@@ -12,6 +12,7 @@ import ModalEvaluar from './components/ModalEvaluar';
 import ModalVerDetalles from './components/ModalVerDetalles';
 import ModalAddEvaluacion from './components/ModalAddEvaluacion';
 import ModalReutilizarRubrica from '../components/ModalReutilizarRubrica';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 import { useUI } from '../context/UIContext';
 
@@ -275,9 +276,60 @@ export default function TeacherEvaluaciones() {
     /* ─────────── render ─────────── */
     const renderContent = () => {
         if (loading) return (
-            <div style={{ textAlign: 'center', padding: '50px' }}>
-                <i className="fas fa-spinner fa-spin fa-3x" style={{ color: '#3b82f6' }} />
-                <p style={{ marginTop: '10px', color: '#64748b' }}>Cargando evaluaciones...</p>
+            <div className="hierarchy-container">
+                {/* Skeleton Carrera 1 (Simulada abierta con estructura interna) */}
+                <div style={{ marginBottom: '20px', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', padding: '15px 20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '50%' }}>
+                            <span className="skeleton skeleton-circle" style={{ width: '22px', height: '22px' }} />
+                            <span className="skeleton skeleton-title" style={{ width: '60%' }} />
+                        </div>
+                        <span className="skeleton" style={{ width: '16px', height: '16px', borderRadius: '4px' }} />
+                    </div>
+                    <div style={{ padding: '20px' }}>
+                        {/* Semestre simulado */}
+                        <div style={{ marginBottom: '20px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px' }}>
+                                <span className="skeleton skeleton-text" style={{ width: '180px' }} />
+                                <span className="skeleton" style={{ width: '14px', height: '14px', borderRadius: '4px' }} />
+                            </div>
+                            {/* Materia 1 simulada */}
+                            <div style={{ marginLeft: '15px', marginBottom: '15px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#eef2ff' }}>
+                                    <span className="skeleton skeleton-text" style={{ width: '220px' }} />
+                                    <span className="skeleton" style={{ width: '14px', height: '14px', borderRadius: '4px' }} />
+                                </div>
+                                <div style={{ padding: '12px 15px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    {/* 2 evaluaciones simuladas */}
+                                    {[1, 2].map(j => (
+                                        <div key={j} style={{ background: 'white', borderRadius: '8px', padding: '14px 18px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '60%' }}>
+                                                <span className="skeleton skeleton-text" style={{ width: '55%' }} />
+                                                <span className="skeleton skeleton-text" style={{ width: '35%' }} />
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                <span className="skeleton skeleton-badge" style={{ width: '65px' }} />
+                                                <span className="skeleton skeleton-button" style={{ width: '28px', height: '28px' }} />
+                                                <span className="skeleton skeleton-button" style={{ width: '28px', height: '28px' }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Skeleton Carrera 2 (Simulada cerrada) */}
+                <div style={{ marginBottom: '20px', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', padding: '15px 20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '40%' }}>
+                            <span className="skeleton skeleton-circle" style={{ width: '22px', height: '22px' }} />
+                            <span className="skeleton skeleton-title" style={{ width: '65%' }} />
+                        </div>
+                        <span className="skeleton" style={{ width: '16px', height: '16px', borderRadius: '4px' }} />
+                    </div>
+                </div>
             </div>
         );
 
@@ -532,9 +584,22 @@ export default function TeacherEvaluaciones() {
                                                                                                                             </div>
                                                                                                                         </div>
                                                                                                                     ) : loadingS ? (
-                                                                                                                        <div style={{ textAlign: 'center', padding: '20px' }}>
-                                                                                                                            <i className="fas fa-spinner fa-spin" style={{ color: '#10b981' }} />
-                                                                                                                            <p style={{ color: '#065f46', fontSize: '0.9em', marginTop: '10px' }}>Cargando estudiantes...</p>
+                                                                                                                        <div className="evaluados-list-premium" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                                                                                            {[1, 2, 3].map(sIdx => (
+                                                                                                                                <div key={sIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                                                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                                                                                        <span className="skeleton skeleton-circle" style={{ width: '36px', height: '36px' }} />
+                                                                                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                                                                                                            <span className="skeleton skeleton-text" style={{ width: '130px' }} />
+                                                                                                                                            <span className="skeleton skeleton-text" style={{ width: '80px' }} />
+                                                                                                                                        </div>
+                                                                                                                                    </div>
+                                                                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                                                                                                                        <span className="skeleton skeleton-badge" style={{ width: '60px' }} />
+                                                                                                                                        <span className="skeleton skeleton-button" style={{ width: '80px', height: '32px' }} />
+                                                                                                                                    </div>
+                                                                                                                                </div>
+                                                                                                                            ))}
                                                                                                                         </div>
                                                                                                                     ) : filtrados.length === 0 ? (
                                                                                                                         <p style={{ textAlign: 'center', color: '#64748b' }}>No hay estudiantes para mostrar.</p>

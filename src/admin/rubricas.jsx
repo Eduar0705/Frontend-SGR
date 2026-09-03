@@ -5,6 +5,7 @@ import Header from '../components/header';
 import { rubricasService } from '../services/rubricas.service';
 import { imprimirRubricaFormal } from '../utils/printRubrica';
 import ModalEditarRubrica from '../components/ModalEditarRubrica';
+import LoadingSpinner from '../components/LoadingSpinner';
 import Swal from 'sweetalert2';
 import '../assets/css/home.css';
 
@@ -258,7 +259,37 @@ export default function Rubricas() {
                                 </thead>
                                 <tbody>
                                     {loading ? (
-                                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px' }}>Cargando rúbricas...</td></tr>
+                                        [1, 2, 3, 4, 5].map(i => (
+                                            <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                <td style={{ padding: '15px' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        <span className="skeleton skeleton-text" style={{ width: '70%' }} />
+                                                        <span className="skeleton skeleton-text" style={{ width: '40%' }} />
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '15px' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        <span className="skeleton skeleton-text" style={{ width: '60%' }} />
+                                                        <span className="skeleton skeleton-text" style={{ width: '45%' }} />
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '15px' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        <span className="skeleton skeleton-text" style={{ width: '50%' }} />
+                                                        <span className="skeleton skeleton-text" style={{ width: '30%' }} />
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    <span className="skeleton skeleton-badge" style={{ width: '75px' }} />
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                                        <span className="skeleton skeleton-button" style={{ width: '32px', height: '32px' }} />
+                                                        <span className="skeleton skeleton-button" style={{ width: '32px', height: '32px' }} />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
                                     ) : paginatedRubricas.length > 0 ? (
                                         paginatedRubricas.map((r) => (
                                             <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>

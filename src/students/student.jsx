@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import dashboardService from '../services/dashboard.service';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../assets/css/home.css';
 
 import { useUI } from '../context/UIContext';
@@ -56,121 +57,147 @@ export default function Student() {
                 <Header title="Panel Estudiantil" user={user} onLogout={handleLogout} />
                 
                 <div className="view active" id="student-dashboard" style={{ padding: '30px' }}>
-                    {loading ? (
-                        <div style={{ textAlign: 'center', padding: '50px' }}>
-                            <i className="fas fa-spinner fa-spin fa-2x" style={{ color: '#1e3a8a' }}></i>
-                            <p>Cargando tu progreso académico...</p>
+                    {/* Resumen de estadísticas */}
+                    <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                        <div className="stat-card card">
+                            <div className="stat-icon primary" style={{ background: '#eff6ff', color: '#1d4ed8' }}>
+                                <i className="fas fa-book-reader"></i>
+                            </div>
+                            <div className="stat-content">
+                                <div className="stat-value" style={{ fontSize: '1.5rem', fontWeight: 'bold', minHeight: '36px', display: 'flex', alignItems: 'center' }}>
+                                    {loading ? (
+                                        <span className="skeleton skeleton-title" style={{ width: '48px' }} />
+                                    ) : (
+                                        data?.stats?.rubricasActivas || 0
+                                    )}
+                                </div>
+                                <div className="stat-label" style={{ color: '#64748b' }}>Rúbricas que te evalúan</div>
+                            </div>
                         </div>
-                    ) : (
-                        <>
-                            {/* Resumen de estadísticas */}
-                            <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-                                <div className="stat-card card">
-                                    <div className="stat-icon primary" style={{ background: '#eff6ff', color: '#1d4ed8' }}>
-                                        <i className="fas fa-book-reader"></i>
-                                    </div>
-                                    <div className="stat-content">
-                                        <div className="stat-value" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-                                            {data?.stats?.rubricasActivas || 0}
-                                        </div>
-                                        <div className="stat-label" style={{ color: '#64748b' }}>Rúbricas que te evalúan</div>
-                                    </div>
-                                </div>
-                                <div className="stat-card card">
-                                    <div className="stat-icon success" style={{ background: '#f0fdf4', color: '#15803d' }}>
-                                        <i className="fas fa-clipboard-check"></i>
-                                    </div>
-                                    <div className="stat-content">
-                                        <div className="stat-value" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-                                            {data?.stats?.evaluacionesCompletadas || 0}
-                                        </div>
-                                        <div className="stat-label" style={{ color: '#64748b' }}>Evaluaciones Realizadas</div>
-                                    </div>
-                                </div>
-                                <div className="stat-card card">
-                                    <div className="stat-icon warning" style={{ background: '#fffbeb', color: '#b45309' }}>
-                                        <i className="fas fa-clock"></i>
-                                    </div>
-                                    <div className="stat-content">
-                                        <div className="stat-value" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-                                            {data?.stats?.evaluacionesPendientes || 0}
-                                        </div>
-                                        <div className="stat-label" style={{ color: '#64748b' }}>Aún sin evaluar</div>
-                                    </div>
-                                </div>
+                        <div className="stat-card card">
+                            <div className="stat-icon success" style={{ background: '#f0fdf4', color: '#15803d' }}>
+                                <i className="fas fa-clipboard-check"></i>
                             </div>
+                            <div className="stat-content">
+                                <div className="stat-value" style={{ fontSize: '1.5rem', fontWeight: 'bold', minHeight: '36px', display: 'flex', alignItems: 'center' }}>
+                                    {loading ? (
+                                        <span className="skeleton skeleton-title" style={{ width: '48px' }} />
+                                    ) : (
+                                        data?.stats?.evaluacionesCompletadas || 0
+                                    )}
+                                </div>
+                                <div className="stat-label" style={{ color: '#64748b' }}>Evaluaciones Realizadas</div>
+                            </div>
+                        </div>
+                        <div className="stat-card card">
+                            <div className="stat-icon warning" style={{ background: '#fffbeb', color: '#b45309' }}>
+                                <i className="fas fa-clock"></i>
+                            </div>
+                            <div className="stat-content">
+                                <div className="stat-value" style={{ fontSize: '1.5rem', fontWeight: 'bold', minHeight: '36px', display: 'flex', alignItems: 'center' }}>
+                                    {loading ? (
+                                        <span className="skeleton skeleton-title" style={{ width: '48px' }} />
+                                    ) : (
+                                        data?.stats?.evaluacionesPendientes || 0
+                                    )}
+                                </div>
+                                <div className="stat-label" style={{ color: '#64748b' }}>Aún sin evaluar</div>
+                            </div>
+                        </div>
+                    </div>
 
-                            <div className="content-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
-                                {/* Evaluadas Recientemente */}
-                                <div className="card" style={{ padding: '25px' }}>
-                                    <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                                        <h2 className="card-title"><i className="fas fa-star" style={{ color: '#fbbf24' }}></i> Últimas Calificaciones</h2>
-                                    </div>
-                                    <div className="card-content">
-                                        {data?.evaluacionesRecientes && data.evaluacionesRecientes.length > 0 ? (
-                                            data.evaluacionesRecientes.map((evaluacion, idx) => (
-                                                <div key={idx} className="evaluacion-recent-item" style={{ padding: '15px 0', borderBottom: '1px solid #f1f5f9' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        <div>
-                                                            <div style={{ fontWeight: '600' }}>{evaluacion.nombre_rubrica}</div>
-                                                            <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{evaluacion.materia} • {evaluacion.tipo_evaluacion}</div>
-                                                        </div>
-                                                        <div style={{ textAlign: 'right' }}>
-                                                            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: parseFloat(evaluacion.puntaje_total) >= 10 ? '#15803d' : '#ef4444' }}>
-                                                                {parseFloat(evaluacion.puntaje_total)} / {evaluacion.ponderacion}
-                                                            </div>
-                                                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                                                                {new Date(evaluacion.fecha_evaluacion).toLocaleDateString()}
-                                                            </div>
-                                                        </div>
+                    <div className="content-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '30px' }}>
+                        {/* Evaluadas Recientemente */}
+                        <div className="card" style={{ padding: '25px' }}>
+                            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                                <h2 className="card-title"><i className="fas fa-star" style={{ color: '#fbbf24' }}></i> Últimas Calificaciones</h2>
+                            </div>
+                            <div className="card-content">
+                                {loading ? (
+                                    [1, 2, 3].map(i => (
+                                        <div key={i} style={{ padding: '15px 0', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                <span className="skeleton skeleton-text" style={{ width: '60%' }} />
+                                                <span className="skeleton skeleton-text" style={{ width: '40%' }} />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                                                <span className="skeleton skeleton-title" style={{ width: '50px' }} />
+                                                <span className="skeleton skeleton-text" style={{ width: '65px' }} />
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : data?.evaluacionesRecientes && data.evaluacionesRecientes.length > 0 ? (
+                                    data.evaluacionesRecientes.map((evaluacion, idx) => (
+                                        <div key={idx} className="evaluacion-recent-item" style={{ padding: '15px 0', borderBottom: '1px solid #f1f5f9' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div>
+                                                    <div style={{ fontWeight: '600' }}>{evaluacion.nombre_rubrica}</div>
+                                                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{evaluacion.materia} • {evaluacion.tipo_evaluacion}</div>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: parseFloat(evaluacion.puntaje_total) >= 10 ? '#15803d' : '#ef4444' }}>
+                                                        {parseFloat(evaluacion.puntaje_total)} / {evaluacion.ponderacion}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                                        {new Date(evaluacion.fecha_evaluacion).toLocaleDateString()}
                                                     </div>
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Aún no tienes evaluaciones calificadas</div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Próximas Evaluaciones */}
-                                <div className="card" style={{ padding: '25px' }}>
-                                    <div className="card-header" style={{ marginBottom: '20px' }}>
-                                        <h2 className="card-title"><i className="fas fa-calendar-alt"></i> Próximos Eventos</h2>
-                                    </div>
-                                    <div className="card-content">
-                                        {data?.proximasEvaluaciones && data.proximasEvaluaciones.length > 0 ? (
-                                            data.proximasEvaluaciones.map((proxima, idx) => (
-                                                <div key={idx} className="proxima-eval-item" style={{ display: 'flex', gap: '15px', padding: '15px 0', borderBottom: '1px solid #f1f5f9' }}>
-                                                    <div className="calendar-box" style={{ width: '50px', height: '55px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center', padding: '5px' }}>
-                                                        <div style={{ fontSize: '0.7rem', color: '#ef4444', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px', textTransform: 'uppercase' }}>
-                                                            {new Date(proxima.fecha_evaluacion).toLocaleString('es-ES', { month: 'short' })}
-                                                        </div>
-                                                        <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b' }}>
-                                                            {new Date(proxima.fecha_evaluacion).getDate()}
-                                                        </div>
-                                                    </div>
-                                                    <div style={{ flex: 1 }}>
-                                                        <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{proxima.nombre_rubrica}</div>
-                                                        <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{proxima.materia}</div>
-                                                        <div style={{ fontSize: '0.8rem', marginTop: '3px' }}>
-                                                            <span style={{ color: '#1d4ed8', background: '#eff6ff', padding: '2px 8px', borderRadius: '10px' }}>
-                                                                {proxima.tipo_evaluacion}
-                                                            </span>
-                                                            <span style={{ color: '#94a3b8', marginLeft: '10px' }}>
-                                                                Valor: {proxima.porcentaje_evaluacion}%
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>No hay próximas evaluaciones programadas</div>
-                                        )}
-                                    </div>
-                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Aún no tienes evaluaciones calificadas</div>
+                                )}
                             </div>
-                        </>
-                    )}
+                        </div>
+
+                        {/* Próximas Evaluaciones */}
+                        <div className="card" style={{ padding: '25px' }}>
+                            <div className="card-header" style={{ marginBottom: '20px' }}>
+                                <h2 className="card-title"><i className="fas fa-calendar-alt"></i> Próximos Eventos</h2>
+                            </div>
+                            <div className="card-content">
+                                {loading ? (
+                                    [1, 2, 3].map(i => (
+                                        <div key={i} style={{ display: 'flex', gap: '15px', padding: '15px 0', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
+                                            <span className="skeleton skeleton-button" style={{ width: '50px', height: '55px', flexShrink: 0 }} />
+                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                <span className="skeleton skeleton-text" style={{ width: '65%' }} />
+                                                <span className="skeleton skeleton-text" style={{ width: '45%' }} />
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : data?.proximasEvaluaciones && data.proximasEvaluaciones.length > 0 ? (
+                                    data.proximasEvaluaciones.map((proxima, idx) => (
+                                        <div key={idx} className="proxima-eval-item" style={{ display: 'flex', gap: '15px', padding: '15px 0', borderBottom: '1px solid #f1f5f9' }}>
+                                            <div className="calendar-box" style={{ width: '50px', height: '55px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center', padding: '5px' }}>
+                                                <div style={{ fontSize: '0.7rem', color: '#ef4444', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px', textTransform: 'uppercase' }}>
+                                                    {new Date(proxima.fecha_evaluacion).toLocaleString('es-ES', { month: 'short' })}
+                                                </div>
+                                                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b' }}>
+                                                    {new Date(proxima.fecha_evaluacion).getDate()}
+                                                </div>
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{proxima.nombre_rubrica}</div>
+                                                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{proxima.materia}</div>
+                                                <div style={{ fontSize: '0.8rem', marginTop: '3px' }}>
+                                                    <span style={{ color: '#1d4ed8', background: '#eff6ff', padding: '2px 8px', borderRadius: '10px' }}>
+                                                        {proxima.tipo_evaluacion}
+                                                    </span>
+                                                    <span style={{ color: '#94a3b8', marginLeft: '10px' }}>
+                                                        Valor: {proxima.porcentaje_evaluacion}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>No hay próximas evaluaciones programadas</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>

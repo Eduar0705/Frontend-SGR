@@ -6,6 +6,7 @@ import { studentEvaluacionesService } from '../services/studentEvaluaciones.serv
 import { periodosService } from '../services/periodos.service'; // Asegúrate de que la ruta sea correcta
 import { imprimirRubricaFormal } from '../utils/printRubrica';
 import Swal from 'sweetalert2';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../assets/css/home.css';
 
 import { useUI } from '../context/UIContext';
@@ -188,35 +189,62 @@ export default function StudentEvaluaciones() {
                         </div>
                         
                     </div>
-                    {periodos.length > 0 && (
-                    <div style={{ display: 'flex', gap: '5px', marginBottom: '20px', borderBottom: '1px solid #ddd' }}>
-                        {periodos.map((periodo, index) => (
-                            <button
-                                key={periodo}
-                                onClick={() => {
-                                    setSelectedDetail(null);
-                                    setPeriodoActivo(periodo);
-                                    loadEvaluaciones(index === 0 ? null : periodo);
-                                }}
-                                style={{
-                                    padding: '10px 20px',
-                                    background: periodoActivo === periodo ? '#dc3545' : '#28a745',
-                                    color: '#fff',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    fontWeight: 'bold',
-                                    borderRadius: '4px 4px 0 0',
-                                    opacity: periodoActivo === periodo ? 1 : 0.7,
-                                    transition: 'all 0.3s ease'
-                                }}
-                            >
-                                {periodo}
-                            </button>
-                        ))}
-                    </div>
-                )}
+                    {loading && periodos.length === 0 ? (
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #ddd', paddingBottom: '10px' }}>
+                            <span className="skeleton skeleton-button" style={{ width: '120px', height: '38px', borderRadius: '4px 4px 0 0' }} />
+                            <span className="skeleton skeleton-button" style={{ width: '120px', height: '38px', borderRadius: '4px 4px 0 0' }} />
+                        </div>
+                    ) : periodos.length > 0 ? (
+                        <div style={{ display: 'flex', gap: '5px', marginBottom: '20px', borderBottom: '1px solid #ddd' }}>
+                            {periodos.map((periodo, index) => (
+                                <button
+                                    key={periodo}
+                                    onClick={() => {
+                                        setSelectedDetail(null);
+                                        setPeriodoActivo(periodo);
+                                        loadEvaluaciones(index === 0 ? null : periodo);
+                                    }}
+                                    style={{
+                                        padding: '10px 20px',
+                                        background: periodoActivo === periodo ? '#dc3545' : '#28a745',
+                                        color: '#fff',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold',
+                                        borderRadius: '4px 4px 0 0',
+                                        opacity: periodoActivo === periodo ? 1 : 0.7,
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                >
+                                    {periodo}
+                                </button>
+                            ))}
+                        </div>
+                    ) : null}
                     {loading ? (
-                        <p style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Cargando evaluaciones...</p>
+                        <div className="cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="card-evaluacion" style={{ background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', minHeight: '320px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span className="skeleton skeleton-badge" style={{ width: '70px' }} />
+                                            <span className="skeleton skeleton-badge" style={{ width: '50px' }} />
+                                        </div>
+                                        <span className="skeleton skeleton-title" style={{ width: '85%' }} />
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <span className="skeleton skeleton-text" style={{ width: '75%' }} />
+                                            <span className="skeleton skeleton-text" style={{ width: '65%' }} />
+                                            <span className="skeleton skeleton-text" style={{ width: '50%' }} />
+                                            <span className="skeleton skeleton-text" style={{ width: '80%' }} />
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                                        <span className="skeleton skeleton-button" style={{ flex: 1 }} />
+                                        <span className="skeleton skeleton-button" style={{ flex: 1 }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     ) : sortedEvaluaciones.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '60px 20px', background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                             <i className="fas fa-clipboard-list" style={{ fontSize: '48px', color: '#cbd5e1', marginBottom: '15px' }}></i>
@@ -341,7 +369,7 @@ export default function StudentEvaluaciones() {
                         </div>
                         <div style={{ padding: '25px', overflowY: 'auto', maxHeight: 'calc(85vh - 130px)' }}>
                             {selectedDetail.loading ? (
-                                <p style={{ textAlign: 'center', padding: '30px', color: '#666' }}>Cargando detalles...</p>
+                                <LoadingSpinner text="Cargando detalles de evaluación..." color="#1e3a8a" padding="40px" />
                             ) : selectedDetail.success ? (
                                 <DetailContent data={selectedDetail} onPrint={() => handleImprimirRubrica(selectedDetail)} />
                             ) : selectedDetail.holdup ? (

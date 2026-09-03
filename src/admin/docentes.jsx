@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import { docentesService } from '../services/docentes.service';
+import LoadingSpinner from '../components/LoadingSpinner';
 import Swal from 'sweetalert2';
 import '../assets/css/home.css';
 import '../assets/css/docentes.css';
@@ -213,7 +214,21 @@ export default function Docentes() {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan="5" style={{textAlign: 'center'}}>Cargando datos...</td></tr>
+                                    [1, 2, 3, 4, 5].map(i => (
+                                        <tr key={i} className="profesor-row">
+                                            <td><span className="skeleton skeleton-text" style={{ width: '140px' }} /></td>
+                                            <td><span className="skeleton skeleton-text" style={{ width: '80px' }} /></td>
+                                            <td><span className="skeleton skeleton-text" style={{ width: '120px' }} /></td>
+                                            <td><span className="skeleton skeleton-badge" style={{ width: '70px' }} /></td>
+                                            <td>
+                                                <div className="table-actions" style={{ display: 'flex', gap: '6px' }}>
+                                                    <span className="skeleton skeleton-button" style={{ width: '30px', height: '30px' }} />
+                                                    <span className="skeleton skeleton-button" style={{ width: '30px', height: '30px' }} />
+                                                    <span className="skeleton skeleton-button" style={{ width: '30px', height: '30px' }} />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
                                 ) : currentItems.length > 0 ? (
                                     currentItems.map(p => (
                                         <tr key={p.cedula} className="profesor-row">

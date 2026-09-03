@@ -4,6 +4,7 @@ import Menu from '../components/menu';
 import Header from '../components/header';
 import { calificacionesService } from '../services/calificaciones.service';
 import Swal from 'sweetalert2';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../assets/css/home.css';
 
 import { useUI } from '../context/UIContext';
@@ -73,7 +74,39 @@ export default function StudentCalificaciones() {
                         </div>
 
                         {loading ? (
-                            <p style={{ textAlign: 'center', color: '#666', padding: '30px' }}>Cargando calificaciones...</p>
+                            <div>
+                                {/* Skeleton tabs */}
+                                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #ddd', paddingBottom: '10px' }}>
+                                    <span className="skeleton skeleton-button" style={{ width: '120px', height: '38px', borderRadius: '4px 4px 0 0' }} />
+                                    <span className="skeleton skeleton-button" style={{ width: '120px', height: '38px', borderRadius: '4px 4px 0 0' }} />
+                                </div>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd', fontFamily: "'Segoe UI', sans-serif" }}>
+                                    <thead>
+                                        <tr>
+                                            <th style={thStyle}>Código</th>
+                                            <th style={{ ...thStyle, width: '40%' }}>Materia</th>
+                                            <th style={thStyle}>UC</th>
+                                            <th style={thStyle}>Nota</th>
+                                            <th style={thStyle}>Puntaje eval.</th>
+                                            <th style={thStyle}>% eval.</th>
+                                            <th style={thStyle}>Sección</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[1, 2, 3, 4, 5].map(i => (
+                                            <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                                                <td style={{ ...tdStyle, textAlign: 'center' }}><span className="skeleton skeleton-text" style={{ width: '60px' }} /></td>
+                                                <td style={tdStyle}><span className="skeleton skeleton-text" style={{ width: '180px' }} /></td>
+                                                <td style={tdCenter}><span className="skeleton skeleton-text" style={{ width: '25px' }} /></td>
+                                                <td style={tdCenter}><span className="skeleton skeleton-text" style={{ width: '40px' }} /></td>
+                                                <td style={tdCenter}><span className="skeleton skeleton-text" style={{ width: '40px' }} /></td>
+                                                <td style={tdCenter}><span className="skeleton skeleton-text" style={{ width: '40px' }} /></td>
+                                                <td style={tdCenter}><span className="skeleton skeleton-text" style={{ width: '30px' }} /></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         ) : lapsos.length === 0 ? (
                             <p style={{ textAlign: 'center', color: '#666', padding: '30px', fontStyle: 'italic' }}>No hay registros académicos disponibles.</p>
                         ) : (

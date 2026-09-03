@@ -4,6 +4,7 @@ import Menu from '../components/menu';
 import Header from '../components/header';
 import Swal from 'sweetalert2';
 import periodosService from '../services/periodos.service';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../assets/css/home.css';
 import '../assets/css/modalConfig.css';
 import '../assets/css/periodos.css';
@@ -596,7 +597,20 @@ export default function Periodos() {
                                             </thead>
                                             <tbody>
                                                 {loadingPeriodos ? (
-                                                    <tr><td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-secondary)' }}>Cargando periodos...</td></tr>
+                                                    [1, 2, 3, 4, 5].map(i => (
+                                                        <tr key={i} style={{ borderTop: '1px solid #eee' }}>
+                                                            <td style={{ padding: '12px' }}><span className="skeleton skeleton-text" style={{ width: '90px' }} /></td>
+                                                            <td style={{ padding: '12px' }}><span className="skeleton skeleton-text" style={{ width: '80px' }} /></td>
+                                                            <td style={{ padding: '12px' }}><span className="skeleton skeleton-text" style={{ width: '80px' }} /></td>
+                                                            <td style={{ padding: '12px', textAlign: 'center' }}><span className="skeleton skeleton-badge" style={{ width: '65px' }} /></td>
+                                                            <td style={{ padding: '12px', textAlign: 'center' }}>
+                                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                                                    <span className="skeleton skeleton-button" style={{ width: '28px', height: '28px' }} />
+                                                                    <span className="skeleton skeleton-button" style={{ width: '28px', height: '28px' }} />
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))
                                                 ) : currentEntries.length === 0 ? (
                                                     <tr><td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-secondary)' }}>No se encontraron periodos.</td></tr>
                                                 ) : currentEntries.map(p => (

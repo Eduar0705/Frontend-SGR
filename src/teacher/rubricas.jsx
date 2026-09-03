@@ -1,10 +1,11 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import { teacherRubricasService } from '../services/teacherRubricas.service';
 import { imprimirRubricaFormal } from '../utils/printRubrica';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../assets/css/home.css';
 
 import { useUI } from '../context/UIContext';
@@ -187,21 +188,50 @@ export default function TeacherRubrica() {
                     </div>
 
                     <div className="table-container" style={{ background: '#fff', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflowX: 'auto' }}>
-                        {loading ? (
-                            <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Cargando rÃºbricas...</div>
-                        ) : (
-                            <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                                    <tr>
-                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Rúbrica</th>
-                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Evaluación</th>
-                                        <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Usada por</th>
-                                        <th style={{ padding: '15px', textAlign: 'center', color: '#64748b' }}>Estado</th>
-                                        <th style={{ padding: '15px', textAlign: 'center', color: '#64748b' }}>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {rubricas.length > 0 ? rubricas.map(rubrica => (
+                        <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                                <tr>
+                                    <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Rúbrica</th>
+                                    <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Evaluación</th>
+                                    <th style={{ padding: '15px', textAlign: 'left', color: '#64748b' }}>Usada por</th>
+                                    <th style={{ padding: '15px', textAlign: 'center', color: '#64748b' }}>Estado</th>
+                                    <th style={{ padding: '15px', textAlign: 'center', color: '#64748b' }}>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    [1, 2, 3, 4].map(i => (
+                                        <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                                            <td style={{ padding: '15px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <span className="skeleton skeleton-text" style={{ width: '70%' }} />
+                                                    <span className="skeleton skeleton-text" style={{ width: '40%' }} />
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '15px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <span className="skeleton skeleton-text" style={{ width: '60%' }} />
+                                                    <span className="skeleton skeleton-text" style={{ width: '45%' }} />
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '15px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <span className="skeleton skeleton-text" style={{ width: '50%' }} />
+                                                    <span className="skeleton skeleton-text" style={{ width: '30%' }} />
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                <span className="skeleton skeleton-badge" style={{ width: '75px' }} />
+                                            </td>
+                                            <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                                    <span className="skeleton skeleton-button" style={{ width: '32px', height: '32px' }} />
+                                                    <span className="skeleton skeleton-button" style={{ width: '32px', height: '32px' }} />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : rubricas.length > 0 ? rubricas.map(rubrica => (
                                         <tr key={`${rubrica.id}-${rubrica.id_evaluacion}`} style={{ borderBottom: '1px solid #eee' }}>
                                             <td style={{ padding: '12px' }}>
                                                 <div style={{ fontWeight: 'bold', color: '#1e293b' }}>{rubrica.nombre_rubrica}</div>
@@ -270,8 +300,6 @@ export default function TeacherRubrica() {
                                     )}
                                 </tbody>
                             </table>
-                        )}
-
                         {!loading && totalPages > 1 && (
                             <div className="pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', borderTop: '1px solid #eee' }}>
                                 <span style={{ fontSize: '0.85rem', color: '#64748b' }}>

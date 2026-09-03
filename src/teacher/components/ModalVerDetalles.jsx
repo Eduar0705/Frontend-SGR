@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { evaluacionesService } from '../../services/evaluaciones.service';
 import { aplicarRedondeoPuntaje } from '../../utils/evaluacionUtils';
 import Swal from 'sweetalert2';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 export default function ModalVerDetalles({ data, onClose }) {
     const { idEvaluacion, cedula } = data;
@@ -33,9 +34,8 @@ export default function ModalVerDetalles({ data, onClose }) {
     if (loading || !evalData) {
         return (
             <div className="modal active" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ background: 'white', padding: '40px', borderRadius: '12px', textAlign: 'center' }}>
-                    <i className="fas fa-spinner fa-spin fa-3x" style={{ color: '#3b82f6', marginBottom: '20px' }}></i>
-                    <h3>Cargando detalles de evaluación...</h3>
+                <div style={{ background: 'white', padding: '40px', borderRadius: '12px', textAlign: 'center', minWidth: '320px' }}>
+                    <LoadingSpinner text="Cargando detalles de evaluación..." color="#3b82f6" padding="20px" />
                 </div>
             </div>
         );

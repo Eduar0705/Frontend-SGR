@@ -3,6 +3,7 @@ import Header from './header';
 import Menu from './menu';
 import userService from '../services/user.service';
 import Swal from 'sweetalert2';
+import LoadingSpinner from './LoadingSpinner';
 import '../assets/css/home.css';
 
 export default function UserProfile({ user: initialUser, onLogout }) {
@@ -52,8 +53,6 @@ export default function UserProfile({ user: initialUser, onLogout }) {
         }
     };
 
-    if (loading) return <div className="loading">Cargando...</div>;
-
     return (
         <main className="main-content">
             <Menu user={initialUser} />
@@ -61,8 +60,11 @@ export default function UserProfile({ user: initialUser, onLogout }) {
                 <Header title="Configuración de Perfil" user={initialUser} onLogout={onLogout} />
                 
                 <div className="view active" style={{ padding: '20px' }}>
-                    <div className="profile-container" style={{ 
-                        maxWidth: '800px', 
+                    {loading ? (
+                        <LoadingSpinner text="Cargando perfil..." color="#3b82f6" padding="80px" />
+                    ) : (
+                        <div className="profile-container" style={{ 
+                            maxWidth: '800px', 
                         margin: '0 auto', 
                         background: '#fff', 
                         padding: '30px', 
@@ -141,6 +143,7 @@ export default function UserProfile({ user: initialUser, onLogout }) {
                             </form>
                         </div>
                     </div>
+                    )}
                 </div>
             </div>
         </main>

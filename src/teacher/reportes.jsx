@@ -5,6 +5,7 @@ import Menu from '../components/menu';
 import dashboardService from '../services/dashboard.service';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Bar, Pie } from 'react-chartjs-2';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../assets/css/home.css';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
@@ -43,7 +44,6 @@ export default function TeacherReportes() {
     }, []);
 
     if (!user) return null;
-    if (loading) return <div>Cargando reportes...</div>;
 
     const distribucionData = {
         labels: advancedStats?.distribucionNotas.map(d => d.rango) || [],
@@ -86,15 +86,21 @@ export default function TeacherReportes() {
                 <div className="view active" style={{ padding: '20px' }}>
                     <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
                         <div className="stat-card" style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e3a8a' }}>{stats?.totalEvaluaciones || 0}</div>
+                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e3a8a', minHeight: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {loading ? <span className="skeleton skeleton-title" style={{ width: '45px' }} /> : (stats?.totalEvaluaciones || 0)}
+                            </div>
                             <div style={{ color: '#666', fontSize: '14px' }}>Eval. Realizadas</div>
                         </div>
                         <div className="stat-card" style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#059669' }}>{stats?.totalEstudiantes || 0}</div>
+                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#059669', minHeight: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {loading ? <span className="skeleton skeleton-title" style={{ width: '45px' }} /> : (stats?.totalEstudiantes || 0)}
+                            </div>
                             <div style={{ color: '#666', fontSize: '14px' }}>Estudiantes a Cargo</div>
                         </div>
                         <div className="stat-card" style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#d97706' }}>{stats?.totalRubricas || 0}</div>
+                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#d97706', minHeight: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {loading ? <span className="skeleton skeleton-title" style={{ width: '45px' }} /> : (stats?.totalRubricas || 0)}
+                            </div>
                             <div style={{ color: '#666', fontSize: '14px' }}>Rúbricas Propias</div>
                         </div>
                     </div>
@@ -102,15 +108,23 @@ export default function TeacherReportes() {
                     <div className="charts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px' }}>
                         <div className="card" style={{ background: '#fff', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
                             <h3 style={{ marginBottom: '20px', fontSize: '18px', borderLeft: '4px solid #3b82f6', paddingLeft: '10px' }}>Distribución de Calificaciones</h3>
-                            <div style={{ height: '300px', display: 'flex', justifyContent: 'center' }}>
-                                <Pie data={distribucionData} options={{ maintainAspectRatio: false }} />
+                            <div style={{ height: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                {loading ? (
+                                    <span className="skeleton skeleton-circle" style={{ width: '220px', height: '220px' }} />
+                                ) : (
+                                    <Pie data={distribucionData} options={{ maintainAspectRatio: false }} />
+                                )}
                             </div>
                         </div>
 
                         <div className="card" style={{ background: '#fff', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
                             <h3 style={{ marginBottom: '20px', fontSize: '18px', borderLeft: '4px solid #3b82f6', paddingLeft: '10px' }}>Rendimiento por Materia</h3>
-                            <div style={{ height: '300px' }}>
-                                <Bar data={rendimientoMateriaData} options={{ maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 20 } } }} />
+                            <div style={{ height: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                {loading ? (
+                                    <span className="skeleton skeleton-button" style={{ width: '90%', height: '240px' }} />
+                                ) : (
+                                    <Bar data={rendimientoMateriaData} options={{ maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 20 } } }} />
+                                )}
                             </div>
                         </div>
                     </div>

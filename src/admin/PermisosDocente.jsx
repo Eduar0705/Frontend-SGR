@@ -5,6 +5,7 @@ import Header from '../components/header';
 import { permisosService } from '../services/permisos.service';
 import { docentesService } from '../services/docentes.service';
 import Swal from 'sweetalert2';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../assets/css/home.css';
 import '../assets/css/permisos_docente.css';
 
@@ -216,7 +217,15 @@ export default function PermisosDocente() {
     };
 
     if (loading || !docente) {
-        return <div className="loading-overlay">Cargando...</div>;
+        return (
+            <div className="home-container">
+                <Menu user={user} />
+                <div className="main-content">
+                    <Header title="Gestión de Permisos" user={user} onLogout={() => navigate('/')} />
+                    <LoadingSpinner text="Cargando permisos del docente..." color="#1e3a8a" padding="100px" />
+                </div>
+            </div>
+        );
     }
 
     return (

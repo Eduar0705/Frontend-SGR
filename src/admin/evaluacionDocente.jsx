@@ -4,6 +4,7 @@ import Menu from '../components/menu';
 import Header from '../components/header';
 import { academicoService } from '../services/academico.service';
 import Swal from 'sweetalert2';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../assets/css/home.css';
 import { useUI } from '../context/UIContext';
 
@@ -298,8 +299,32 @@ export default function EvaluacionDocente() {
                                 </thead>
                                 <tbody>
                                     {loading ? (
-                                        <tr><td colSpan="4" style={{ textAlign: 'center', padding: '30px' }}>Cargando datos...</td></tr>
-                                    ) : paginatedEvaluaciones.length > 0 ? (
+                                    [1, 2, 3, 4, 5].map(i => (
+                                        <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                            <td style={{ padding: '15px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                    <span className="skeleton skeleton-text" style={{ width: '150px' }} />
+                                                    <span className="skeleton skeleton-text" style={{ width: '90px' }} />
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '15px' }}>
+                                                <span className="skeleton skeleton-badge" style={{ width: '100px' }} />
+                                            </td>
+                                            <td style={{ padding: '15px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                    <span className="skeleton skeleton-text" style={{ width: '120px' }} />
+                                                    <span className="skeleton skeleton-text" style={{ width: '80px' }} />
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                                                    <span className="skeleton skeleton-button" style={{ width: '32px', height: '32px' }} />
+                                                    <span className="skeleton skeleton-button" style={{ width: '32px', height: '32px' }} />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : paginatedEvaluaciones.length > 0 ? (
                                         paginatedEvaluaciones.map((evalu) => (
                                             <tr key={evalu.cedula} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                                 <td style={{ padding: '15px' }}>

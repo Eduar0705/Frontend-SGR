@@ -5,6 +5,7 @@ import Menu from '../components/menu';
 import Header from '../components/header';
 import ModalVerEstudiante from './components/ModalVerEstudiante';
 import { estudiantesService } from '../services/estudiantes.service';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../assets/css/home.css';
 import '../assets/css/estudiantes.css';
 
@@ -188,7 +189,18 @@ export default function TeacherEstudiantes() {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan="8" className="no-data">Cargando datos...</td></tr>
+                                    [1, 2, 3, 4, 5].map(i => (
+                                        <tr key={i}>
+                                            <td className="student-name"><span className="skeleton skeleton-text" style={{ width: '150px' }} /></td>
+                                            <td><span className="skeleton skeleton-text" style={{ width: '80px' }} /></td>
+                                            <td><span className="skeleton skeleton-badge" style={{ width: '110px' }} /></td>
+                                            <td><span className="skeleton skeleton-badge" style={{ width: '70px' }} /></td>
+                                            <td><span className="skeleton skeleton-text" style={{ width: '90px' }} /></td>
+                                            <td><span className="skeleton skeleton-text" style={{ width: '60px' }} /></td>
+                                            <td><span className="skeleton skeleton-badge" style={{ width: '45px' }} /></td>
+                                            <td><span className="skeleton skeleton-button" style={{ width: '32px', height: '32px' }} /></td>
+                                        </tr>
+                                    ))
                                 ) : paginatedItems.length > 0 ? (
                                     paginatedItems.map((est, index) => (
                                         <tr key={`${est.cedula}-${index}`}>

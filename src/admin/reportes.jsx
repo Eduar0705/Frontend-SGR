@@ -18,6 +18,7 @@ import {
   Filler
 } from 'chart.js';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../assets/css/home.css';
 
 ChartJS.register(
@@ -197,31 +198,65 @@ export default function Reportes() {
                         </button>
                     </div>
 
-                    {loading ? (
-                        <div style={{ textAlign: 'center', padding: '100px' }}>
-                            <i className="fas fa-spinner fa-spin fa-3x" style={{ color: '#1e3a8a' }}></i>
-                            <p style={{ marginTop: '20px', color: '#64748b' }}>Generando reportes estadísticos...</p>
+                    {/* Estadísticas Generales Inmediatas */}
+                    <div className="stats-overview" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                        <div className="card" style={{ padding: '25px', textAlign: 'center', borderRadius: '15px' }}>
+                            <div style={{ fontSize: '2.5rem', color: '#3498db', marginBottom: '10px' }}><i className="fas fa-chalkboard-teacher"></i></div>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', minHeight: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {loading ? <span className="skeleton skeleton-title" style={{ width: '60px' }} /> : (stats?.totalDocentes || 0)}
+                            </div>
+                            <div style={{ color: '#64748b' }}>Docentes Activos</div>
                         </div>
-                    ) : stats ? (
+                        <div className="card" style={{ padding: '25px', textAlign: 'center', borderRadius: '15px' }}>
+                            <div style={{ fontSize: '2.5rem', color: '#9b59b6', marginBottom: '10px' }}><i className="fas fa-table"></i></div>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', minHeight: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {loading ? <span className="skeleton skeleton-title" style={{ width: '60px' }} /> : (stats?.totalRubricas || 0)}
+                            </div>
+                            <div style={{ color: '#64748b' }}>Rúbricas Creadas</div>
+                        </div>
+                        <div className="card" style={{ padding: '25px', textAlign: 'center', borderRadius: '15px' }}>
+                            <div style={{ fontSize: '2.5rem', color: '#e74c3c', marginBottom: '10px' }}><i className="fas fa-clipboard-check"></i></div>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', minHeight: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {loading ? <span className="skeleton skeleton-title" style={{ width: '60px' }} /> : (stats?.totalEvaluaciones || 0)}
+                            </div>
+                            <div style={{ color: '#64748b' }}>Evaluaciones Completadas</div>
+                        </div>
+                    </div>
+
+                    {loading ? (
                         <>
-                            {/* Estadísticas Generales */}
-                            <div className="stats-overview" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-                                <div className="card" style={{ padding: '25px', textAlign: 'center', borderRadius: '15px' }}>
-                                    <div style={{ fontSize: '2.5rem', color: '#3498db', marginBottom: '10px' }}><i className="fas fa-chalkboard-teacher"></i></div>
-                                    <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalDocentes}</div>
-                                    <div style={{ color: '#64748b' }}>Docentes Activos</div>
+                            {/* Skeleton Gráficas Principales */}
+                            <div className="content-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '30px', marginBottom: '30px' }}>
+                                <div className="card" style={{ padding: '25px' }}>
+                                    <span className="skeleton skeleton-text" style={{ width: '180px', marginBottom: '20px' }} />
+                                    <span className="skeleton skeleton-button" style={{ width: '100%', height: '300px' }} />
                                 </div>
-                                <div className="card" style={{ padding: '25px', textAlign: 'center', borderRadius: '15px' }}>
-                                    <div style={{ fontSize: '2.5rem', color: '#9b59b6', marginBottom: '10px' }}><i className="fas fa-table"></i></div>
-                                    <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalRubricas}</div>
-                                    <div style={{ color: '#64748b' }}>Rúbricas Creadas</div>
-                                </div>
-                                <div className="card" style={{ padding: '25px', textAlign: 'center', borderRadius: '15px' }}>
-                                    <div style={{ fontSize: '2.5rem', color: '#e74c3c', marginBottom: '10px' }}><i className="fas fa-clipboard-check"></i></div>
-                                    <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalEvaluaciones}</div>
-                                    <div style={{ color: '#64748b' }}>Evaluaciones Completadas</div>
+                                <div className="card" style={{ padding: '25px' }}>
+                                    <span className="skeleton skeleton-text" style={{ width: '200px', marginBottom: '20px' }} />
+                                    <span className="skeleton skeleton-button" style={{ width: '100%', height: '300px' }} />
                                 </div>
                             </div>
+
+                            {/* Skeleton Tendencia */}
+                            <div className="card" style={{ padding: '25px', marginBottom: '30px' }}>
+                                <span className="skeleton skeleton-text" style={{ width: '160px', marginBottom: '20px' }} />
+                                <span className="skeleton skeleton-button" style={{ width: '100%', height: '320px' }} />
+                            </div>
+
+                            {/* Skeleton Donut & Bar */}
+                            <div className="content-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '30px', marginBottom: '30px' }}>
+                                <div className="card" style={{ padding: '25px' }}>
+                                    <span className="skeleton skeleton-text" style={{ width: '170px', marginBottom: '20px' }} />
+                                    <span className="skeleton skeleton-button" style={{ width: '100%', height: '280px' }} />
+                                </div>
+                                <div className="card" style={{ padding: '25px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <span className="skeleton skeleton-text" style={{ width: '190px', alignSelf: 'flex-start', marginBottom: '20px' }} />
+                                    <span className="skeleton skeleton-circle" style={{ width: '240px', height: '240px' }} />
+                                </div>
+                            </div>
+                        </>
+                    ) : stats ? (
+                        <>
 
                             {/* Alertas */}
                             {stats.profesoresInactivos?.length > 0 && (
