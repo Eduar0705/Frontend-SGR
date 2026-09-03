@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import Swal from 'sweetalert2';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'; import Swal from 'sweetalert2';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import { teacherRubricasService } from '../services/teacherRubricas.service';
@@ -13,6 +12,8 @@ import { useUI } from '../context/UIContext';
 export default function TeacherEditarRubrica() {
     const { id, id_eval } = useParams();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const esDuplicado = searchParams.get('modo') === 'duplicar';
     const { setLoading: setGlobalLoading } = useUI();
     const [user] = useState(() => {
         const storedUser = localStorage.getItem('user');
@@ -59,7 +60,9 @@ export default function TeacherEditarRubrica() {
             setTiposRubrica(data.tipos || []);
 
             // Cargar datos de la rúbrica para editar
-            const editData = await teacherRubricasService.getRubricaForEdit(id, id_eval);
+            const editData = esDuplicado
+                ? await teacherRubricasService.getRubricaForDuplica(id, id_eval)
+                : await teacherRubricasService.getRubricaForEdit(id, id_eval);
             if (!editData || !editData.rubrica) {
                 throw new Error(editData?.message || 'Error al cargar rúbrica');
             }
@@ -279,7 +282,7 @@ export default function TeacherEditarRubrica() {
         const validacion = validarEstructuraRubrica({
             criterios: criterios,
             porcentaje: formData.porcentaje_evaluacion,
-            esCreacion: false
+            esCreacion: esDuplicado
         });
 
         if (!validacion.valido) {
@@ -307,21 +310,29 @@ export default function TeacherEditarRubrica() {
 
         try {
             setLoading(true);
-            Swal.fire({ title: 'Actualizando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const result = await teacherRubricasService.updateRubrica(id, payload);
+            Swal.fire({
+                title: esDuplicado ? 'Guardando...' : 'Actualizando...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            const result = esDuplicado
+                ? await teacherRubricasService.saveRubrica(payload)
+                : await teacherRubricasService.updateRubrica(id, payload);
+
             Swal.close();
 
             if (result.status === 'error' || result.success === false) {
-                throw new Error(result.mensaje || result.message || 'Error al actualizar la rúbrica');
+                throw new Error(result.mensaje || result.message || (esDuplicado ? 'Error al crear la rúbrica' : 'Error al actualizar la rúbrica'));
             }
 
-            Swal.fire('Éxito', result.mensaje || 'Rúbrica actualizada correctamente', 'success').then(() => {
+            Swal.fire('Éxito', result.mensaje || (esDuplicado ? 'Rúbrica creada correctamente' : 'Rúbrica actualizada correctamente'), 'success').then(() => {
                 navigate('/teacher/rubricas');
             });
         } catch (error) {
             Swal.close();
-            console.error('Error al actualizar rúbrica:', error);
-            Swal.fire('Error', error.message || 'Error al actualizar rúbrica', 'error');
+            console.error('Error al guardar rúbrica:', error);
+            Swal.fire('Error', error.message || 'Error al guardar rúbrica', 'error');
         } finally {
             setLoading(false);
         }
@@ -333,7 +344,7 @@ export default function TeacherEditarRubrica() {
         <main className="main-content">
             <Menu user={user} />
             <div className="content-wrapper" style={{ width: '100%' }}>
-                <Header title="Editar Rúbrica" user={user} onLogout={() => navigate('/login')} />
+                <Header title={esDuplicado ? 'Nueva Rúbrica (desde plantilla)' : 'Editar Rúbrica'} user={user} onLogout={() => navigate('/login')} />
 
                 <div style={{ padding: '30px' }}>
                     <div className="card" style={{ borderRadius: '15px', background: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', padding: '30px' }}>
@@ -342,21 +353,21 @@ export default function TeacherEditarRubrica() {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
                                 <div>
                                     <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Nombre de la Rúbrica *</label>
-                                    <input 
-                                        type="text" 
-                                        value={formData.nombre_rubrica} 
-                                        onChange={(e) => setFormData({ ...formData, nombre_rubrica: e.target.value })} 
-                                        className="form-input" 
-                                        required 
-                                        placeholder="Ej: Rúbrica de Proyecto Final" 
+                                    <input
+                                        type="text"
+                                        value={formData.nombre_rubrica}
+                                        onChange={(e) => setFormData({ ...formData, nombre_rubrica: e.target.value })}
+                                        className="form-input"
+                                        required
+                                        placeholder="Ej: Rúbrica de Proyecto Final"
                                     />
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Tipo de Rúbrica *</label>
-                                    <select 
-                                        value={formData.tipo_rubrica} 
-                                        onChange={(e) => setFormData({ ...formData, tipo_rubrica: e.target.value })} 
-                                        className="form-select" 
+                                    <select
+                                        value={formData.tipo_rubrica}
+                                        onChange={(e) => setFormData({ ...formData, tipo_rubrica: e.target.value })}
+                                        className="form-select"
                                         required
                                     >
                                         <option value="">Seleccione tipo</option>
@@ -369,8 +380,8 @@ export default function TeacherEditarRubrica() {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                                 <div>
                                     <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Carrera</label>
-                                    <select 
-                                        value={formData.carrera_codigo} 
+                                    <select
+                                        value={formData.carrera_codigo}
                                         className="form-select"
                                         disabled
                                     >
@@ -380,9 +391,9 @@ export default function TeacherEditarRubrica() {
                                 </div>
                                 <div>
                                     <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Semestre</label>
-                                    <select 
-                                        value={formData.semestre} 
-                                        className="form-select" 
+                                    <select
+                                        value={formData.semestre}
+                                        className="form-select"
                                         disabled
                                     >
                                         <option value="">Seleccione semestre</option>
@@ -391,9 +402,9 @@ export default function TeacherEditarRubrica() {
                                 </div>
                                 <div>
                                     <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Materia</label>
-                                    <select 
-                                        value={formData.materia_codigo} 
-                                        className="form-select" 
+                                    <select
+                                        value={formData.materia_codigo}
+                                        className="form-select"
                                         disabled
                                     >
                                         <option value="">Seleccione materia</option>
@@ -402,9 +413,9 @@ export default function TeacherEditarRubrica() {
                                 </div>
                                 <div>
                                     <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Sección</label>
-                                    <select 
-                                        value={formData.seccion_id} 
-                                        className="form-select" 
+                                    <select
+                                        value={formData.seccion_id}
+                                        className="form-select"
                                         disabled
                                     >
                                         <option value="">Seleccione sección</option>
@@ -414,10 +425,10 @@ export default function TeacherEditarRubrica() {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                                     <div style={{ flex: 1, marginRight: '20px' }}>
                                         <label style={{ fontWeight: '600', fontSize: '0.85rem' }}>Evaluación</label>
-                                        <select 
-                                            value={formData.evaluacion_id} 
-                                            className="form-select" 
-                                            required 
+                                        <select
+                                            value={formData.evaluacion_id}
+                                            className="form-select"
+                                            required
                                             disabled
                                         >
                                             <option value="">Seleccione evaluación</option>
@@ -436,11 +447,11 @@ export default function TeacherEditarRubrica() {
                             {/* Instrucciones */}
                             <div style={{ marginBottom: '30px' }}>
                                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Instrucciones Generales</label>
-                                <textarea 
-                                    className="form-textarea" 
-                                    rows="3" 
-                                    value={formData.instrucciones} 
-                                    onChange={(e) => setFormData({ ...formData, instrucciones: e.target.value })} 
+                                <textarea
+                                    className="form-textarea"
+                                    rows="3"
+                                    value={formData.instrucciones}
+                                    onChange={(e) => setFormData({ ...formData, instrucciones: e.target.value })}
                                     placeholder="Instrucciones para el estudiante..."
                                 ></textarea>
                             </div>
@@ -463,24 +474,24 @@ export default function TeacherEditarRubrica() {
                                         <label style={{ display: 'block', color: '#1e3a8a', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '6px' }}>Nombre de Criterio</label>
 
                                         <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', paddingRight: '40px' }}>
-                                            <input 
-                                                type="text" 
-                                                placeholder="Descripción del criterio (Ej: Dominio del tema)" 
-                                                value={c.descripcion} 
-                                                onChange={(e) => handleCriterioChange(cIdx, 'descripcion', e.target.value)} 
-                                                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
-                                                required 
+                                            <input
+                                                type="text"
+                                                placeholder="Descripción del criterio (Ej: Dominio del tema)"
+                                                value={c.descripcion}
+                                                onChange={(e) => handleCriterioChange(cIdx, 'descripcion', e.target.value)}
+                                                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                                                required
                                             />
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                <input 
-                                                    type="number" 
-                                                    step="0.001" 
-                                                    min="0" 
-                                                    value={c.puntaje_maximo} 
-                                                    onChange={(e) => handleCriterioChange(cIdx, 'puntaje_maximo', e.target.value)} 
-                                                    style={{ width: '100px', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '10px', fontWeight: 'bold' }} 
-                                                    placeholder="Max" 
-                                                    required 
+                                                <input
+                                                    type="number"
+                                                    step="0.001"
+                                                    min="0"
+                                                    value={c.puntaje_maximo}
+                                                    onChange={(e) => handleCriterioChange(cIdx, 'puntaje_maximo', e.target.value)}
+                                                    style={{ width: '100px', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '10px', fontWeight: 'bold' }}
+                                                    placeholder="Max"
+                                                    required
                                                 />
                                                 <span style={{ fontWeight: 'bold' }}>Pts</span>
                                             </div>
@@ -489,29 +500,29 @@ export default function TeacherEditarRubrica() {
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                                             {c.niveles.map((n, nIdx) => (
                                                 <div key={n.id_local || n.id || nIdx} style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
-                                                    <input 
-                                                        type="text" 
-                                                        value={n.nombre_nivel} 
-                                                        onChange={(e) => handleNivelChange(cIdx, nIdx, 'nombre_nivel', e.target.value)} 
-                                                        style={{ fontWeight: 'bold', border: 'none', background: 'transparent', width: '100%', marginBottom: '5px', color: '#475569' }} 
-                                                        placeholder="Nivel" 
+                                                    <input
+                                                        type="text"
+                                                        value={n.nombre_nivel}
+                                                        onChange={(e) => handleNivelChange(cIdx, nIdx, 'nombre_nivel', e.target.value)}
+                                                        style={{ fontWeight: 'bold', border: 'none', background: 'transparent', width: '100%', marginBottom: '5px', color: '#475569' }}
+                                                        placeholder="Nivel"
                                                     />
-                                                    <textarea 
-                                                        value={n.descripcion} 
-                                                        onChange={(e) => handleNivelChange(cIdx, nIdx, 'descripcion', e.target.value)} 
-                                                        style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '0.85rem', padding: '8px', marginBottom: '5px', resize: 'vertical' }} 
-                                                        rows="3" 
-                                                        placeholder="Descripción del nivel..." 
+                                                    <textarea
+                                                        value={n.descripcion}
+                                                        onChange={(e) => handleNivelChange(cIdx, nIdx, 'descripcion', e.target.value)}
+                                                        style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '0.85rem', padding: '8px', marginBottom: '5px', resize: 'vertical' }}
+                                                        rows="3"
+                                                        placeholder="Descripción del nivel..."
                                                     />
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                        <input 
-                                                            type="number" 
-                                                            step="0.001" 
-                                                            min="0" 
-                                                            value={n.puntaje} 
-                                                            onChange={(e) => handleNivelChange(cIdx, nIdx, 'puntaje', e.target.value)} 
-                                                            style={{ width: '80px', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px', fontSize: '0.9rem', color: '#1e3a8a', fontWeight: 'bold' }} 
-                                                            placeholder="0" 
+                                                        <input
+                                                            type="number"
+                                                            step="0.001"
+                                                            min="0"
+                                                            value={n.puntaje}
+                                                            onChange={(e) => handleNivelChange(cIdx, nIdx, 'puntaje', e.target.value)}
+                                                            style={{ width: '80px', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px', fontSize: '0.9rem', color: '#1e3a8a', fontWeight: 'bold' }}
+                                                            placeholder="0"
                                                         />
                                                         <span style={{ fontSize: '0.8rem', color: '#64748b' }}>pts</span>
                                                     </div>
@@ -525,7 +536,10 @@ export default function TeacherEditarRubrica() {
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px', borderTop: '1px solid #e5e7eb', paddingTop: '25px', marginTop: '30px' }}>
                                 <button type="button" onClick={() => navigate('/teacher/rubricas')} className="btns" style={{ background: '#94a3b8', color: 'white', padding: '12px 30px', borderRadius: '10px' }}>Cancelar</button>
                                 <button type="submit" className="btns" style={{ background: '#1e3a8a', color: 'white', padding: '12px 45px', borderRadius: '10px', fontWeight: 'bold' }} disabled={loading}>
-                                    <i className="fas fa-save" style={{ marginRight: '8px' }}></i> {loading ? 'Actualizando...' : 'Actualizar Rúbrica'}
+                                    <i className="fas fa-save" style={{ marginRight: '8px' }}></i>
+                                    {loading
+                                        ? (esDuplicado ? 'Guardando...' : 'Actualizando...')
+                                        : (esDuplicado ? 'Guardar Rúbrica' : 'Actualizar Rúbrica')}
                                 </button>
                             </div>
                         </form>

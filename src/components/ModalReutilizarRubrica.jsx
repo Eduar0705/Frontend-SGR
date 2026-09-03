@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { rubricasService } from '../services/rubricas.service';
 import { teacherRubricasService } from '../services/teacherRubricas.service';
@@ -8,7 +9,7 @@ export default function ModalReutilizarRubrica({
     isOpen,
     onClose,
     evaluacionId,
-    onRubricaVinculada,
+    onDuplicarRubrica,
     role = 'teacher' // 'teacher' | 'admin'
 }) {
     const [rubricas, setRubricas] = useState([]);
@@ -24,6 +25,7 @@ export default function ModalReutilizarRubrica({
 
     // Admin mode: filtro de profesor
     const [professorFilter, setProfessorFilter] = useState('');
+    const navigate = useNavigate();
 
     const debounceRef = useRef(null);
     const isVinculandoRef = useRef(false);
@@ -135,6 +137,26 @@ export default function ModalReutilizarRubrica({
     const handleSeleccionarRubrica = async (rubrica) => {
         if (isVinculandoRef.current) return;
 
+        if (isTeacher) {
+            const confirm = await Swal.fire({
+                title: '¿Reutilizar esta rúbrica?',
+                html: 'Se creará una copia de <b>"' + (rubrica.nombre_rubrica || '') + '"</b> para esta evaluación. Podrás revisar y ajustar los criterios antes de guardarla.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sí, continuar',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            navigate(`/teacher/rubricas/editar/${rubrica.id}/${evaluacionId}?modo=duplicar`);
+            onClose();
+            return;
+        }
+
+        // Admin: se mantiene el flujo de vinculación directa por ahora
         const confirm = await Swal.fire({
             title: '¿Vincular rúbrica a esta evaluación?',
             html: 'Se asignará la rúbrica <b>"' + (rubrica.nombre_rubrica || '') + '"</b> a la evaluación seleccionada.',
@@ -148,32 +170,10 @@ export default function ModalReutilizarRubrica({
 
         if (!confirm.isConfirmed) return;
 
-        try {
-            isVinculandoRef.current = true;
-            Swal.fire({
-                title: 'Vinculando rúbrica...',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
-
-            const res = await service.vincularRubrica(rubrica.id, evaluacionId);
-            Swal.close();
-
-            if (res.success) {
-                await Swal.fire('¡Vinculada!', res.message || 'Rúbrica vinculada exitosamente', 'success');
-                if (onRubricaVinculada) {
-                    onRubricaVinculada(rubrica.id, evaluacionId);
-                }
-                onClose();
-            } else {
-                Swal.fire('Error', res.message || 'No se pudo vincular la rúbrica', 'error');
-            }
-        } catch (error) {
-            console.error('Error al vincular rúbrica:', error);
-            Swal.fire('Error', error.message || 'Error de conexión al vincular', 'error');
-        } finally {
-            isVinculandoRef.current = false;
+        if (onDuplicarRubrica) {
+            onDuplicarRubrica(rubrica.id, evaluacionId);
         }
+        onClose()
     };
 
     if (!isOpen) return null;
@@ -422,14 +422,14 @@ export default function ModalReutilizarRubrica({
                                                         r.estado === 'Aprobado' || r.estado === 'Activa'
                                                             ? '#e2f5ec'
                                                             : r.estado === 'Rechazado' || r.estado === 'Inactivo'
-                                                            ? '#fee2e2'
-                                                            : '#fef3c7',
+                                                                ? '#fee2e2'
+                                                                : '#fef3c7',
                                                     color:
                                                         r.estado === 'Aprobado' || r.estado === 'Activa'
                                                             ? '#10b981'
                                                             : r.estado === 'Rechazado' || r.estado === 'Inactivo'
-                                                            ? '#ef4444'
-                                                            : '#d97706'
+                                                                ? '#ef4444'
+                                                                : '#d97706'
                                                 }}
                                             >
                                                 {r.estado || 'En Revision'}

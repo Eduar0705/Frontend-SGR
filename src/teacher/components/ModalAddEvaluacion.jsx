@@ -304,7 +304,7 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
                     <div className="form-section-premium">
                         <h4><i className="fas fa-tasks"></i> Detalles de la Evaluación</h4>
                         <div className="form-field full-width">
-                            <label>Contenido / Título</label>
+                            <label style={{ fontSize: '15px' }}>Contenido / Título</label>
                             <input
                                 type="text"
                                 value={formData.contenido}

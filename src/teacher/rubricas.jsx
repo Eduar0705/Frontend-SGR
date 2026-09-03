@@ -228,7 +228,7 @@ export default function TeacherRubrica() {
                                             </td>
                                             <td style={{ padding: '12px', textAlign: 'center' }}>
                                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                                    <button onClick={() => handleView(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#1264d6', color: 'white', padding: '8px', borderRadius: '8px' }} title="Ver">
+                                                    <button onClick={() => handleView(rubrica.id, rubrica.id_evaluacion)} className="btns" style={{ background: '#44cc6d', color: 'white', padding: '8px', borderRadius: '8px' }} title="Ver">
                                                         <i className="fas fa-eye"></i>
                                                     </button>
                                                     {/* solo si el usuario actual es el docente dueño de la rúbrica */}
@@ -248,7 +248,7 @@ export default function TeacherRubrica() {
                                                                 <button
                                                                     onClick={() => handleDelete(rubrica.id, rubrica.id_evaluacion)}
                                                                     className="btns"
-                                                                    style={{ background: '#ef4444', color: 'white', padding: '8px', borderRadius: '8px' }}
+                                                                    style={{ background: '#ef9744', color: 'white', padding: '8px', borderRadius: '8px' }}
                                                                     title="Desvincular"
                                                                 >
                                                                     <i className="fas fa-chain-broken"></i>

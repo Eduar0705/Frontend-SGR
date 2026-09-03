@@ -87,6 +87,13 @@ export const teacherRubricasService = {
         return await res.json();
     },
 
+    async getRubricaForDuplica(id, id_eval) {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/teacher/rubricas/duplicar/${id}/${id_eval}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) throw new Error('Error al obtener rúbrica para editar');
+        return await res.json();
+    },
+
     async updateRubrica(id, rubricaData) {
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_URL}/teacher/rubricas/${id}`, {
@@ -96,14 +103,6 @@ export const teacherRubricasService = {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(rubricaData)
-        });
-        return await res.json();
-    },
-    async vincularRubrica(id, id_eval) {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/teacher/rubricas/link/${id}/${id_eval}`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
         });
         return await res.json();
     },

@@ -125,7 +125,7 @@ export default function TeacherEvaluaciones() {
 
     const agruparEvaluaciones = (lista, cortes = [], lapsos = [], preserveExpanded = false) => {
         const agrupadas = {};
-        const now = new Date('2026-03-08'); //FECHA PERSONALIZADA
+        const now = new Date(); //FECHA PERSONALIZADA
 
         lista.forEach(ev => {
             ev.carrera_codigo = ev.carrera_codigo || ev.codigo_carrera;
@@ -145,15 +145,12 @@ export default function TeacherEvaluaciones() {
                 if (matchingCorte) {
                     const start = new Date(matchingCorte.fecha_inicio);
                     const end = new Date(matchingCorte.fecha_fin);
-
+                    console.log(now, start)
                     if (now < start) {
-                        canModify = false;
-                    } /*else if (now >= start && now <= end) {
-                        canModify = ev.existe_evaluado === 0; //POSIBLE MODIFICACION
-                    }*/
-
-                    if (now >= start && now <= end) {
-                        canEvaluate = false;
+                        canModify = true;
+                    } else if (now >= start && now <= end) {
+                        canModify = true; //POSIBLE MODIFICACION
+                        canEvaluate = true;
                     }
                 }
             }

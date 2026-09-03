@@ -340,7 +340,7 @@ export default function CrearRubricas() {
             id_evaluacion: formData.evaluacion_id,
             tipo_rubrica: formData.tipo_rubrica,
             instrucciones: formData.instrucciones,
-            porcentaje: porcentajeTotal,
+            porcentaje_evaluacion: porcentajeTotal,
             criterios: criterios.map(c => ({
                 descripcion: c.descripcion.trim(),
                 puntaje_maximo: parseFloat(c.puntaje_maximo),

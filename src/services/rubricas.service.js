@@ -124,6 +124,10 @@ export const rubricasService = {
         if (!id) throw new Error('ID de rúbrica requerido');
         return fetchJSON(`/rubricas/admin/rubricas/editar/${id}/${id_eval}`);
     },
+    async getRubricaForDuplica(id, id_eval) {
+        if (!id) throw new Error('ID de rúbrica requerido');
+        return fetchJSON(`/rubricas/admin/rubricas/duplicar/${id}/${id_eval}`);
+    },
 
     async getCarreraXSeccion(idSecc) {
         if (!idSecc) throw new Error('Código de materia requerido');
@@ -183,7 +187,6 @@ export const rubricasService = {
         if (!nombre_rubrica || !id_evaluacion || !tipo_rubrica || !instrucciones || !criterios || !porcentaje_evaluacion) {
             throw new Error('Faltan campos obligatorios');
         }
-        
         return fetchJSON(`/rubricas/guardar`, {
             method: 'POST',
             body: rubricaData
@@ -192,17 +195,9 @@ export const rubricasService = {
 
     async deleteRubrica(id) {
         if (!id) throw new Error('ID de rúbrica requerido');
-        return fetchJSON(`/teacher/rubricas/unlink/${id}`, {
+        return fetchJSON(`${API_URL}/rubricas/admin/rubricas/${id}`, {
             method: 'DELETE'
         });
-    },
-    async vincularRubrica(id, id_eval) {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/rubricas/admin/rubricas/link/${id}/${id_eval}`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        return await res.json();
     },
     async desvincularRubrica(id, id_eval) {
         const token = localStorage.getItem('token');

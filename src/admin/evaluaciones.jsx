@@ -12,6 +12,7 @@ import '../assets/css/evaluacion.css';
 import ModalEvaluar from '../teacher/components/ModalEvaluar';
 import ModalVerDetalles from '../teacher/components/ModalVerDetalles';
 import ModalReutilizarRubrica from '../components/ModalReutilizarRubrica';
+import ModalEditarRubrica from '../components/ModalEditarRubrica'; // ajusta ruta/casing
 
 const transformDateJSON = (formData) => {
     const fecha_data = JSON.parse(formData.fecha_horario_json)
@@ -38,6 +39,7 @@ export default function Evaluaciones() {
         return storedUser ? JSON.parse(storedUser) : null;
     });
 
+    const [duplicarInfo, setDuplicarInfo] = useState(null); // { rubricaId, evaluacionId } | null
     const [seccionesData, setSeccionesData] = useState([]);
     const [evaluacionesPorSeccion, setEvaluacionesPorSeccion] = useState({}); // { id_seccion: evaluaciones[] }
     const [loadingSeccionesDetalle, setLoadingSeccionesDetalle] = useState({}); // { id_seccion: boolean }
@@ -1121,23 +1123,22 @@ export default function Evaluaciones() {
                             setTargetSeccionId(null);
                             setRubricaKeyToClose(null);
                         }}
-                        onRubricaVinculada={() => {
-                            const secId = targetSeccionId;
-                            const keyToClose = rubricaKeyToClose;
+                        onDuplicarRubrica={(rubrica, evalId) => {
+                            setDuplicarInfo({ rubricaId: rubrica, evaluacionId: evalId });
+                        }}
+                    />
+                )}
 
-                            setShowReutilizarModal(false);
-                            setSelectedEvalForRubrica(null);
-                            setTargetSeccionId(null);
-                            setRubricaKeyToClose(null);
-
-                            if (keyToClose) {
-                                setExpandedRubricas(prev => ({ ...prev, [keyToClose]: false }));
-                            }
-                            if (secId) {
-                                fetchEvaluacionesDeSeccion(secId, true);
-                            } else {
-                                loadEvaluaciones();
-                            }
+                {duplicarInfo && (
+                    <ModalEditarRubrica
+                        isOpen={!!duplicarInfo}
+                        onClose={() => setDuplicarInfo(null)}
+                        rubricaId={duplicarInfo.rubricaId}
+                        idEval={duplicarInfo.evaluacionId}
+                        modo="duplicar"
+                        onSaved={() => {
+                            setDuplicarInfo(null);
+                            // TODO: la función que uses en esta página para refrescar la lista/estado
                         }}
                     />
                 )}
