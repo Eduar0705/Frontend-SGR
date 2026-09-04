@@ -76,7 +76,7 @@ export default function ModalEditarRubrica({
         const evaluacion = evaluaciones.find(e => e.evaluacion_id == evalId);
         if (!evaluacion) return;
 
-        const nuevoPorcentaje = evaluacion.valor || evaluacion.ponderacion || 10;
+        const nuevoPorcentaje = evaluacion.valor != null ? evaluacion.valor : (evaluacion.ponderacion != null ? evaluacion.ponderacion : 0);
         const nuevosCriterios = redistribuirPuntajes(nuevoPorcentaje, formData.criterios);
 
         setFormData(prev => ({
@@ -90,9 +90,21 @@ export default function ModalEditarRubrica({
     const redistribuirPuntajes = (porcentaje, criterios) => {
         if (!criterios.length) return criterios;
 
+        const pTotal = parseFloat(porcentaje) || 0;
+        if (pTotal === 0) {
+            return criterios.map(c => ({
+                ...c,
+                puntaje_maximo: 0,
+                niveles: c.niveles.map(n => ({
+                    ...n,
+                    puntaje: 0
+                }))
+            }));
+        }
+
         const numCriterios = criterios.length;
-        const puntajeBase = Math.floor((porcentaje / numCriterios) * 1000) / 1000;
-        const resto = parseFloat((porcentaje - puntajeBase * numCriterios).toFixed(3));
+        const puntajeBase = Math.floor((pTotal / numCriterios) * 1000) / 1000;
+        const resto = parseFloat((pTotal - puntajeBase * numCriterios).toFixed(3));
         const minBase = Math.floor((0.025 / numCriterios) * 1000) / 1000;
         const minResto = parseFloat((0.025 - minBase * numCriterios).toFixed(3));
 
@@ -229,15 +241,15 @@ export default function ModalEditarRubrica({
         if (!confirm2.isConfirmed) return;
 
         const nuevoCriterio = {
-            id_local: Date.now(),
+            id_local: 0,
             descripcion: '',
             puntaje_maximo: '',
             orden: formData.criterios.length + 1,
             niveles: [
-                { id_local: Date.now() + 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '', orden: 1 },
-                { id_local: Date.now() + 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '', orden: 2 },
-                { id_local: Date.now() + 3, nombre_nivel: 'Bueno', descripcion: '', puntaje: '', orden: 3 },
-                { id_local: Date.now() + 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0, orden: 4 }
+                { id_local: 0 + 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '', orden: 1 },
+                { id_local: 0 + 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '', orden: 2 },
+                { id_local: 0 + 3, nombre_nivel: 'Bueno', descripcion: '', puntaje: '', orden: 3 },
+                { id_local: 0 + 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0, orden: 4 }
             ]
         };
 
@@ -486,7 +498,7 @@ export default function ModalEditarRubrica({
                         </div>
                         <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
                             <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', textTransform: 'uppercase' }}>Suma de Criterios</div>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios) > 0.025 ? '#059669' : '#ef4444' }}>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios - formData.porcentaje_evaluacion) < 0.01 ? '#059669' : '#ef4444' }}>
                                 {totalPuntosCriterios.toFixed(3)} / {formData.porcentaje_evaluacion}
                             </div>
                         </div>

@@ -177,6 +177,7 @@ export const rubricasService = {
     async getEvaluacionesPendientes(seccionId) {
         if (!seccionId) throw new Error('ID de sección requerido');
         const response = await fetchJSON(`/rubricas/evaluaciones/${seccionId}`);
+        console.log(response.evaluaciones)
         return Array.isArray(response?.evaluaciones) ? response.evaluaciones : [];
     },
 
@@ -184,7 +185,7 @@ export const rubricasService = {
         if (!rubricaData || typeof rubricaData !== 'object') throw new Error('Datos de rúbrica inválidos');
         
         const { nombre_rubrica, id_evaluacion, tipo_rubrica, instrucciones, criterios, porcentaje_evaluacion } = rubricaData;
-        if (!nombre_rubrica || !id_evaluacion || !tipo_rubrica || !instrucciones || !criterios || !porcentaje_evaluacion) {
+        if (!nombre_rubrica || !id_evaluacion || !tipo_rubrica || !instrucciones || !criterios || porcentaje_evaluacion == null) {
             throw new Error('Faltan campos obligatorios');
         }
         return fetchJSON(`/rubricas/guardar`, {

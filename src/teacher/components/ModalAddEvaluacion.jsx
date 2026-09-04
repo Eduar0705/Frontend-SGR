@@ -208,6 +208,16 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
             return;
         }
 
+        const pValor = parseFloat(formData.porcentaje);
+        if (!esDiagnostico && (isNaN(pValor) || pValor <= 0)) {
+            Swal.fire('Atención', 'La ponderación debe ser mayor a 0% para estrategias ponderables.', 'warning');
+            return;
+        }
+        if (pValor < 0 || pValor > 100) {
+            Swal.fire('Atención', 'La ponderación debe estar entre 0% y 100%.', 'warning');
+            return;
+        }
+
         setSubmitting(true);
         try {
             const res = await evaluacionesService.saveEvaluacion(formData, currentEvalId);
@@ -223,6 +233,10 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
             setSubmitting(false);
         }
     };
+
+    const esDiagnostico = estrategias
+        .filter(est => formData.estrategias_eval.includes(est.id))
+        .some(est => est.ponderable === 0);
 
     return (
         <div className="modal-premium-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -318,11 +332,11 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
                             <div className="form-field">
                                 <label>Ponderación (%)</label>
                                 <input
-                                    type="number" min="1" max="100"
+                                    type="number" min={esDiagnostico ? "0" : "1"} max="100"
                                     value={formData.porcentaje}
                                     onChange={(e) => setFormData({ ...formData, porcentaje: e.target.value })}
                                     required
-                                    disabled={mode === 'view'}
+                                    disabled={mode === 'view' || esDiagnostico}
                                 />
                             </div>
                             <div className="form-field">
@@ -459,7 +473,16 @@ export default function ModalAddEvaluacion({ onClose, onSaved, mode = 'create', 
                                                 const newEst = e.target.checked
                                                     ? [...formData.estrategias_eval, id]
                                                     : formData.estrategias_eval.filter(x => x !== id);
-                                                setFormData({ ...formData, estrategias_eval: newEst });
+
+                                                const tieneNoPonderable = estrategias
+                                                    .filter(est => newEst.includes(est.id))
+                                                    .some(est => est.ponderable === 0);
+
+                                                const porcentaje = tieneNoPonderable
+                                                    ? 0
+                                                    : (esDiagnostico ? 5 : formData.porcentaje);
+
+                                                setFormData({ ...formData, estrategias_eval: newEst, porcentaje });
                                             }}
                                         />
                                         {est.nombre}
