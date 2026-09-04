@@ -249,7 +249,7 @@ export default function CrearRubricas() {
     };
 
     const agregarCriterio = () => {
-        const id = Date.now();
+        const id = id;
         const nuevoCriterio = {
             id,
             descripcion: '',
@@ -278,7 +278,7 @@ export default function CrearRubricas() {
     const handleCriterioChange = (cId, field, value) => {
         setCriterios(criterios.map(c => c.id === cId ? { ...c, [field]: value } : c));
     };
-
+    /*
     const agregarNivel = (cId) => {
         setCriterios(criterios.map(c => {
             if (c.id === cId) {
@@ -292,7 +292,6 @@ export default function CrearRubricas() {
         }));
     };
 
-    const eliminarNivel = (cId, nId) => {
         setCriterios(criterios.map(c => {
             if (c.id === cId) {
                 if (c.niveles.length <= 1) {
@@ -303,7 +302,7 @@ export default function CrearRubricas() {
             }
             return c;
         }));
-    };
+    };*/
 
     const handleNivelChange = (cId, nId, field, value) => {
         setCriterios(criterios.map(c => {
@@ -447,7 +446,7 @@ export default function CrearRubricas() {
                                     </button>
                                 </div>
 
-                                {criterios.map((c, cIdx) => (
+                                {criterios.map((c) => (
                                     <div key={c.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', marginBottom: '20px', position: 'relative' }}>
                                         <button type="button" onClick={() => eliminarCriterio(c.id)} style={{ position: 'absolute', top: '10px', right: '10px', background: '#fee2e2', color: '#ef4444', border: 'none', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Eliminar criterio">
                                             <i className="fas fa-trash"></i>
@@ -461,7 +460,7 @@ export default function CrearRubricas() {
                                         </div>
 
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                                            {c.niveles.map((n, nIdx) => (
+                                            {c.niveles.map((n) => (
                                                 <div key={n.id} style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
                                                     <input type="text" value={n.nombre} onChange={(e) => handleNivelChange(c.id, n.id, 'nombre', e.target.value)} style={{ fontWeight: 'bold', border: 'none', background: 'transparent', width: '100%', marginBottom: '5px', color: '#475569' }} placeholder="Nivel" />
                                                     <textarea value={n.descripcion} onChange={(e) => handleNivelChange(c.id, n.id, 'descripcion', e.target.value)} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '0.85rem', padding: '8px', marginBottom: '5px', resize: 'vertical' }} rows="3" placeholder="Descripción del nivel..." />

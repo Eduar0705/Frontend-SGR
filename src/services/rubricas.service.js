@@ -177,6 +177,7 @@ export const rubricasService = {
     async getEvaluacionesPendientes(seccionId) {
         if (!seccionId) throw new Error('ID de sección requerido');
         const response = await fetchJSON(`/rubricas/evaluaciones/${seccionId}`);
+        console.log(response.evaluaciones)
         return Array.isArray(response?.evaluaciones) ? response.evaluaciones : [];
     },
 
