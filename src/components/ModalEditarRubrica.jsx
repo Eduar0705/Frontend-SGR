@@ -76,7 +76,7 @@ export default function ModalEditarRubrica({
         const evaluacion = evaluaciones.find(e => e.evaluacion_id == evalId);
         if (!evaluacion) return;
 
-        const nuevoPorcentaje = evaluacion.valor || evaluacion.ponderacion || 10;
+        const nuevoPorcentaje = evaluacion.valor || evaluacion.ponderacion;
         const nuevosCriterios = redistribuirPuntajes(nuevoPorcentaje, formData.criterios);
 
         setFormData(prev => ({
@@ -229,15 +229,15 @@ export default function ModalEditarRubrica({
         if (!confirm2.isConfirmed) return;
 
         const nuevoCriterio = {
-            id_local: Date.now(),
+            id_local: 0,
             descripcion: '',
             puntaje_maximo: '',
             orden: formData.criterios.length + 1,
             niveles: [
-                { id_local: Date.now() + 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '', orden: 1 },
-                { id_local: Date.now() + 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '', orden: 2 },
-                { id_local: Date.now() + 3, nombre_nivel: 'Bueno', descripcion: '', puntaje: '', orden: 3 },
-                { id_local: Date.now() + 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0, orden: 4 }
+                { id_local: 0 + 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '', orden: 1 },
+                { id_local: 0 + 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '', orden: 2 },
+                { id_local: 0 + 3, nombre_nivel: 'Bueno', descripcion: '', puntaje: '', orden: 3 },
+                { id_local: 0 + 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0, orden: 4 }
             ]
         };
 

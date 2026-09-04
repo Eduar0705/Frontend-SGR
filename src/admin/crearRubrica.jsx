@@ -262,7 +262,7 @@ export default function CrearRubricas() {
                 { id: id + 1, nombre: 'Sobresaliente', puntaje: 0, descripcion: '', orden: 1 }
             ]
         };
-        const nuevosCriterios = redistribuirPuntajes(parseFloat(formData.porcentaje_evaluacion) || 10, [...criterios, nuevoCriterio]);
+        const nuevosCriterios = redistribuirPuntajes(parseFloat(formData.porcentaje_evaluacion), [...criterios, nuevoCriterio]);
         setCriterios(nuevosCriterios);
     };
 
@@ -271,7 +271,7 @@ export default function CrearRubricas() {
             return Swal.fire('Atención', 'Debe mantener al menos un criterio', 'warning');
         }
         const tempCriterios = criterios.filter(c => c.id !== id);
-        const nuevosCriterios = redistribuirPuntajes(parseFloat(formData.porcentaje_evaluacion) || 10, tempCriterios);
+        const nuevosCriterios = redistribuirPuntajes(parseFloat(formData.porcentaje_evaluacion), tempCriterios);
         setCriterios(nuevosCriterios);
     };
 
