@@ -249,7 +249,7 @@ export default function CrearRubricas() {
     };
 
     const agregarCriterio = () => {
-        const id = id;
+        const id = 0;
         const nuevoCriterio = {
             id,
             descripcion: '',
