@@ -112,7 +112,7 @@ export default function TeacherEditarRubrica() {
                     {
                         id_local: null,
                         descripcion: '',
-                        puntaje_maximo: r.porcentaje_evaluacion || 10,
+                        puntaje_maximo: r.porcentaje_evaluacion != null ? r.porcentaje_evaluacion : 10,
                         niveles: [
                             { id_local: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0 },
                             { id_local: 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: '' },
@@ -135,9 +135,21 @@ export default function TeacherEditarRubrica() {
     const redistribuirPuntajes = (porcentaje, listaCriterios) => {
         if (!listaCriterios || !listaCriterios.length) return listaCriterios || [];
 
+        const pTotal = parseFloat(porcentaje) || 0;
+        if (pTotal === 0) {
+            return listaCriterios.map(c => ({
+                ...c,
+                puntaje_maximo: (0).toFixed(3),
+                niveles: c.niveles.map(n => ({
+                    ...n,
+                    puntaje: (0).toFixed(3)
+                }))
+            }));
+        }
+
         const numCriterios = listaCriterios.length;
-        const puntajeBase = Math.floor((porcentaje / numCriterios) * 1000) / 1000;
-        const resto = parseFloat((porcentaje - (puntajeBase * numCriterios)).toFixed(3));
+        const puntajeBase = Math.floor((pTotal / numCriterios) * 1000) / 1000;
+        const resto = parseFloat((pTotal - (puntajeBase * numCriterios)).toFixed(3));
 
         return listaCriterios.map((c, idx) => {
             const nuevoMax = idx === numCriterios - 1 ? parseFloat((puntajeBase + resto).toFixed(3)) : puntajeBase;
@@ -190,16 +202,17 @@ export default function TeacherEditarRubrica() {
 
         if (!confirm2.isConfirmed) return;
 
+        const esCero = parseFloat(formData.porcentaje_evaluacion) === 0;
         const nuevoCriterio = {
             id: null,
             id_local: Date.now(),
             descripcion: '',
-            puntaje_maximo: '',
+            puntaje_maximo: esCero ? '0.000' : '',
             niveles: [
-                { id_local: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 0 },
-                { id_local: 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: '' },
-                { id_local: 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '' },
-                { id_local: 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '' }
+                { id_local: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: esCero ? '0.000' : 0 },
+                { id_local: 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: esCero ? '0.000' : '' },
+                { id_local: 2, nombre_nivel: 'Notable', descripcion: '', puntaje: esCero ? '0.000' : '' },
+                { id_local: 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: esCero ? '0.000' : '' }
             ]
         };
 
@@ -432,7 +445,7 @@ export default function TeacherEditarRubrica() {
                                             disabled
                                         >
                                             <option value="">Seleccione evaluación</option>
-                                            {evaluaciones.map(ev => <option key={ev.id} value={ev.id}>{ev.competencias || ev.contenido} ({ev.ponderacion || formData.porcentaje_evaluacion}%)</option>)}
+                                            {evaluaciones.map(ev => <option key={ev.id} value={ev.id}>{ev.competencias || ev.contenido} ({ev.ponderacion != null ? ev.ponderacion : formData.porcentaje_evaluacion}%)</option>)}
                                         </select>
                                     </div>
                                 </div>

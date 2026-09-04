@@ -383,6 +383,15 @@ export default function Evaluaciones() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const pValor = parseFloat(formData.porcentaje);
+        if (!esDiagnostico && (isNaN(pValor) || pValor <= 0)) {
+            return Swal.fire('Atención', 'La ponderación debe ser mayor a 0% para estrategias ponderables.', 'warning');
+        }
+        if (pValor < 0 || pValor > 100) {
+            return Swal.fire('Atención', 'La ponderación debe estar entre 0% y 100%.', 'warning');
+        }
+
         setSubmitting(true);
         if (formData.fecha_horario_json) {
             transformDateJSON(formData)
@@ -911,7 +920,7 @@ export default function Evaluaciones() {
                                         <div className="form-field">
                                             <label>Ponderación (%)</label>
                                             <input
-                                                type="number" min="1" max="100"
+                                                type="number" min={esDiagnostico ? "0" : "1"} max="100"
                                                 value={formData.porcentaje}
                                                 onChange={(e) => setFormData({ ...formData, porcentaje: e.target.value })}
                                                 required

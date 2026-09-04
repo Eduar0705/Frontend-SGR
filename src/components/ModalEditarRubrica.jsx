@@ -76,7 +76,7 @@ export default function ModalEditarRubrica({
         const evaluacion = evaluaciones.find(e => e.evaluacion_id == evalId);
         if (!evaluacion) return;
 
-        const nuevoPorcentaje = evaluacion.valor || evaluacion.ponderacion;
+        const nuevoPorcentaje = evaluacion.valor != null ? evaluacion.valor : (evaluacion.ponderacion != null ? evaluacion.ponderacion : 0);
         const nuevosCriterios = redistribuirPuntajes(nuevoPorcentaje, formData.criterios);
 
         setFormData(prev => ({
@@ -90,9 +90,21 @@ export default function ModalEditarRubrica({
     const redistribuirPuntajes = (porcentaje, criterios) => {
         if (!criterios.length) return criterios;
 
+        const pTotal = parseFloat(porcentaje) || 0;
+        if (pTotal === 0) {
+            return criterios.map(c => ({
+                ...c,
+                puntaje_maximo: 0,
+                niveles: c.niveles.map(n => ({
+                    ...n,
+                    puntaje: 0
+                }))
+            }));
+        }
+
         const numCriterios = criterios.length;
-        const puntajeBase = Math.floor((porcentaje / numCriterios) * 1000) / 1000;
-        const resto = parseFloat((porcentaje - puntajeBase * numCriterios).toFixed(3));
+        const puntajeBase = Math.floor((pTotal / numCriterios) * 1000) / 1000;
+        const resto = parseFloat((pTotal - puntajeBase * numCriterios).toFixed(3));
         const minBase = Math.floor((0.025 / numCriterios) * 1000) / 1000;
         const minResto = parseFloat((0.025 - minBase * numCriterios).toFixed(3));
 
@@ -486,7 +498,7 @@ export default function ModalEditarRubrica({
                         </div>
                         <div style={{ background: '#e0f2fe', padding: '10px 20px', borderRadius: '10px', border: '1px solid #7dd3fc', textAlign: 'center' }}>
                             <div style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', textTransform: 'uppercase' }}>Suma de Criterios</div>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios) > 0.025 ? '#059669' : '#ef4444' }}>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: Math.abs(totalPuntosCriterios - formData.porcentaje_evaluacion) < 0.01 ? '#059669' : '#ef4444' }}>
                                 {totalPuntosCriterios.toFixed(3)} / {formData.porcentaje_evaluacion}
                             </div>
                         </div>

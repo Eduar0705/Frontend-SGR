@@ -185,7 +185,7 @@ export const rubricasService = {
         if (!rubricaData || typeof rubricaData !== 'object') throw new Error('Datos de rúbrica inválidos');
         
         const { nombre_rubrica, id_evaluacion, tipo_rubrica, instrucciones, criterios, porcentaje_evaluacion } = rubricaData;
-        if (!nombre_rubrica || !id_evaluacion || !tipo_rubrica || !instrucciones || !criterios || !porcentaje_evaluacion) {
+        if (!nombre_rubrica || !id_evaluacion || !tipo_rubrica || !instrucciones || !criterios || porcentaje_evaluacion == null) {
             throw new Error('Faltan campos obligatorios');
         }
         return fetchJSON(`/rubricas/guardar`, {

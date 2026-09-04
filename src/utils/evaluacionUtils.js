@@ -40,8 +40,10 @@ export function validarEstructuraRubrica({ criterios, porcentaje }) {
 
     const porcentajeTotal = parseFloat(porcentaje);
     if (isNaN(porcentajeTotal) || porcentajeTotal < 0) {
-        return { valido: false, mensaje: 'El porcentaje de la evaluación debe ser mayor a 0.' };
+        return { valido: false, mensaje: 'El porcentaje de la evaluación debe ser mayor o igual a 0.' };
     }
+
+    const esEvaluacionCero = (porcentajeTotal === 0);
 
     let sumaPuntajes = 0;
     let sumatoriaMinimos = 0;
@@ -55,8 +57,13 @@ export function validarEstructuraRubrica({ criterios, porcentaje }) {
         }
 
         const puntajeCriterio = parseFloat(crit.puntaje_maximo);
-        if (isNaN(puntajeCriterio) || puntajeCriterio <= 0) {
-            return { valido: false, mensaje: `El puntaje del criterio "${critNombre}" debe ser mayor a 0.` };
+        if (isNaN(puntajeCriterio) || puntajeCriterio < 0 || (!esEvaluacionCero && puntajeCriterio <= 0)) {
+            return {
+                valido: false,
+                mensaje: esEvaluacionCero
+                    ? `El puntaje del criterio "${critNombre}" no puede ser negativo.`
+                    : `El puntaje del criterio "${critNombre}" debe ser mayor a 0.`
+            };
         }
         sumaPuntajes += puntajeCriterio;
 
@@ -94,17 +101,26 @@ export function validarEstructuraRubrica({ criterios, porcentaje }) {
             }
         }
 
-        // 1. Todos los niveles deben tener puntajes distintos
-        const formattedScores = puntajesNiveles.map(p => p.toFixed(4));
-        const uniqueScores = new Set(formattedScores);
-        if (uniqueScores.size !== puntajesNiveles.length) {
-            return { valido: false, mensaje: `En el criterio "${critNombre}", todos los niveles deben tener puntajes distintos.` };
-        }
+        if (!esEvaluacionCero) {
+            // 1. Todos los niveles deben tener puntajes distintos (solo para evaluaciones con ponderación > 0)
+            const formattedScores = puntajesNiveles.map(p => p.toFixed(4));
+            const uniqueScores = new Set(formattedScores);
+            if (uniqueScores.size !== puntajesNiveles.length) {
+                return { valido: false, mensaje: `En el criterio "${critNombre}", todos los niveles deben tener puntajes distintos.` };
+            }
 
-        // 2. Al menos uno de los niveles ha de tener puntaje = puntaje_maximo_del_criterio
-        const tieneNivelMaximo = puntajesNiveles.some(p => Math.abs(p - puntajeCriterio) < 0.001);
-        if (!tieneNivelMaximo) {
-            return { valido: false, mensaje: `En el criterio "${critNombre}", al menos uno de los niveles debe tener un puntaje igual al puntaje máximo del criterio (${puntajeCriterio} pts).` };
+            // 2. Al menos uno de los niveles ha de tener puntaje = puntaje_maximo_del_criterio
+            const tieneNivelMaximo = puntajesNiveles.some(p => Math.abs(p - puntajeCriterio) < 0.001);
+            if (!tieneNivelMaximo) {
+                return { valido: false, mensaje: `En el criterio "${critNombre}", al menos uno de los niveles debe tener un puntaje igual al puntaje máximo del criterio (${puntajeCriterio} pts).` };
+            }
+        } else {
+            // Si la evaluación tiene ponderación 0, los niveles pueden tener el mismo puntaje (0).
+            // Se valida que al menos un nivel tenga el puntaje máximo del criterio (0 pts).
+            const tieneNivelMaximo = puntajesNiveles.some(p => Math.abs(p - puntajeCriterio) < 0.001);
+            if (!tieneNivelMaximo) {
+                return { valido: false, mensaje: `En el criterio "${critNombre}", al menos uno de los niveles debe tener un puntaje igual al puntaje máximo del criterio (${puntajeCriterio} pts).` };
+            }
         }
 
         sumatoriaMinimos += (minNivelCriterio === Infinity ? 0 : minNivelCriterio);
@@ -118,8 +134,8 @@ export function validarEstructuraRubrica({ criterios, porcentaje }) {
         };
     }
 
-    // 4. La sumatoria de los criterios más bajos sea mínimo 0,025pts
-    if (sumatoriaMinimos < 0.02499) {
+    // 4. La sumatoria de los criterios más bajos sea mínimo 0,025pts (solo para evaluaciones con ponderación > 0)
+    if (!esEvaluacionCero && sumatoriaMinimos < 0.02499) {
         return {
             valido: false,
             mensaje: `La sumatoria de los puntajes más bajos de todos los criterios debe ser como mínimo 0.025 puntos (actual: ${sumatoriaMinimos.toFixed(3)} pts).`

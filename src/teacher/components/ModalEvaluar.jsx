@@ -122,8 +122,9 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
         }
 
         const calificacionFinal = puntajeRealObtenido();
+        const esEvalCero = parseFloat(evalData?.evaluacion?.porcentaje_evaluacion) === 0;
 
-        if (calificacionFinal < 0.02499) {
+        if (!esEvalCero && calificacionFinal < 0.02499) {
             Swal.fire(
                 'Atención',
                 'La calificación total obtenida no puede ser inferior a 0.025 puntos. Por favor, revise y ajuste los puntajes de los criterios.',
@@ -348,7 +349,9 @@ export default function ModalEvaluar({ data, onClose, onSaved }) {
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ color: '#64748b', fontSize: '0.9em', textTransform: 'uppercase', fontWeight: 'bold' }}>Calificación Final</div>
                             <div style={{ fontSize: '2em', color: '#3b82f6', fontWeight: 'bold' }}>
-                                {(puntajeFinal * 100 / parseFloat(evalData.evaluacion.porcentaje_evaluacion)).toFixed(2)}
+                                {parseFloat(evalData.evaluacion.porcentaje_evaluacion) > 0
+                                    ? (puntajeFinal * 100 / parseFloat(evalData.evaluacion.porcentaje_evaluacion)).toFixed(2)
+                                    : '0.00'}
                                 <span style={{ fontSize: '0.5em', color: '#94a3b8' }}>/100</span>
                             </div>
                         </div>

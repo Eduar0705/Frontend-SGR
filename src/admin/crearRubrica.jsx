@@ -101,7 +101,7 @@ export default function CrearRubricas() {
                     const targetEval = resEval.find(ev => String(ev.evaluacion_id) === String(preData.evaluacion_id));
 
                     // 6. Actualizar formData con todos los valores como strings para que los selects los reconozcan
-                    const finalPorcentaje = targetEval?.valor || 10;
+                    const finalPorcentaje = targetEval?.valor != null ? targetEval.valor : 10;
                     setFormData(prev => ({
                         ...prev,
                         carrera: String(preData.carrera),
@@ -139,9 +139,21 @@ export default function CrearRubricas() {
     const redistribuirPuntajes = (porcentaje, listaCriterios) => {
         if (!listaCriterios.length) return [];
         
+        const pTotal = parseFloat(porcentaje) || 0;
+        if (pTotal === 0) {
+            return listaCriterios.map(c => ({
+                ...c,
+                puntaje_maximo: (0).toFixed(3),
+                niveles: c.niveles.map(n => ({
+                    ...n,
+                    puntaje: (0).toFixed(3)
+                }))
+            }));
+        }
+
         const numCriterios = listaCriterios.length;
-        const puntajeBase = Math.floor((porcentaje / numCriterios) * 1000) / 1000;
-        const resto = parseFloat((porcentaje - (puntajeBase * numCriterios)).toFixed(3));
+        const puntajeBase = Math.floor((pTotal / numCriterios) * 1000) / 1000;
+        const resto = parseFloat((pTotal - (puntajeBase * numCriterios)).toFixed(3));
         const minBase = Math.floor((0.025 / numCriterios) * 1000) / 1000;
         const minResto = parseFloat((0.025 - (minBase * numCriterios)).toFixed(3));
 
@@ -227,7 +239,7 @@ export default function CrearRubricas() {
         const evaluacion = evaluaciones.find(ev => ev.evaluacion_id === parseInt(id));
         
         if (evaluacion) {
-            const nuevoPorcentaje = evaluacion.valor || 10;
+            const nuevoPorcentaje = evaluacion.valor != null ? evaluacion.valor : 10;
             const nuevosCriterios = redistribuirPuntajes(nuevoPorcentaje, criterios);
             setFormData(prev => ({
                 ...prev,
@@ -361,8 +373,9 @@ export default function CrearRubricas() {
             } else {
                 Swal.fire('Error', result.message || 'Error al guardar', 'error');
             }
-        } catch {
-            Swal.fire('Error', 'Error de conexión', 'error');
+        } catch (error) {
+            console.error('Error al guardar rúbrica:', error);
+            Swal.fire('Error', error.message || 'Error de conexión', 'error');
         }
     };
 

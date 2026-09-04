@@ -173,8 +173,21 @@ export default function TeacherCrearRubricas() {
         if (!criterios.length) return criterios;
 
         const numCriterios = criterios.length;
-        const puntajeBase = Math.floor((porcentaje / numCriterios) * 1000) / 1000;
-        const resto = parseFloat((porcentaje - (puntajeBase * numCriterios)).toFixed(3));
+        const pTotal = parseFloat(porcentaje) || 0;
+
+        if (pTotal === 0) {
+            return criterios.map(c => ({
+                ...c,
+                puntaje_maximo: (0).toFixed(3),
+                niveles: c.niveles.map(n => ({
+                    ...n,
+                    puntaje: (0).toFixed(3)
+                }))
+            }));
+        }
+
+        const puntajeBase = Math.floor((pTotal / numCriterios) * 1000) / 1000;
+        const resto = parseFloat((pTotal - (puntajeBase * numCriterios)).toFixed(3));
         const minBase = Math.floor((0.025 / numCriterios) * 1000) / 1000;
         const minResto = parseFloat((0.025 - (minBase * numCriterios)).toFixed(3));
 
@@ -206,10 +219,10 @@ export default function TeacherCrearRubricas() {
     };
 
     const handleEvaluacionChange = (evalId) => {
-        const evaluacion = evaluaciones.find(e => e.id == evalId);
+        const evaluacion = evaluaciones.find(e => String(e.id) === String(evalId));
         if (!evaluacion) return;
 
-        const nuevoPorcentaje = evaluacion.ponderacion;
+        const nuevoPorcentaje = evaluacion.ponderacion != null ? evaluacion.ponderacion : 0;
         const nuevosCriterios = redistribuirPuntajes(nuevoPorcentaje, formData.criterios);
 
         setFormData(prev => ({
@@ -221,16 +234,17 @@ export default function TeacherCrearRubricas() {
     };
 
     const addCriterio = () => {
+        const esCero = parseFloat(formData.porcentaje_evaluacion) === 0;
         const nuevoCriterio = {
             id: null,
             id_local: Date.now(),
             descripcion: '',
-            puntaje_maximo: '',
+            puntaje_maximo: esCero ? '0.000' : '',
             niveles: [
-                { id_local: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: '0.025' },
-                { id_local: 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: '' },
-                { id_local: 2, nombre_nivel: 'Notable', descripcion: '', puntaje: '' },
-                { id_local: 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: '' }
+                { id_local: 4, nombre_nivel: 'Insuficiente', descripcion: '', puntaje: esCero ? '0.000' : '0.025' },
+                { id_local: 3, nombre_nivel: 'Aprobado', descripcion: '', puntaje: esCero ? '0.000' : '' },
+                { id_local: 2, nombre_nivel: 'Notable', descripcion: '', puntaje: esCero ? '0.000' : '' },
+                { id_local: 1, nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: esCero ? '0.000' : '' }
             ]
         };
 
