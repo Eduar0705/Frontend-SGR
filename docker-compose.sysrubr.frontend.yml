@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3000/api
+    container_name: sgr_frontend
+    restart: always
+    ports:
+      - "85:80"
+    networks:
+      - sgr_frontend_net
+
+networks:
+  sgr_frontend_net:
+    driver: bridge
